@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor de Impactos | PepsiCo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: "Inter", system-ui, -apple-system, sans-serif;
+            background: #f2f4f8;
+            padding: 16px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        .container { max-width: 1280px; width: 100%; margin: 0 auto; }
+        header {
+            background: linear-gradient(135deg, #003da5 0%, #0057c7 100%);
+            color: white;
+            padding: 16px 20px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            box-shadow: 0 8px 24px rgba(0, 61, 165, 0.25);
+        }
+        header h1 { font-size: 1.3rem; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+        header h1 span { font-weight: 300; color: rgba(255,255,255,0.7); }
+        header .sub { font-size: 0.7rem; opacity: 0.85; margin-top: 2px; }
+        .badge {
+            background: rgba(255,255,255,0.15);
+            padding: 4px 14px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            border: 1px solid rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .badge::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #4ade80;
+            border-radius: 50%;
+            animation: pulse-dot 1.8s infinite;
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 20px;
+            background: white;
+            padding: 6px;
+            border-radius: 50px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .tab-btn {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 10px 16px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            color: #4a5b76;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+        .tab-btn:hover { background: #f0f3f9; }
+        .tab-btn.ativo {
+            background: #003da5;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 61, 165, 0.25);
+        }
+        .tab-content { display: none; animation: fadeUp 0.3s ease; }
+        .tab-content.ativo { display: block; }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .card-metrica {
+            background: white;
+            padding: 12px 10px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .card-metrica .numero { font-size: 1.5rem; font-weight: 700; line-height: 1.2; }
+        .card-metrica .rotulo { font-size: 0.55rem; color: #6b7a93; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600; margin-top: 2px; }
+        .card-metrica .icone { font-size: 1.3rem; display: block; }
+        .card-metrica.critico .numero { color: #dc2626; }
+        .card-metrica.atencao .numero { color: #d97706; }
+        .card-metrica.info .numero { color: #2563eb; }
+        .card-metrica.total .numero { color: #003da5; }
+        .dashboard-extras {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .card-extra {
+            background: white;
+            padding: 12px 14px;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .card-extra h4 { font-size: 0.6rem; color: #6b7a93; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600; margin-bottom: 6px; }
+        .fonte-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+            border-bottom: 1px solid #f0f2f6;
+            font-size: 0.8rem;
+        }
+        .fonte-item:last-child { border-bottom: none; }
+        .fonte-item strong { color: #003da5; }
+        .filtros-rapidos {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 12px;
+        }
+        .filtros-rapidos button {
+            background: white;
+            border: 1px solid #e2e6ee;
+            padding: 5px 12px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-family: inherit;
+            color: #2c3e4e;
+        }
+        .filtros-rapidos button:hover { background: #f0f3f9; border-color: #bcc4d4; }
+        .filtros-rapidos button.ativo {
+            background: #003da5;
+            color: white;
+            border-color: #003da5;
+            box-shadow: 0 4px 12px rgba(0, 61, 165, 0.2);
+        }
+        .barra-busca {
+            background: white;
+            padding: 6px 14px;
+            border-radius: 60px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .barra-busca input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 0.85rem;
+            padding: 8px 0;
+            font-family: inherit;
+            background: transparent;
+            color: #1e2a3a;
+        }
+        .barra-busca input::placeholder { color: #9aa8bc; }
+        .grid-2colunas {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+        @media (min-width: 820px) { .grid-2colunas { grid-template-columns: 1fr 1fr; } }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 14px 14px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border-left: 4px solid #003da5;
+            transition: all 0.2s ease;
+        }
+        .card:hover {
+            box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+            transform: translateY(-1px);
+        }
+        .card.lida {
+            opacity: 0.6;
+            background: #f8f9fc;
+            border-left-color: #bcc4d4;
+        }
+        .card.lida:hover { transform: none; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .selo {
+            display: inline-block;
+            font-size: 0.5rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 40px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .selo.critico { background: #fee2e2; color: #991b1b; }
+        .selo.atencao { background: #fef9c3; color: #854d0e; }
+        .selo.info { background: #dbeafe; color: #1e40af; }
+        .titulo { font-size: 0.9rem; font-weight: 600; margin: 4px 0 3px; color: #1e2a3a; line-height: 1.3; }
+        .fonte {
+            font-size: 0.6rem;
+            color: #6b7a93;
+            margin-bottom: 4px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            align-items: center;
+        }
+        .fonte a { color: #003da5; text-decoration: none; font-weight: 500; }
+        .fonte a:hover { text-decoration: underline; }
+        .resumo { color: #2c3e4e; line-height: 1.4; font-size: 0.78rem; margin-bottom: 8px; }
+        .acoes {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 4px;
+            border-top: 1px solid #eef0f4;
+            padding-top: 8px;
+        }
+        .emoji-btn {
+            background: none;
+            border: none;
+            font-size: 1rem;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 30px;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            transition: background 0.15s ease;
+            font-family: inherit;
+        }
+        .emoji-btn:hover { background: #f0f3f9; }
+        .contador { font-size: 0.6rem; color: #4a5b76; min-width: 14px; }
+        .btn-acao {
+            background: none;
+            border: 1px solid #d0d7e2;
+            padding: 2px 10px;
+            border-radius: 40px;
+            font-size: 0.55rem;
+            font-weight: 500;
+            cursor: pointer;
+            background: white;
+            transition: all 0.15s ease;
+            font-family: inherit;
+            color: #2c3e4e;
+        }
+        .btn-acao:hover { background: #f0f3f9; border-color: #b0baca; }
+        #mapa {
+            height: 250px;
+            border-radius: 14px;
+            background: #e8ecf2;
+            border: 1px solid #e2e6ee;
+            margin-bottom: 6px;
+        }
+        .card-mapa {
+            background: white;
+            border-radius: 16px;
+            padding: 14px 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .card-mapa h3 { font-size: 0.8rem; margin-bottom: 8px; color: #1e2a3a; font-weight: 600; }
+        .config-section {
+            background: white;
+            border-radius: 20px;
+            padding: 18px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            margin-bottom: 16px;
+        }
+        .config-section h3 { font-size: 0.95rem; margin-bottom: 8px; color: #1e2a3a; font-weight: 600; }
+        .config-section p { font-size: 0.75rem; color: #6b7a93; margin-bottom: 10px; }
+        .config-section .campo {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .config-section input[type="text"] {
+            flex: 1;
+            padding: 6px 12px;
+            border: 1px solid #d0d7e2;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            outline: none;
+            font-family: inherit;
+            min-width: 120px;
+            transition: border 0.15s ease;
+        }
+        .config-section input[type="text"]:focus {
+            border-color: #003da5;
+            box-shadow: 0 0 0 3px rgba(0, 61, 165, 0.1);
+        }
+        .config-section button {
+            background: #003da5;
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.15s ease;
+            font-family: inherit;
+        }
+        .config-section button:hover { background: #002d7a; }
+        .lista-itens {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 10px;
+        }
+        .item-chip {
+            background: #f0f3f9;
+            padding: 3px 12px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 500;
+        }
+        .item-chip .remover {
+            background: none;
+            border: none;
+            color: #991b1b;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.8rem;
+            line-height: 1;
+            padding: 0 2px;
+        }
+        .toggle-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 8px 0;
+        }
+        .toggle-group label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .toggle-group input[type="checkbox"] {
+            width: 15px;
+            height: 15px;
+            accent-color: #003da5;
+            cursor: pointer;
+        }
+        .palavra-sugestao {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #f0f3f9;
+            padding: 3px 10px 3px 12px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin: 2px 3px 2px 0;
+        }
+        .palavra-sugestao .add-btn {
+            background: none;
+            border: none;
+            color: #003da5;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.9rem;
+            line-height: 1;
+            padding: 0 2px;
+        }
+        .palavra-sugestao .add-btn:hover { color: #002d7a; }
+        footer {
+            text-align: center;
+            font-size: 0.6rem;
+            color: #8a9bb0;
+            margin-top: 24px;
+            padding-top: 12px;
+            border-top: 1px solid #e2e6ee;
+        }
+        @media (max-width: 480px) {
+            body { padding: 8px; }
+            header { padding: 10px 14px; }
+            header h1 { font-size: 1rem; }
+            .tab-btn { font-size: 0.65rem; padding: 6px 8px; }
+            .card { padding: 10px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <div>
+            <h1>🚛 Monitor <span>| PepsiCo</span></h1>
+            <div class="sub">Rodovias • Clima • Greves • Fábricas • Policial</div>
+        </div>
+        <div class="badge" id="authStatus">⏳ Conectando...</div>
+    </header>
+
+    <div class="tabs">
+        <button class="tab-btn ativo" data-tab="noticias">📋 Notícias</button>
+        <button class="tab-btn" data-tab="preferencias">⚙️ Preferências</button>
+    </div>
+
+    <div id="tab-noticias" class="tab-content ativo">
+        <div class="dashboard" id="dashboardMetricas">
+            <div class="card-metrica total"><span class="icone">📰</span><div class="numero" id="totalCount">0</div><div class="rotulo">Total</div></div>
+            <div class="card-metrica critico"><span class="icone">🔴</span><div class="numero" id="criticoCount">0</div><div class="rotulo">Crítico</div></div>
+            <div class="card-metrica atencao"><span class="icone">🟡</span><div class="numero" id="atencaoCount">0</div><div class="rotulo">Atenção</div></div>
+            <div class="card-metrica info"><span class="icone">🟢</span><div class="numero" id="infoCount">0</div><div class="rotulo">Informativo</div></div>
+        </div>
+        <div class="dashboard-extras">
+            <div class="card-extra"><h4>📰 Top fontes</h4><div id="topFontes"></div></div>
+        </div>
+        <div class="filtros-rapidos" id="filtrosContainer">
+            <button data-filtro="todos" class="ativo">📋 Todos</button>
+            <button data-filtro="clima">🌧️ Clima</button>
+            <button data-filtro="transito">🚧 Trânsito</button>
+            <button data-filtro="greve">🚛 Greve</button>
+            <button data-filtro="fabrica">🏭 Fábricas</button>
+            <button data-filtro="acidente">⚠️ Acidentes</button>
+            <button data-filtro="policial">🚔 Policial</button>
+        </div>
+        <div class="barra-busca">
+            🔍 <input type="text" id="buscaInput" placeholder="Buscar notícias...">
+        </div>
+        <div class="grid-2colunas">
+            <div id="feedNoticias"></div>
+            <div>
+                <div class="card-mapa">
+                    <h3>🗺️ Ocorrências por região</h3>
+                    <div id="mapa"></div>
+                    <p style="font-size:0.55rem; color:#8a9bb0; margin-top:4px;">📍 Marcadores fixos para demonstração.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-preferencias" class="tab-content">
+        <div class="config-section">
+            <h3>🔑 Palavras-chave</h3>
+            <p>Adicione termos para classificar notícias.</p>
+            <div class="campo">
+                <input type="text" id="novaPalavra" placeholder="Ex: enchente, greve...">
+                <button id="addPalavraBtn">➕ Adicionar</button>
+            </div>
+            <div class="lista-itens" id="listaPalavras"></div>
+        </div>
+        <div class="config-section">
+            <h3>📊 Palavras em alta</h3>
+            <p>Clique em ➕ para adicionar à lista.</p>
+            <div id="palavrasSugeridas" style="display:flex; flex-wrap:wrap; gap:5px; margin-top:5px;"></div>
+        </div>
+        <div class="config-section">
+            <h3>📌 Categorias ativas</h3>
+            <div class="toggle-group" id="categoriasToggle"></div>
+        </div>
+    </div>
+
+    <footer>✅ Lidas salvas localmente • Reações persistem no banco</footer>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyCYh4_MyqFITFDJDg36eFHTU2VqJ8JeIuc",
+        authDomain: "monitor-de-frotas-pepsic-8a7cc.firebaseapp.com",
+        projectId: "monitor-de-frotas-pepsic-8a7cc",
+        storageBucket: "monitor-de-frotas-pepsic-8a7cc.firebasestorage.app",
+        messagingSenderId: "1021524604061",
+        appId: "1:1021524604061:web:ec2de92564115f1f221074"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    // ===== DATA SERVICE =====
+    const DataService = {
+        _noticias: [],
+        _listeners: [],
+        _unsubscribe: null,
+        _initialized: false,
+
+        init() {
+            this._unsubscribe = db.collection('noticias')
+                .orderBy('dataPublicacao', 'desc')
+                .onSnapshot((snapshot) => {
+                    this._noticias = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                    this._notify();
+                }, (error) => {
+                    console.error('Erro no Firestore:', error);
+                });
+            this._initialized = true;
+        },
+
+        getNoticias() { return this._noticias; },
+
+        isLida(id) {
+            const lidas = JSON.parse(localStorage.getItem('noticias_lidas') || '[]');
+            return lidas.includes(id);
+        },
+
+        toggleLida(id) {
+            let lidas = JSON.parse(localStorage.getItem('noticias_lidas') || '[]');
+            const index = lidas.indexOf(id);
+            if (index !== -1) {
+                lidas.splice(index, 1);
+            } else {
+                lidas.push(id);
+            }
+            localStorage.setItem('noticias_lidas', JSON.stringify(lidas));
+            this._notify();
+        },
+
+        async reagirNoticia(id, emoji) {
+            try {
+                const docRef = db.collection('noticias').doc(id);
+                await docRef.update({
+                    [`reacoes.${emoji}`]: firebase.firestore.FieldValue.increment(1)
+                });
+            } catch (error) {
+                console.error('Erro ao reagir:', error);
+                alert('Erro ao reagir. Tente novamente.');
+            }
+        },
+
+        getConfig() {
+            const padrao = {
+                palavrasChave: ['interdição', 'greve', 'acidente', 'enchente', 'blitz', 'operação', 'PRF'],
+                categoriasAtivas: ['clima', 'transito', 'greve', 'fabrica', 'acidente', 'policial']
+            };
+            const stored = localStorage.getItem('monitor_config');
+            if (stored) {
+                try { return { ...padrao, ...JSON.parse(stored) }; }
+                catch (e) { return padrao; }
+            }
+            return padrao;
+        },
+
+        saveConfig(config) {
+            localStorage.setItem('monitor_config', JSON.stringify(config));
+            this._config = config;
+        },
+
+        addPalavraChave(palavra) {
+            const config = this.getConfig();
+            if (!config.palavrasChave.includes(palavra)) {
+                config.palavrasChave.push(palavra);
+                this.saveConfig(config);
+            }
+            return config;
+        },
+
+        removePalavraChave(palavra) {
+            const config = this.getConfig();
+            config.palavrasChave = config.palavrasChave.filter(p => p !== palavra);
+            this.saveConfig(config);
+            return config;
+        },
+
+        setCategoriasAtivas(categorias) {
+            const config = this.getConfig();
+            config.categoriasAtivas = categorias;
+            this.saveConfig(config);
+            return config;
+        },
+
+        onChange(callback) { this._listeners.push(callback); },
+
+        _notify() {
+            this._listeners.forEach(cb => cb(this._noticias));
+        }
+    };
+
+    // ===== AUTENTICAÇÃO ANÔNIMA =====
+    auth.onAuthStateChanged(user => {
+        const statusEl = document.getElementById('authStatus');
+        if (user) {
+            statusEl.textContent = '✅ Conectado';
+            statusEl.style.background = 'rgba(74, 222, 128, 0.2)';
+            if (!DataService._initialized) {
+                DataService.init();
+            }
+        } else {
+            statusEl.textContent = '⏳ Conectando...';
+            auth.signInAnonymously().catch(error => {
+                console.error('Erro no login:', error);
+                statusEl.textContent = '❌ Erro';
+                statusEl.style.background = 'rgba(255, 100, 100, 0.2)';
+            });
+        }
+    });
+
+    // ===== FUNÇÕES =====
+    function escapeHtml(text) {
+        if (!text) return '';
+        return text.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m] || m));
+    }
+
+    function classificarSeveridade(titulo, resumo, palavrasChave) {
+        const texto = (titulo + ' ' + resumo).toLowerCase();
+        const palavras = palavrasChave.map(p => p.toLowerCase());
+        const encontrou = palavras.some(p => texto.includes(p));
+        if (!encontrou) return { label: 'Informativo', classe: 'info' };
+        const criticas = ['interdição', 'greve', 'acidente', 'enchente', 'vazou', 'paralisação', 'blitz', 'operação', 'PRF'];
+        const temCritica = criticas.some(p => texto.includes(p));
+        if (temCritica) return { label: 'Crítico', classe: 'critico' };
+        return { label: 'Atenção', classe: 'atencao' };
+    }
+
+    function renderFeed(noticias, filtroTexto = '', categoriaAtiva = 'todos', palavrasChave, categoriasAtivas) {
+        const feedDiv = document.getElementById('feedNoticias');
+        if (!feedDiv) return;
+
+        let filtradas = noticias.filter(n => {
+            const matchTexto = !filtroTexto.trim() ||
+                (n.titulo + ' ' + n.resumo).toLowerCase().includes(filtroTexto.toLowerCase());
+            const matchCategoria = categoriaAtiva === 'todos' || n.categoria === categoriaAtiva;
+            if (categoriaAtiva !== 'todos' && !categoriasAtivas.includes(categoriaAtiva)) {
+                return false;
+            }
+            return matchTexto && matchCategoria;
+        });
+
+        if (filtradas.length === 0) {
+            feedDiv.innerHTML = `<div style="background:white; border-radius:16px; padding:30px; text-align:center; color:#8a9bb0;">📭 Nenhuma notícia</div>`;
+            return;
+        }
+
+        feedDiv.innerHTML = filtradas.map(n => {
+            const severidade = classificarSeveridade(n.titulo, n.resumo, palavrasChave);
+            const dataFmt = n.dataPublicacao ? new Date(n.dataPublicacao.seconds * 1000).toLocaleString('pt-BR') : 'Data desconhecida';
+            const lida = DataService.isLida(n.id);
+            const lidaClass = lida ? 'lida' : '';
+            const reacoes = n.reacoes || {};
+
+            return `
+                <div class="card ${lidaClass}" data-id="${n.id}">
+                    <span class="selo ${severidade.classe}">${severidade.label}</span>
+                    <div class="titulo">${escapeHtml(n.titulo)}</div>
+                    <div class="fonte">
+                        📰 ${escapeHtml(n.fonte)} • 🕒 ${dataFmt}
+                        <a href="${n.link}" target="_blank" style="margin-left:auto;">🔗 Ver original</a>
+                    </div>
+                    <div class="resumo">${escapeHtml(n.resumo)}</div>
+                    <div class="acoes">
+                        <button class="emoji-btn" data-emoji="👍">👍 <span class="contador" id="cont-${n.id}-👍">${reacoes['👍'] || 0}</span></button>
+                        <button class="emoji-btn" data-emoji="⚠️">⚠️ <span class="contador" id="cont-${n.id}-⚠️">${reacoes['⚠️'] || 0}</span></button>
+                        <button class="emoji-btn" data-emoji="🔥">🔥 <span class="contador" id="cont-${n.id}-🔥">${reacoes['🔥'] || 0}</span></button>
+                        <button class="btn-acao" onclick="compartilharNoticia('${n.id}')">📤 Compartilhar</button>
+                        <button class="btn-acao toggle-lida" data-id="${n.id}" style="margin-left:auto;">${lida ? '✅ Lida' : '📖 Marcar lida'}</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        feedDiv.querySelectorAll('.emoji-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const card = btn.closest('.card');
+                const id = card.dataset.id;
+                const emoji = btn.dataset.emoji;
+                await DataService.reagirNoticia(id, emoji);
+                const span = document.getElementById(`cont-${id}-${emoji}`);
+                if (span) {
+                    const current = parseInt(span.innerText) || 0;
+                    span.innerText = current + 1;
+                }
+            });
+        });
+
+        feedDiv.querySelectorAll('.toggle-lida').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.dataset.id;
+                DataService.toggleLida(id);
+                const busca = document.getElementById('buscaInput').value;
+                const ativa = document.querySelector('#filtrosContainer .ativo');
+                const cat = ativa ? ativa.dataset.filtro : 'todos';
+                const config = DataService.getConfig();
+                const noticiasAtuais = DataService.getNoticias();
+                renderFeed(noticiasAtuais, busca, cat, config.palavrasChave, config.categoriasAtivas);
+                atualizarDashboard(noticiasAtuais, config.palavrasChave);
+            });
+        });
+    }
+
+    function atualizarDashboard(noticias, palavrasChave) {
+        const total = noticias.length;
+        let criticos = 0, atencao = 0, info = 0;
+        const contagemFontes = {};
+
+        noticias.forEach(n => {
+            const sev = classificarSeveridade(n.titulo, n.resumo, palavrasChave);
+            if (sev.classe === 'critico') criticos++;
+            else if (sev.classe === 'atencao') atencao++;
+            else info++;
+            contagemFontes[n.fonte] = (contagemFontes[n.fonte] || 0) + 1;
+        });
+
+        document.getElementById('totalCount').textContent = total;
+        document.getElementById('criticoCount').textContent = criticos;
+        document.getElementById('atencaoCount').textContent = atencao;
+        document.getElementById('infoCount').textContent = info;
+
+        const fontesSorted = Object.entries(contagemFontes).sort((a,b) => b[1] - a[1]).slice(0, 5);
+        document.getElementById('topFontes').innerHTML = fontesSorted.map(([nome, qtd]) =>
+            `<div class="fonte-item"><span>${nome}</span><span><strong>${qtd}</strong></span></div>`
+        ).join('') || "<span style='color:#999;'>Nenhuma fonte</span>";
+
+        const tags = getPalavrasFrequentes(noticias);
+        const sugeridasDiv = document.getElementById('palavrasSugeridas');
+        if (sugeridasDiv) {
+            const config = DataService.getConfig();
+            sugeridasDiv.innerHTML = tags.map(([palavra, freq]) => {
+                const jaExiste = config.palavrasChave.includes(palavra);
+                return `<span class="palavra-sugestao">
+                            ${palavra} <span style="color:#6b7a93; font-size:0.65rem;">(${freq})</span>
+                            ${!jaExiste ? `<button class="add-btn" data-palavra="${palavra}">➕</button>` : ''}
+                        </span>`;
+            }).join('');
+            sugeridasDiv.querySelectorAll('.add-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const palavra = btn.dataset.palavra;
+                    DataService.addPalavraChave(palavra);
+                    renderizarPalavras(DataService.getConfig());
+                    const busca = document.getElementById('buscaInput').value;
+                    const ativa = document.querySelector('#filtrosContainer .ativo');
+                    const cat = ativa ? ativa.dataset.filtro : 'todos';
+                    const noticiasAtuais = DataService.getNoticias();
+                    const configAtual = DataService.getConfig();
+                    renderFeed(noticiasAtuais, busca, cat, configAtual.palavrasChave, configAtual.categoriasAtivas);
+                    atualizarDashboard(noticiasAtuais, configAtual.palavrasChave);
+                });
+            });
+        }
+    }
+
+    function getPalavrasFrequentes(noticias) {
+        const palavras = {};
+        noticias.forEach(n => {
+            const texto = (n.titulo + ' ' + n.resumo).toLowerCase();
+            const tokens = texto.split(/\s+/).filter(p => p.length > 3 && !['para','com','sem','sobre','pelo','pela','entre','contra','através','porque','quando','como','mais','muito','depois','antes','durante','dentro','fora'].includes(p));
+            tokens.forEach(p => { palavras[p] = (palavras[p] || 0) + 1; });
+        });
+        return Object.entries(palavras).sort((a,b) => b[1] - a[1]).slice(0, 15);
+    }
+
+    function compartilharNoticia(id) {
+        const url = window.location.href.split('#')[0] + '#noticia-' + id;
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(url).then(() => {
+                alert('🔗 Link copiado! Envie para sua equipe.\n' + url);
+            }).catch(() => prompt('Copie o link manualmente:', url));
+        } else {
+            prompt('Copie o link manualmente:', url);
+        }
+    }
+
+    function renderizarPalavras(config) {
+        const container = document.getElementById('listaPalavras');
+        container.innerHTML = config.palavrasChave.map(p =>
+            `<span class="item-chip">${p} <button class="remover" data-palavra="${p}">✕</button></span>`
+        ).join('');
+        container.querySelectorAll('.remover').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const palavra = btn.dataset.palavra;
+                DataService.removePalavraChave(palavra);
+                renderizarPalavras(DataService.getConfig());
+                const busca = document.getElementById('buscaInput').value;
+                const ativa = document.querySelector('#filtrosContainer .ativo');
+                const cat = ativa ? ativa.dataset.filtro : 'todos';
+                const noticiasAtuais = DataService.getNoticias();
+                const configAtual = DataService.getConfig();
+                renderFeed(noticiasAtuais, busca, cat, configAtual.palavrasChave, configAtual.categoriasAtivas);
+                atualizarDashboard(noticiasAtuais, configAtual.palavrasChave);
+            });
+        });
+    }
+
+    function renderizarCategorias(config) {
+        const container = document.getElementById('categoriasToggle');
+        const todas = [
+            { id: 'clima', label: '🌧️ Clima' },
+            { id: 'transito', label: '🚧 Trânsito' },
+            { id: 'greve', label: '🚛 Greve' },
+            { id: 'fabrica', label: '🏭 Fábricas' },
+            { id: 'acidente', label: '⚠️ Acidentes' },
+            { id: 'policial', label: '🚔 Policial' }
+        ];
+        container.innerHTML = todas.map(cat =>
+            `<label>
+                <input type="checkbox" value="${cat.id}" ${config.categoriasAtivas.includes(cat.id) ? 'checked' : ''}>
+                ${cat.label}
+            </label>`
+        ).join('');
+        container.querySelectorAll('input[type="checkbox"]').forEach(chk => {
+            chk.addEventListener('change', () => {
+                let ativas = [];
+                container.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => ativas.push(cb.value));
+                DataService.setCategoriasAtivas(ativas);
+                atualizarFiltrosRapidos(ativas);
+                const busca = document.getElementById('buscaInput').value;
+                const ativa = document.querySelector('#filtrosContainer .ativo');
+                const cat = ativa ? ativa.dataset.filtro : 'todos';
+                const noticiasAtuais = DataService.getNoticias();
+                const configAtual = DataService.getConfig();
+                renderFeed(noticiasAtuais, busca, cat, configAtual.palavrasChave, configAtual.categoriasAtivas);
+                atualizarDashboard(noticiasAtuais, configAtual.palavrasChave);
+            });
+        });
+    }
+
+    function atualizarFiltrosRapidos(categoriasAtivas) {
+        const container = document.getElementById('filtrosContainer');
+        const botoes = container.querySelectorAll('button[data-filtro]');
+        botoes.forEach(btn => {
+            const filtro = btn.dataset.filtro;
+            if (filtro === 'todos') return;
+            if (categoriasAtivas.includes(filtro)) {
+                btn.style.display = '';
+            } else {
+                btn.style.display = 'none';
+                if (btn.classList.contains('ativo')) {
+                    btn.classList.remove('ativo');
+                    const todosBtn = container.querySelector('[data-filtro="todos"]');
+                    if (todosBtn) todosBtn.classList.add('ativo');
+                }
+            }
+        });
+    }
+
+    // ===== MAPA =====
+    let map;
+    function initMapa() {
+        map = L.map('mapa').setView([-23.5, -46.5], 6);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+        const pontos = [
+            { lat: -20.5, lng: -43.8, titulo: 'Interdição BR-040 - Congonhas' },
+            { lat: -22.9, lng: -47.1, titulo: 'Acidente Rod. Bandeirantes' },
+            { lat: -23.95, lng: -46.33, titulo: 'Greve de caminhoneiros - SP' },
+            { lat: -23.98, lng: -46.30, titulo: 'Calor extremo - Interior SP' },
+            { lat: -23.98, lng: -46.33, titulo: 'Porto de Santos - Ventos' },
+            { lat: -23.55, lng: -46.63, titulo: 'Operação PRF - Rod. Fernão Dias' }
+        ];
+        pontos.forEach(p => {
+            L.marker([p.lat, p.lng]).addTo(map).bindPopup(`<b>${p.titulo}</b>`);
+        });
+        setTimeout(() => map.invalidateSize(), 300);
+    }
+
+    // ===== INICIALIZAÇÃO =====
+    function init() {
+        const checkInit = setInterval(() => {
+            if (DataService._initialized) {
+                clearInterval(checkInit);
+                const config = DataService.getConfig();
+                renderizarPalavras(config);
+                renderizarCategorias(config);
+                atualizarFiltrosRapidos(config.categoriasAtivas);
+
+                DataService.onChange((noticias) => {
+                    const busca = document.getElementById('buscaInput').value;
+                    const ativa = document.querySelector('#filtrosContainer .ativo');
+                    const cat = ativa ? ativa.dataset.filtro : 'todos';
+                    const configAtual = DataService.getConfig();
+                    renderFeed(noticias, busca, cat, configAtual.palavrasChave, configAtual.categoriasAtivas);
+                    atualizarDashboard(noticias, configAtual.palavrasChave);
+                });
+
+                const noticias = DataService.getNoticias();
+                const configAtual = DataService.getConfig();
+                renderFeed(noticias, '', 'todos', configAtual.palavrasChave, configAtual.categoriasAtivas);
+                atualizarDashboard(noticias, configAtual.palavrasChave);
+
+                initMapa();
+
+                document.getElementById('buscaInput').addEventListener('input', (e) => {
+                    const ativa = document.querySelector('#filtrosContainer .ativo');
+                    const cat = ativa ? ativa.dataset.filtro : 'todos';
+                    const noticiasAtuais = DataService.getNoticias();
+                    const configAtual = DataService.getConfig();
+                    renderFeed(noticiasAtuais, e.target.value, cat, configAtual.palavrasChave, configAtual.categoriasAtivas);
+                });
+
+                document.querySelectorAll('#filtrosContainer button').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        document.querySelectorAll('#filtrosContainer button').forEach(b => b.classList.remove('ativo'));
+                        btn.classList.add('ativo');
+                        const categoria = btn.dataset.filtro;
+                        const busca = document.getElementById('buscaInput').value;
+                        const noticiasAtuais = DataService.getNoticias();
+                        const configAtual = DataService.getConfig();
+                        renderFeed(noticiasAtuais, busca, categoria, configAtual.palavrasChave, configAtual.categoriasAtivas);
+                    });
+                });
+
+                document.getElementById('addPalavraBtn').addEventListener('click', () => {
+                    const input = document.getElementById('novaPalavra');
+                    const val = input.value.trim().toLowerCase();
+                    if (!val) return;
+                    const configAtual = DataService.getConfig();
+                    if (configAtual.palavrasChave.includes(val)) {
+                        alert('Essa palavra já está na lista.');
+                        return;
+                    }
+                    DataService.addPalavraChave(val);
+                    input.value = '';
+                    const novaConfig = DataService.getConfig();
+                    renderizarPalavras(novaConfig);
+                    const busca = document.getElementById('buscaInput').value;
+                    const ativa = document.querySelector('#filtrosContainer .ativo');
+                    const cat = ativa ? ativa.dataset.filtro : 'todos';
+                    const noticiasAtuais = DataService.getNoticias();
+                    renderFeed(noticiasAtuais, busca, cat, novaConfig.palavrasChave, novaConfig.categoriasAtivas);
+                    atualizarDashboard(noticiasAtuais, novaConfig.palavrasChave);
+                });
+
+                document.getElementById('novaPalavra').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') document.getElementById('addPalavraBtn').click();
+                });
+
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('ativo'));
+                        btn.classList.add('ativo');
+                        const tab = btn.dataset.tab;
+                        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('ativo'));
+                        document.getElementById('tab-' + tab).classList.add('ativo');
+                        if (tab === 'noticias') {
+                            setTimeout(() => { if (map) map.invalidateSize(); }, 200);
+                        }
+                    });
+                });
+            }
+        }, 300);
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
