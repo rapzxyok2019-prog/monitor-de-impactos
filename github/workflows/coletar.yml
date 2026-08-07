@@ -1,0 +1,37 @@
+name: Coletar notícias automaticamente
+
+on:
+  schedule:
+    - cron: '0 */2 * * *'   # A cada 2 horas
+  workflow_dispatch:          # Para testar manualmente
+
+jobs:
+  coleta:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Clonar o repositório
+        uses: actions/checkout@v4
+      
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Instalar dependências
+        run: |
+          cd scripts
+          npm install
+      
+      - name: Criar arquivo de credenciais do Firebase
+        run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > serviceAccount.json
+      
+      - name: Executar coleta de notícias
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/serviceAccount.json
+        run: |
+          cd scripts
+          node coletar.js
+      
+      - name: Limpar arquivo de credenciais
+        run: rm -f serviceAccount.json
