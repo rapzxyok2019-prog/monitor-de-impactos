@@ -271,11 +271,12 @@
         }
         .btn-acao:hover { background: #f0f3f9; border-color: #b0baca; }
         #mapa {
-            height: 250px;
+            height: 280px;
             border-radius: 14px;
             background: #e8ecf2;
             border: 1px solid #e2e6ee;
             margin-bottom: 6px;
+            overflow: hidden;
         }
         .card-mapa {
             background: white;
@@ -408,6 +409,7 @@
             header h1 { font-size: 1rem; }
             .tab-btn { font-size: 0.65rem; padding: 6px 8px; }
             .card { padding: 10px; }
+            #mapa { height: 200px; }
         }
     </style>
 </head>
@@ -454,7 +456,7 @@
                 <div class="card-mapa">
                     <h3>🗺️ Ocorrências por região</h3>
                     <div id="mapa"></div>
-                    <p style="font-size:0.55rem; color:#8a9bb0; margin-top:4px;">📍 Marcadores fixos para demonstração.</p>
+                    <p style="font-size:0.55rem; color:#8a9bb0; margin-top:4px;">📍 Marcadores baseados nas notícias coletadas</p>
                 </div>
             </div>
         </div>
@@ -486,6 +488,9 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+    // ============================================================
+    //  FIREBASE CONFIG (SUAS CREDENCIAIS)
+    // ============================================================
     const firebaseConfig = {
         apiKey: "AIzaSyCYh4_MyqFITFDJDg36eFHTU2VqJ8JeIuc",
         authDomain: "monitor-de-frotas-pepsic-8a7cc.firebaseapp.com",
@@ -636,9 +641,13 @@
         return { label: 'Atenção', classe: 'atencao' };
     }
 
+    // ===== RENDER FEED =====
     function renderFeed(noticias, filtroTexto = '', categoriaAtiva = 'todos', palavrasChave, categoriasAtivas) {
         const feedDiv = document.getElementById('feedNoticias');
         if (!feedDiv) return;
+
+        const config = DataService.getConfig();
+        const palavras = config.palavrasChave || [];
 
         let filtradas = noticias.filter(n => {
             const matchTexto = !filtroTexto.trim() ||
@@ -647,7 +656,11 @@
             if (categoriaAtiva !== 'todos' && !categoriasAtivas.includes(categoriaAtiva)) {
                 return false;
             }
-            return matchTexto && matchCategoria;
+            // Filtro por palavras-chave (se houver)
+            const matchPalavraChave = palavras.length === 0 || palavras.some(p =>
+                (n.titulo + ' ' + n.resumo).toLowerCase().includes(p.toLowerCase())
+            );
+            return matchTexto && matchCategoria && matchPalavraChave;
         });
 
         if (filtradas.length === 0) {
@@ -711,6 +724,7 @@
         });
     }
 
+    // ===== DASHBOARD =====
     function atualizarDashboard(noticias, palavrasChave) {
         const total = noticias.length;
         let criticos = 0, atencao = 0, info = 0;
@@ -783,6 +797,7 @@
         }
     }
 
+    // ===== PREFERÊNCIAS =====
     function renderizarPalavras(config) {
         const container = document.getElementById('listaPalavras');
         container.innerHTML = config.palavrasChave.map(p =>
@@ -856,25 +871,77 @@
         });
     }
 
-    // ===== MAPA =====
+    // ===== MAPA (AGORA DINÂMICO) =====
     let map;
-    function initMapa() {
-        map = L.map('mapa').setView([-23.5, -46.5], 6);
+
+    function initMapa(noticias) {
+        const mapaDiv = document.getElementById('mapa');
+        if (!mapaDiv) return;
+
+        // Remove mapa anterior se existir
+        if (map) {
+            map.remove();
+            map = null;
+        }
+
+        // Se não houver notícias, mostra mensagem
+        if (!noticias || noticias.length === 0) {
+            mapaDiv.innerHTML = `
+                <div style="display:flex; align-items:center; justify-content:center; height:100%; color:#6b7a93; font-size:0.9rem;">
+                    🗺️ Aguardando notícias...
+                </div>
+            `;
+            return;
+        }
+
+        // Filtra notícias que têm localização
+        const noticiasComLocalizacao = noticias.filter(n => n.localizacao && n.localizacao.lat);
+        
+        if (noticiasComLocalizacao.length === 0) {
+            mapaDiv.innerHTML = `
+                <div style="display:flex; align-items:center; justify-content:center; height:100%; color:#6b7a93; font-size:0.9rem;">
+                    🗺️ Nenhuma notícia com localização disponível
+                </div>
+            `;
+            return;
+        }
+
+        // Cria o mapa
+        map = L.map('mapa').setView([-15.5, -56.0], 4);
+        
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap'
         }).addTo(map);
-        const pontos = [
-            { lat: -20.5, lng: -43.8, titulo: 'Interdição BR-040 - Congonhas' },
-            { lat: -22.9, lng: -47.1, titulo: 'Acidente Rod. Bandeirantes' },
-            { lat: -23.95, lng: -46.33, titulo: 'Greve de caminhoneiros - SP' },
-            { lat: -23.98, lng: -46.30, titulo: 'Calor extremo - Interior SP' },
-            { lat: -23.98, lng: -46.33, titulo: 'Porto de Santos - Ventos' },
-            { lat: -23.55, lng: -46.63, titulo: 'Operação PRF - Rod. Fernão Dias' }
-        ];
-        pontos.forEach(p => {
-            L.marker([p.lat, p.lng]).addTo(map).bindPopup(`<b>${p.titulo}</b>`);
+
+        // Adiciona marcadores
+        const markers = [];
+        noticiasComLocalizacao.forEach(n => {
+            const dataFmt = n.dataPublicacao ? new Date(n.dataPublicacao.seconds * 1000).toLocaleDateString('pt-BR') : 'Data desconhecida';
+            const popupContent = `
+                <b>${escapeHtml(n.titulo)}</b><br>
+                <span style="font-size:0.8rem;">📍 ${n.localizacao.cidade || 'Localização'}</span><br>
+                <span style="font-size:0.7rem; color:#666;">${escapeHtml(n.fonte)} • ${dataFmt}</span><br>
+                <a href="${n.link}" target="_blank" style="font-size:0.7rem; color:#003da5;">🔗 Ver notícia</a>
+            `;
+            
+            const marker = L.marker([n.localizacao.lat, n.localizacao.lng])
+                .addTo(map)
+                .bindPopup(popupContent);
+            markers.push(marker);
         });
-        setTimeout(() => map.invalidateSize(), 300);
+
+        // Ajusta o zoom para mostrar todos os marcadores
+        if (markers.length > 1) {
+            const group = L.featureGroup(markers);
+            map.fitBounds(group.getBounds().pad(0.2));
+        } else if (markers.length === 1) {
+            map.setZoom(10);
+        }
+
+        // Força o redimensionamento do mapa
+        setTimeout(() => {
+            if (map) map.invalidateSize();
+        }, 300);
     }
 
     // ===== INICIALIZAÇÃO =====
@@ -894,14 +961,16 @@
                     const configAtual = DataService.getConfig();
                     renderFeed(noticias, busca, cat, configAtual.palavrasChave, configAtual.categoriasAtivas);
                     atualizarDashboard(noticias, configAtual.palavrasChave);
+                    // Atualiza o mapa quando as notícias mudarem
+                    initMapa(noticias);
                 });
 
                 const noticias = DataService.getNoticias();
                 const configAtual = DataService.getConfig();
                 renderFeed(noticias, '', 'todos', configAtual.palavrasChave, configAtual.categoriasAtivas);
                 atualizarDashboard(noticias, configAtual.palavrasChave);
-
-                initMapa();
+                // Inicializa o mapa com as notícias atuais
+                initMapa(noticias);
 
                 document.getElementById('buscaInput').addEventListener('input', (e) => {
                     const ativa = document.querySelector('#filtrosContainer .ativo');
