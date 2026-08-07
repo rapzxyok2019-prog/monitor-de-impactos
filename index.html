@@ -47,6 +47,7 @@
             display: flex;
             align-items: center;
             gap: 6px;
+            cursor: pointer;
         }
         .badge::before {
             content: '';
@@ -61,6 +62,90 @@
             0%, 100% { opacity: 1; transform: scale(1); }
             50% { opacity: 0.5; transform: scale(0.8); }
         }
+        .logout-btn {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .logout-btn:hover { background: rgba(255,255,255,0.25); }
+
+        /* ===== TELA DE LOGIN ===== */
+        #telaLogin {
+            max-width: 400px;
+            margin: 60px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+        }
+        #telaLogin h2 {
+            text-align: center;
+            color: #003da5;
+            margin-bottom: 8px;
+        }
+        #telaLogin .subtitle {
+            text-align: center;
+            color: #6b7a93;
+            font-size: 0.9rem;
+            margin-bottom: 24px;
+        }
+        #telaLogin input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #d0d7e2;
+            border-radius: 10px;
+            font-size: 1rem;
+            margin-bottom: 12px;
+            font-family: inherit;
+            outline: none;
+            transition: border 0.15s ease;
+        }
+        #telaLogin input:focus {
+            border-color: #003da5;
+            box-shadow: 0 0 0 3px rgba(0, 61, 165, 0.1);
+        }
+        #loginBtn {
+            width: 100%;
+            background: #003da5;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s ease;
+        }
+        #loginBtn:hover { background: #002d7a; }
+        #loginBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+        #cadastrarBtn {
+            width: 100%;
+            background: transparent;
+            color: #003da5;
+            border: none;
+            padding: 10px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-family: inherit;
+            margin-top: 4px;
+        }
+        #cadastrarBtn:hover { text-decoration: underline; }
+        #loginErro {
+            color: #dc2626;
+            font-size: 0.85rem;
+            text-align: center;
+            display: none;
+            margin-top: 8px;
+        }
+
+        .conteudo-site { display: none; }
+
         .tabs {
             display: flex;
             gap: 4px;
@@ -327,6 +412,10 @@
             font-family: inherit;
         }
         .config-section button:hover { background: #002d7a; }
+        .config-section button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
         .lista-itens {
             display: flex;
             flex-wrap: wrap;
@@ -395,6 +484,15 @@
             padding: 0 2px;
         }
         .palavra-sugestao .add-btn:hover { color: #002d7a; }
+        .mensagem-bloqueio {
+            color: #6b7a93;
+            font-size: 0.8rem;
+            margin-top: 8px;
+            padding: 8px 12px;
+            background: #f0f3f9;
+            border-radius: 8px;
+            text-align: center;
+        }
         footer {
             text-align: center;
             font-size: 0.6rem;
@@ -410,80 +508,108 @@
             .tab-btn { font-size: 0.65rem; padding: 6px 8px; }
             .card { padding: 10px; }
             #mapa { height: 200px; }
+            #telaLogin { margin: 30px 16px; padding: 20px; }
         }
     </style>
 </head>
 <body>
 <div class="container">
-    <header>
-        <div>
-            <h1>🚛 Monitor <span>| PepsiCo</span></h1>
-            <div class="sub">Rodovias • Clima • Greves • Fábricas • Policial</div>
-        </div>
-        <div class="badge" id="authStatus">⏳ Conectando...</div>
-    </header>
 
-    <div class="tabs">
-        <button class="tab-btn ativo" data-tab="noticias">📋 Notícias</button>
-        <button class="tab-btn" data-tab="preferencias">⚙️ Preferências</button>
+    <!-- ===== TELA DE LOGIN ===== -->
+    <div id="telaLogin">
+        <h2>🚛 Monitor de Impactos</h2>
+        <p class="subtitle">Faça login para acessar o sistema</p>
+        
+        <div>
+            <input type="email" id="emailInput" placeholder="E-mail">
+            <input type="password" id="senhaInput" placeholder="Senha">
+            <button id="loginBtn">Entrar</button>
+            <button id="cadastrarBtn">Criar nova conta</button>
+            <div id="loginErro"></div>
+        </div>
     </div>
 
-    <div id="tab-noticias" class="tab-content ativo">
-        <div class="dashboard" id="dashboardMetricas">
-            <div class="card-metrica total"><span class="icone">📰</span><div class="numero" id="totalCount">0</div><div class="rotulo">Total</div></div>
-            <div class="card-metrica critico"><span class="icone">🔴</span><div class="numero" id="criticoCount">0</div><div class="rotulo">Crítico</div></div>
-            <div class="card-metrica atencao"><span class="icone">🟡</span><div class="numero" id="atencaoCount">0</div><div class="rotulo">Atenção</div></div>
-            <div class="card-metrica info"><span class="icone">🟢</span><div class="numero" id="infoCount">0</div><div class="rotulo">Informativo</div></div>
-        </div>
-        <div class="dashboard-extras">
-            <div class="card-extra"><h4>📰 Top fontes</h4><div id="topFontes"></div></div>
-        </div>
-        <div class="filtros-rapidos" id="filtrosContainer">
-            <button data-filtro="todos" class="ativo">📋 Todos</button>
-            <button data-filtro="clima">🌧️ Clima</button>
-            <button data-filtro="transito">🚧 Trânsito</button>
-            <button data-filtro="greve">🚛 Greve</button>
-            <button data-filtro="fabrica">🏭 Fábricas</button>
-            <button data-filtro="acidente">⚠️ Acidentes</button>
-            <button data-filtro="policial">🚔 Policial</button>
-        </div>
-        <div class="barra-busca">
-            🔍 <input type="text" id="buscaInput" placeholder="Buscar notícias...">
-        </div>
-        <div class="grid-2colunas">
-            <div id="feedNoticias"></div>
+    <!-- ===== CONTEÚDO PRINCIPAL ===== -->
+    <div class="conteudo-site" id="conteudoSite">
+
+        <header>
             <div>
-                <div class="card-mapa">
-                    <h3>🗺️ Ocorrências por região</h3>
-                    <div id="mapa"></div>
-                    <p style="font-size:0.55rem; color:#8a9bb0; margin-top:4px;">📍 Marcadores baseados nas notícias coletadas</p>
+                <h1>🚛 Monitor <span>| PepsiCo</span></h1>
+                <div class="sub">Rodovias • Clima • Greves • Fábricas • Policial</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span class="badge" id="authStatus">⏳ Conectando...</span>
+                <button class="logout-btn" id="logoutBtn">Sair</button>
+            </div>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn ativo" data-tab="noticias">📋 Notícias</button>
+            <button class="tab-btn" data-tab="preferencias">⚙️ Preferências</button>
+        </div>
+
+        <!-- ===== ABA NOTÍCIAS ===== -->
+        <div id="tab-noticias" class="tab-content ativo">
+            <div class="dashboard" id="dashboardMetricas">
+                <div class="card-metrica total"><span class="icone">📰</span><div class="numero" id="totalCount">0</div><div class="rotulo">Total</div></div>
+                <div class="card-metrica critico"><span class="icone">🔴</span><div class="numero" id="criticoCount">0</div><div class="rotulo">Crítico</div></div>
+                <div class="card-metrica atencao"><span class="icone">🟡</span><div class="numero" id="atencaoCount">0</div><div class="rotulo">Atenção</div></div>
+                <div class="card-metrica info"><span class="icone">🟢</span><div class="numero" id="infoCount">0</div><div class="rotulo">Informativo</div></div>
+            </div>
+            <div class="dashboard-extras">
+                <div class="card-extra"><h4>📰 Top fontes</h4><div id="topFontes"></div></div>
+            </div>
+            <div class="filtros-rapidos" id="filtrosContainer">
+                <button data-filtro="todos" class="ativo">📋 Todos</button>
+                <button data-filtro="clima">🌧️ Clima</button>
+                <button data-filtro="transito">🚧 Trânsito</button>
+                <button data-filtro="greve">🚛 Greve</button>
+                <button data-filtro="fabrica">🏭 Fábricas</button>
+                <button data-filtro="acidente">⚠️ Acidentes</button>
+                <button data-filtro="policial">🚔 Policial</button>
+            </div>
+            <div class="barra-busca">
+                🔍 <input type="text" id="buscaInput" placeholder="Buscar notícias...">
+            </div>
+            <div class="grid-2colunas">
+                <div id="feedNoticias"></div>
+                <div>
+                    <div class="card-mapa">
+                        <h3>🗺️ Ocorrências por região</h3>
+                        <div id="mapa"></div>
+                        <p style="font-size:0.55rem; color:#8a9bb0; margin-top:4px;">📍 Marcadores baseados nas notícias coletadas</p>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div id="tab-preferencias" class="tab-content">
-        <div class="config-section">
-            <h3>🔑 Palavras-chave</h3>
-            <p>Adicione termos para classificar notícias.</p>
-            <div class="campo">
-                <input type="text" id="novaPalavra" placeholder="Ex: enchente, greve...">
-                <button id="addPalavraBtn">➕ Adicionar</button>
+        <!-- ===== ABA PREFERÊNCIAS ===== -->
+        <div id="tab-preferencias" class="tab-content">
+            <div class="config-section">
+                <h3>🔑 Palavras-chave</h3>
+                <p id="palavrasDescricao">Adicione termos para classificar notícias. (Apenas administradores podem editar)</p>
+                <div class="campo">
+                    <input type="text" id="novaPalavra" placeholder="Ex: enchente, greve...">
+                    <button id="addPalavraBtn">➕ Adicionar</button>
+                </div>
+                <div class="lista-itens" id="listaPalavras"></div>
+                <div id="mensagemBloqueio" class="mensagem-bloqueio" style="display:none;">
+                    🔒 Apenas administradores podem editar as palavras-chave.
+                </div>
             </div>
-            <div class="lista-itens" id="listaPalavras"></div>
+            <div class="config-section">
+                <h3>📊 Palavras em alta</h3>
+                <p>Clique em ➕ para adicionar à lista.</p>
+                <div id="palavrasSugeridas" style="display:flex; flex-wrap:wrap; gap:5px; margin-top:5px;"></div>
+            </div>
+            <div class="config-section">
+                <h3>📌 Categorias ativas</h3>
+                <div class="toggle-group" id="categoriasToggle"></div>
+            </div>
         </div>
-        <div class="config-section">
-            <h3>📊 Palavras em alta</h3>
-            <p>Clique em ➕ para adicionar à lista.</p>
-            <div id="palavrasSugeridas" style="display:flex; flex-wrap:wrap; gap:5px; margin-top:5px;"></div>
-        </div>
-        <div class="config-section">
-            <h3>📌 Categorias ativas</h3>
-            <div class="toggle-group" id="categoriasToggle"></div>
-        </div>
-    </div>
 
-    <footer>✅ Lidas salvas localmente • Reações persistem no banco</footer>
+        <footer>✅ Lidas compartilhadas • Reações persistem no banco</footer>
+    </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -503,6 +629,9 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const auth = firebase.auth();
+
+    // ===== ADMINISTRADOR (substitua pelo seu e-mail) =====
+    const ADMIN_EMAIL = "SEU_EMAIL_AQUI"; // ⚠️ SUBSTITUA PELO SEU E-MAIL
 
     // ===== DATA SERVICE =====
     const DataService = {
@@ -528,21 +657,48 @@
 
         getNoticias() { return this._noticias; },
 
-        isLida(id) {
-            const lidas = JSON.parse(localStorage.getItem('noticias_lidas') || '[]');
-            return lidas.includes(id);
+        // ===== LIDA GLOBAL (Firestore) =====
+        async isLida(id) {
+            try {
+                const doc = await db.collection('noticias').doc(id).get();
+                if (doc.exists) {
+                    const lidaPor = doc.data().lidaPor || [];
+                    const user = auth.currentUser;
+                    if (!user) return false;
+                    return lidaPor.includes(user.uid);
+                }
+                return false;
+            } catch (error) {
+                console.error('Erro ao verificar lida:', error);
+                return false;
+            }
         },
 
-        toggleLida(id) {
-            let lidas = JSON.parse(localStorage.getItem('noticias_lidas') || '[]');
-            const index = lidas.indexOf(id);
-            if (index !== -1) {
-                lidas.splice(index, 1);
-            } else {
-                lidas.push(id);
+        async toggleLida(id) {
+            try {
+                const user = auth.currentUser;
+                if (!user) {
+                    alert('Você precisa estar logado para marcar como lida.');
+                    return;
+                }
+                const docRef = db.collection('noticias').doc(id);
+                const doc = await docRef.get();
+                const lidaPor = doc.data().lidaPor || [];
+                
+                if (lidaPor.includes(user.uid)) {
+                    await docRef.update({
+                        lidaPor: firebase.firestore.FieldValue.arrayRemove(user.uid)
+                    });
+                } else {
+                    await docRef.update({
+                        lidaPor: firebase.firestore.FieldValue.arrayUnion(user.uid)
+                    });
+                }
+                this._notify();
+            } catch (error) {
+                console.error('Erro ao marcar lida:', error);
+                alert('Erro ao marcar como lida. Tente novamente.');
             }
-            localStorage.setItem('noticias_lidas', JSON.stringify(lidas));
-            this._notify();
         },
 
         async reagirNoticia(id, emoji) {
@@ -557,44 +713,66 @@
             }
         },
 
-        getConfig() {
-            const padrao = {
-                palavrasChave: ['interdição', 'greve', 'acidente', 'enchente', 'blitz', 'operação', 'PRF'],
-                categoriasAtivas: ['clima', 'transito', 'greve', 'fabrica', 'acidente', 'policial']
-            };
-            const stored = localStorage.getItem('monitor_config');
-            if (stored) {
-                try { return { ...padrao, ...JSON.parse(stored) }; }
-                catch (e) { return padrao; }
+        // ===== CONFIGURAÇÕES (Firestore) =====
+        async getConfig() {
+            try {
+                const doc = await db.collection('configuracoes').doc('geral').get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    return {
+                        palavrasChave: data.palavrasChave || ['interdição', 'greve', 'acidente', 'enchente', 'blitz', 'operação', 'PRF'],
+                        categoriasAtivas: data.categoriasAtivas || ['clima', 'transito', 'greve', 'fabrica', 'acidente', 'policial']
+                    };
+                } else {
+                    // Cria o documento padrão
+                    await db.collection('configuracoes').doc('geral').set({
+                        palavrasChave: ['interdição', 'greve', 'acidente', 'enchente', 'blitz', 'operação', 'PRF'],
+                        categoriasAtivas: ['clima', 'transito', 'greve', 'fabrica', 'acidente', 'policial']
+                    });
+                    return {
+                        palavrasChave: ['interdição', 'greve', 'acidente', 'enchente', 'blitz', 'operação', 'PRF'],
+                        categoriasAtivas: ['clima', 'transito', 'greve', 'fabrica', 'acidente', 'policial']
+                    };
+                }
+            } catch (error) {
+                console.error('Erro ao carregar configurações:', error);
+                return {
+                    palavrasChave: ['interdição', 'greve', 'acidente', 'enchente', 'blitz', 'operação', 'PRF'],
+                    categoriasAtivas: ['clima', 'transito', 'greve', 'fabrica', 'acidente', 'policial']
+                };
             }
-            return padrao;
         },
 
-        saveConfig(config) {
-            localStorage.setItem('monitor_config', JSON.stringify(config));
-            this._config = config;
+        async saveConfig(config) {
+            try {
+                await db.collection('configuracoes').doc('geral').set(config, { merge: true });
+                console.log('✅ Configurações salvas no Firestore');
+            } catch (error) {
+                console.error('Erro ao salvar configurações:', error);
+                throw error;
+            }
         },
 
-        addPalavraChave(palavra) {
-            const config = this.getConfig();
+        async addPalavraChave(palavra) {
+            const config = await this.getConfig();
             if (!config.palavrasChave.includes(palavra)) {
                 config.palavrasChave.push(palavra);
-                this.saveConfig(config);
+                await this.saveConfig(config);
             }
             return config;
         },
 
-        removePalavraChave(palavra) {
-            const config = this.getConfig();
+        async removePalavraChave(palavra) {
+            const config = await this.getConfig();
             config.palavrasChave = config.palavrasChave.filter(p => p !== palavra);
-            this.saveConfig(config);
+            await this.saveConfig(config);
             return config;
         },
 
-        setCategoriasAtivas(categorias) {
-            const config = this.getConfig();
+        async setCategoriasAtivas(categorias) {
+            const config = await this.getConfig();
             config.categoriasAtivas = categorias;
-            this.saveConfig(config);
+            await this.saveConfig(config);
             return config;
         },
 
@@ -605,26 +783,101 @@
         }
     };
 
-    // ===== AUTENTICAÇÃO ANÔNIMA =====
+    // ===== AUTENTICAÇÃO COM E-MAIL/SENHA =====
+    const telaLogin = document.getElementById('telaLogin');
+    const conteudoSite = document.getElementById('conteudoSite');
+    const emailInput = document.getElementById('emailInput');
+    const senhaInput = document.getElementById('senhaInput');
+    const loginBtn = document.getElementById('loginBtn');
+    const cadastrarBtn = document.getElementById('cadastrarBtn');
+    const loginErro = document.getElementById('loginErro');
+    const authStatus = document.getElementById('authStatus');
+
+    // Login com Enter
+    emailInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') loginBtn.click(); });
+    senhaInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') loginBtn.click(); });
+
     auth.onAuthStateChanged(user => {
-        const statusEl = document.getElementById('authStatus');
         if (user) {
-            statusEl.textContent = '✅ Conectado';
-            statusEl.style.background = 'rgba(74, 222, 128, 0.2)';
+            telaLogin.style.display = 'none';
+            conteudoSite.style.display = 'block';
+            const email = user.email || 'Usuário';
+            authStatus.textContent = `✅ ${email}`;
+            authStatus.style.background = 'rgba(74, 222, 128, 0.2)';
+            
             if (!DataService._initialized) {
                 DataService.init();
+                // Inicializa a interface após login
+                initApp();
             }
         } else {
-            statusEl.textContent = '⏳ Conectando...';
-            auth.signInAnonymously().catch(error => {
-                console.error('Erro no login:', error);
-                statusEl.textContent = '❌ Erro';
-                statusEl.style.background = 'rgba(255, 100, 100, 0.2)';
-            });
+            telaLogin.style.display = 'block';
+            conteudoSite.style.display = 'none';
+            authStatus.textContent = '🔒 Desconectado';
+            authStatus.style.background = 'rgba(255, 100, 100, 0.2)';
+            loginBtn.textContent = 'Entrar';
+            loginBtn.disabled = false;
         }
     });
 
-    // ===== FUNÇÕES =====
+    loginBtn.addEventListener('click', async () => {
+        const email = emailInput.value.trim();
+        const senha = senhaInput.value.trim();
+        
+        if (!email || !senha) {
+            loginErro.textContent = 'Preencha e-mail e senha.';
+            loginErro.style.display = 'block';
+            return;
+        }
+        
+        loginErro.style.display = 'none';
+        loginBtn.textContent = '⏳ Entrando...';
+        loginBtn.disabled = true;
+        
+        try {
+            await auth.signInWithEmailAndPassword(email, senha);
+        } catch (error) {
+            loginErro.textContent = getMensagemErro(error.code);
+            loginErro.style.display = 'block';
+            loginBtn.textContent = 'Entrar';
+            loginBtn.disabled = false;
+        }
+    });
+
+    cadastrarBtn.addEventListener('click', async () => {
+        const email = prompt('Digite o e-mail do novo usuário:');
+        if (!email) return;
+        const senha = prompt('Digite a senha (mínimo 6 caracteres):');
+        if (!senha || senha.length < 6) {
+            alert('A senha deve ter pelo menos 6 caracteres.');
+            return;
+        }
+        try {
+            await auth.createUserWithEmailAndPassword(email, senha);
+            alert(`✅ Usuário ${email} criado com sucesso!`);
+        } catch (error) {
+            alert(`❌ Erro ao criar usuário: ${getMensagemErro(error.code)}`);
+        }
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+        await auth.signOut();
+    });
+
+    function getMensagemErro(code) {
+        const erros = {
+            'auth/user-not-found': 'Usuário não encontrado.',
+            'auth/wrong-password': 'Senha incorreta.',
+            'auth/invalid-email': 'E-mail inválido.',
+            'auth/user-disabled': 'Usuário desativado.',
+            'auth/too-many-requests': 'Muitas tentativas. Aguarde alguns minutos.',
+            'auth/network-request-failed': 'Erro de rede. Verifique sua conexão.',
+            'auth/email-already-in-use': 'Este e-mail já está em uso.'
+        };
+        return erros[code] || 'Erro ao fazer login. Tente novamente.';
+    }
+
+    // ===== FUNÇÕES GLOBAIS =====
     function escapeHtml(text) {
         if (!text) return '';
         return text.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m] || m));
@@ -641,41 +894,55 @@
         return { label: 'Atenção', classe: 'atencao' };
     }
 
+    function getPalavrasFrequentes(noticias) {
+        const palavras = {};
+        noticias.forEach(n => {
+            const texto = (n.titulo + ' ' + n.resumo).toLowerCase();
+            const tokens = texto.split(/\s+/).filter(p => p.length > 3 && !['para','com','sem','sobre','pelo','pela','entre','contra','através','porque','quando','como','mais','muito','depois','antes','durante','dentro','fora'].includes(p));
+            tokens.forEach(p => { palavras[p] = (palavras[p] || 0) + 1; });
+        });
+        return Object.entries(palavras).sort((a,b) => b[1] - a[1]).slice(0, 15);
+    }
+
     // ===== RENDER FEED =====
-    function renderFeed(noticias, filtroTexto = '', categoriaAtiva = 'todos', palavrasChave, categoriasAtivas) {
+    async function renderFeed(noticias, filtroTexto = '', categoriaAtiva = 'todos', palavrasChave, categoriasAtivas) {
         const feedDiv = document.getElementById('feedNoticias');
         if (!feedDiv) return;
 
-        const config = DataService.getConfig();
-        const palavras = config.palavrasChave || [];
-
-        let filtradas = noticias.filter(n => {
+        // Filtra as notícias
+        let filtradas = [];
+        for (const n of noticias) {
             const matchTexto = !filtroTexto.trim() ||
                 (n.titulo + ' ' + n.resumo).toLowerCase().includes(filtroTexto.toLowerCase());
             const matchCategoria = categoriaAtiva === 'todos' || n.categoria === categoriaAtiva;
             if (categoriaAtiva !== 'todos' && !categoriasAtivas.includes(categoriaAtiva)) {
-                return false;
+                continue;
             }
-            // Filtro por palavras-chave (se houver)
-            const matchPalavraChave = palavras.length === 0 || palavras.some(p =>
+            const matchPalavraChave = palavrasChave.length === 0 || palavrasChave.some(p =>
                 (n.titulo + ' ' + n.resumo).toLowerCase().includes(p.toLowerCase())
             );
-            return matchTexto && matchCategoria && matchPalavraChave;
-        });
+            if (matchTexto && matchCategoria && matchPalavraChave) {
+                filtradas.push(n);
+            }
+        }
 
         if (filtradas.length === 0) {
             feedDiv.innerHTML = `<div style="background:white; border-radius:16px; padding:30px; text-align:center; color:#8a9bb0;">📭 Nenhuma notícia</div>`;
             return;
         }
 
-        feedDiv.innerHTML = filtradas.map(n => {
+        const user = auth.currentUser;
+
+        let html = '';
+        for (const n of filtradas) {
             const severidade = classificarSeveridade(n.titulo, n.resumo, palavrasChave);
             const dataFmt = n.dataPublicacao ? new Date(n.dataPublicacao.seconds * 1000).toLocaleString('pt-BR') : 'Data desconhecida';
-            const lida = DataService.isLida(n.id);
+            const lidaPor = n.lidaPor || [];
+            const lida = user ? lidaPor.includes(user.uid) : false;
             const lidaClass = lida ? 'lida' : '';
             const reacoes = n.reacoes || {};
 
-            return `
+            html += `
                 <div class="card ${lidaClass}" data-id="${n.id}">
                     <span class="selo ${severidade.classe}">${severidade.label}</span>
                     <div class="titulo">${escapeHtml(n.titulo)}</div>
@@ -693,8 +960,11 @@
                     </div>
                 </div>
             `;
-        }).join('');
+        }
 
+        feedDiv.innerHTML = html;
+
+        // Eventos de reação
         feedDiv.querySelectorAll('.emoji-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const card = btn.closest('.card');
@@ -709,23 +979,25 @@
             });
         });
 
+        // Eventos de toggle lida (agora global)
         feedDiv.querySelectorAll('.toggle-lida').forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', async () => {
                 const id = btn.dataset.id;
-                DataService.toggleLida(id);
+                await DataService.toggleLida(id);
+                // Re-renderiza tudo para atualizar os estados
                 const busca = document.getElementById('buscaInput').value;
                 const ativa = document.querySelector('#filtrosContainer .ativo');
                 const cat = ativa ? ativa.dataset.filtro : 'todos';
-                const config = DataService.getConfig();
+                const config = await DataService.getConfig();
                 const noticiasAtuais = DataService.getNoticias();
-                renderFeed(noticiasAtuais, busca, cat, config.palavrasChave, config.categoriasAtivas);
-                atualizarDashboard(noticiasAtuais, config.palavrasChave);
+                await renderFeed(noticiasAtuais, busca, cat, config.palavrasChave, config.categoriasAtivas);
+                await atualizarDashboard(noticiasAtuais, config.palavrasChave);
             });
         });
     }
 
     // ===== DASHBOARD =====
-    function atualizarDashboard(noticias, palavrasChave) {
+    async function atualizarDashboard(noticias, palavrasChave) {
         const total = noticias.length;
         let criticos = 0, atencao = 0, info = 0;
         const contagemFontes = {};
@@ -748,78 +1020,139 @@
             `<div class="fonte-item"><span>${nome}</span><span><strong>${qtd}</strong></span></div>`
         ).join('') || "<span style='color:#999;'>Nenhuma fonte</span>";
 
+        // Palavras sugeridas
         const tags = getPalavrasFrequentes(noticias);
         const sugeridasDiv = document.getElementById('palavrasSugeridas');
         if (sugeridasDiv) {
-            const config = DataService.getConfig();
+            const config = await DataService.getConfig();
+            const palavrasAtuais = config.palavrasChave || [];
+            const isAdmin = auth.currentUser && auth.currentUser.email === ADMIN_EMAIL;
+            
             sugeridasDiv.innerHTML = tags.map(([palavra, freq]) => {
-                const jaExiste = config.palavrasChave.includes(palavra);
+                const jaExiste = palavrasAtuais.includes(palavra);
                 return `<span class="palavra-sugestao">
                             ${palavra} <span style="color:#6b7a93; font-size:0.65rem;">(${freq})</span>
-                            ${!jaExiste ? `<button class="add-btn" data-palavra="${palavra}">➕</button>` : ''}
+                            ${!jaExiste && isAdmin ? `<button class="add-btn" data-palavra="${palavra}">➕</button>` : ''}
                         </span>`;
             }).join('');
-            sugeridasDiv.querySelectorAll('.add-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const palavra = btn.dataset.palavra;
-                    DataService.addPalavraChave(palavra);
-                    renderizarPalavras(DataService.getConfig());
-                    const busca = document.getElementById('buscaInput').value;
-                    const ativa = document.querySelector('#filtrosContainer .ativo');
-                    const cat = ativa ? ativa.dataset.filtro : 'todos';
-                    const noticiasAtuais = DataService.getNoticias();
-                    const configAtual = DataService.getConfig();
-                    renderFeed(noticiasAtuais, busca, cat, configAtual.palavrasChave, configAtual.categoriasAtivas);
-                    atualizarDashboard(noticiasAtuais, configAtual.palavrasChave);
+            
+            if (isAdmin) {
+                sugeridasDiv.querySelectorAll('.add-btn').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        const palavra = btn.dataset.palavra;
+                        await DataService.addPalavraChave(palavra);
+                        await renderizarPalavras();
+                        const busca = document.getElementById('buscaInput').value;
+                        const ativa = document.querySelector('#filtrosContainer .ativo');
+                        const cat = ativa ? ativa.dataset.filtro : 'todos';
+                        const noticiasAtuais = DataService.getNoticias();
+                        const configAtual = await DataService.getConfig();
+                        await renderFeed(noticiasAtuais, busca, cat, configAtual.palavrasChave, configAtual.categoriasAtivas);
+                        await atualizarDashboard(noticiasAtuais, configAtual.palavrasChave);
+                    });
                 });
-            });
+            }
         }
     }
 
-    function getPalavrasFrequentes(noticias) {
-        const palavras = {};
-        noticias.forEach(n => {
-            const texto = (n.titulo + ' ' + n.resumo).toLowerCase();
-            const tokens = texto.split(/\s+/).filter(p => p.length > 3 && !['para','com','sem','sobre','pelo','pela','entre','contra','através','porque','quando','como','mais','muito','depois','antes','durante','dentro','fora'].includes(p));
-            tokens.forEach(p => { palavras[p] = (palavras[p] || 0) + 1; });
-        });
-        return Object.entries(palavras).sort((a,b) => b[1] - a[1]).slice(0, 15);
-    }
-
+    // ===== COMPARTILHAR (agora copia o link original da notícia) =====
     function compartilharNoticia(id) {
-        const url = window.location.href.split('#')[0] + '#noticia-' + id;
+        const noticias = DataService.getNoticias();
+        const noticia = noticias.find(n => n.id === id);
+        if (!noticia) {
+            alert('Notícia não encontrada.');
+            return;
+        }
+        // Copia o link original da notícia (não o link do site)
+        const url = noticia.link || '#';
         if (navigator.clipboard) {
             navigator.clipboard.writeText(url).then(() => {
-                alert('🔗 Link copiado! Envie para sua equipe.\n' + url);
-            }).catch(() => prompt('Copie o link manualmente:', url));
+                alert('🔗 Link original da notícia copiado! Envie para sua equipe.\n' + url);
+            }).catch(() => {
+                prompt('Copie o link manualmente:', url);
+            });
         } else {
             prompt('Copie o link manualmente:', url);
         }
     }
 
     // ===== PREFERÊNCIAS =====
-    function renderizarPalavras(config) {
+    async function renderizarPalavras() {
+        const config = await DataService.getConfig();
+        const palavras = config.palavrasChave || [];
         const container = document.getElementById('listaPalavras');
-        container.innerHTML = config.palavrasChave.map(p =>
-            `<span class="item-chip">${p} <button class="remover" data-palavra="${p}">✕</button></span>`
+        const user = auth.currentUser;
+        const isAdmin = user && user.email === ADMIN_EMAIL;
+        const addBtn = document.getElementById('addPalavraBtn');
+        const input = document.getElementById('novaPalavra');
+        const bloqueio = document.getElementById('mensagemBloqueio');
+
+        // Mostra/oculta controles baseado no admin
+        if (isAdmin) {
+            addBtn.style.display = '';
+            input.style.display = '';
+            bloqueio.style.display = 'none';
+            document.getElementById('palavrasDescricao').textContent = 'Adicione termos para classificar notícias. Você é administrador.';
+        } else {
+            addBtn.style.display = 'none';
+            input.style.display = 'none';
+            bloqueio.style.display = 'block';
+            document.getElementById('palavrasDescricao').textContent = 'Adicione termos para classificar notícias. Apenas administradores podem editar.';
+        }
+
+        // Renderiza as palavras
+        container.innerHTML = palavras.map(p =>
+            `<span class="item-chip">${p} ${isAdmin ? `<button class="remover" data-palavra="${p}">✕</button>` : ''}</span>`
         ).join('');
-        container.querySelectorAll('.remover').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const palavra = btn.dataset.palavra;
-                DataService.removePalavraChave(palavra);
-                renderizarPalavras(DataService.getConfig());
+
+        // Eventos de remover (apenas admin)
+        if (isAdmin) {
+            container.querySelectorAll('.remover').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const palavra = btn.dataset.palavra;
+                    await DataService.removePalavraChave(palavra);
+                    await renderizarPalavras();
+                    const busca = document.getElementById('buscaInput').value;
+                    const ativa = document.querySelector('#filtrosContainer .ativo');
+                    const cat = ativa ? ativa.dataset.filtro : 'todos';
+                    const noticiasAtuais = DataService.getNoticias();
+                    const configAtual = await DataService.getConfig();
+                    await renderFeed(noticiasAtuais, busca, cat, configAtual.palavrasChave, configAtual.categoriasAtivas);
+                    await atualizarDashboard(noticiasAtuais, configAtual.palavrasChave);
+                });
+            });
+
+            // Adicionar palavra
+            addBtn.onclick = async () => {
+                const val = input.value.trim().toLowerCase();
+                if (!val) return;
+                const configAtual = await DataService.getConfig();
+                if (configAtual.palavrasChave.includes(val)) {
+                    alert('Essa palavra já está na lista.');
+                    return;
+                }
+                await DataService.addPalavraChave(val);
+                input.value = '';
+                await renderizarPalavras();
                 const busca = document.getElementById('buscaInput').value;
                 const ativa = document.querySelector('#filtrosContainer .ativo');
                 const cat = ativa ? ativa.dataset.filtro : 'todos';
                 const noticiasAtuais = DataService.getNoticias();
-                const configAtual = DataService.getConfig();
-                renderFeed(noticiasAtuais, busca, cat, configAtual.palavrasChave, configAtual.categoriasAtivas);
-                atualizarDashboard(noticiasAtuais, configAtual.palavrasChave);
+                const configAtual = await DataService.getConfig();
+                await renderFeed(noticiasAtuais, busca, cat, configAtual.palavrasChave, configAtual.categoriasAtivas);
+                await atualizarDashboard(noticiasAtuais, configAtual.palavrasChave);
+            };
+
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addBtn.click();
             });
-        });
+        }
+
+        // Categorias
+        await renderizarCategorias(config);
     }
 
-    function renderizarCategorias(config) {
+    async function renderizarCategorias(config) {
         const container = document.getElementById('categoriasToggle');
         const todas = [
             { id: 'clima', label: '🌧️ Clima' },
@@ -829,25 +1162,28 @@
             { id: 'acidente', label: '⚠️ Acidentes' },
             { id: 'policial', label: '🚔 Policial' }
         ];
+        const ativas = config.categoriasAtivas || [];
+        
         container.innerHTML = todas.map(cat =>
             `<label>
-                <input type="checkbox" value="${cat.id}" ${config.categoriasAtivas.includes(cat.id) ? 'checked' : ''}>
+                <input type="checkbox" value="${cat.id}" ${ativas.includes(cat.id) ? 'checked' : ''}>
                 ${cat.label}
             </label>`
         ).join('');
+
         container.querySelectorAll('input[type="checkbox"]').forEach(chk => {
-            chk.addEventListener('change', () => {
-                let ativas = [];
-                container.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => ativas.push(cb.value));
-                DataService.setCategoriasAtivas(ativas);
-                atualizarFiltrosRapidos(ativas);
+            chk.addEventListener('change', async () => {
+                let novasAtivas = [];
+                container.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => novasAtivas.push(cb.value));
+                await DataService.setCategoriasAtivas(novasAtivas);
+                atualizarFiltrosRapidos(novasAtivas);
                 const busca = document.getElementById('buscaInput').value;
                 const ativa = document.querySelector('#filtrosContainer .ativo');
                 const cat = ativa ? ativa.dataset.filtro : 'todos';
                 const noticiasAtuais = DataService.getNoticias();
-                const configAtual = DataService.getConfig();
-                renderFeed(noticiasAtuais, busca, cat, configAtual.palavrasChave, configAtual.categoriasAtivas);
-                atualizarDashboard(noticiasAtuais, configAtual.palavrasChave);
+                const configAtual = await DataService.getConfig();
+                await renderFeed(noticiasAtuais, busca, cat, configAtual.palavrasChave, configAtual.categoriasAtivas);
+                await atualizarDashboard(noticiasAtuais, configAtual.palavrasChave);
             });
         });
     }
@@ -871,20 +1207,18 @@
         });
     }
 
-    // ===== MAPA (AGORA DINÂMICO) =====
+    // ===== MAPA =====
     let map;
 
     function initMapa(noticias) {
         const mapaDiv = document.getElementById('mapa');
         if (!mapaDiv) return;
 
-        // Remove mapa anterior se existir
         if (map) {
             map.remove();
             map = null;
         }
 
-        // Se não houver notícias, mostra mensagem
         if (!noticias || noticias.length === 0) {
             mapaDiv.innerHTML = `
                 <div style="display:flex; align-items:center; justify-content:center; height:100%; color:#6b7a93; font-size:0.9rem;">
@@ -894,7 +1228,6 @@
             return;
         }
 
-        // Filtra notícias que têm localização
         const noticiasComLocalizacao = noticias.filter(n => n.localizacao && n.localizacao.lat);
         
         if (noticiasComLocalizacao.length === 0) {
@@ -906,14 +1239,11 @@
             return;
         }
 
-        // Cria o mapa
         map = L.map('mapa').setView([-15.5, -56.0], 4);
-        
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap'
         }).addTo(map);
 
-        // Adiciona marcadores
         const markers = [];
         noticiasComLocalizacao.forEach(n => {
             const dataFmt = n.dataPublicacao ? new Date(n.dataPublicacao.seconds * 1000).toLocaleDateString('pt-BR') : 'Data desconhecida';
@@ -930,7 +1260,6 @@
             markers.push(marker);
         });
 
-        // Ajusta o zoom para mostrar todos os marcadores
         if (markers.length > 1) {
             const group = L.featureGroup(markers);
             map.fitBounds(group.getBounds().pad(0.2));
@@ -938,102 +1267,69 @@
             map.setZoom(10);
         }
 
-        // Força o redimensionamento do mapa
-        setTimeout(() => {
-            if (map) map.invalidateSize();
-        }, 300);
+        setTimeout(() => { if (map) map.invalidateSize(); }, 300);
     }
 
     // ===== INICIALIZAÇÃO =====
-    function init() {
-        const checkInit = setInterval(() => {
-            if (DataService._initialized) {
-                clearInterval(checkInit);
-                const config = DataService.getConfig();
-                renderizarPalavras(config);
-                renderizarCategorias(config);
-                atualizarFiltrosRapidos(config.categoriasAtivas);
+    async function initApp() {
+        const config = await DataService.getConfig();
+        await renderizarPalavras();
+        atualizarFiltrosRapidos(config.categoriasAtivas);
 
-                DataService.onChange((noticias) => {
-                    const busca = document.getElementById('buscaInput').value;
-                    const ativa = document.querySelector('#filtrosContainer .ativo');
-                    const cat = ativa ? ativa.dataset.filtro : 'todos';
-                    const configAtual = DataService.getConfig();
-                    renderFeed(noticias, busca, cat, configAtual.palavrasChave, configAtual.categoriasAtivas);
-                    atualizarDashboard(noticias, configAtual.palavrasChave);
-                    // Atualiza o mapa quando as notícias mudarem
-                    initMapa(noticias);
-                });
+        DataService.onChange(async (noticias) => {
+            const busca = document.getElementById('buscaInput').value;
+            const ativa = document.querySelector('#filtrosContainer .ativo');
+            const cat = ativa ? ativa.dataset.filtro : 'todos';
+            const configAtual = await DataService.getConfig();
+            await renderFeed(noticias, busca, cat, configAtual.palavrasChave, configAtual.categoriasAtivas);
+            await atualizarDashboard(noticias, configAtual.palavrasChave);
+            initMapa(noticias);
+        });
 
-                const noticias = DataService.getNoticias();
-                const configAtual = DataService.getConfig();
-                renderFeed(noticias, '', 'todos', configAtual.palavrasChave, configAtual.categoriasAtivas);
-                atualizarDashboard(noticias, configAtual.palavrasChave);
-                // Inicializa o mapa com as notícias atuais
-                initMapa(noticias);
+        const noticias = DataService.getNoticias();
+        const configAtual = await DataService.getConfig();
+        await renderFeed(noticias, '', 'todos', configAtual.palavrasChave, configAtual.categoriasAtivas);
+        await atualizarDashboard(noticias, configAtual.palavrasChave);
+        initMapa(noticias);
 
-                document.getElementById('buscaInput').addEventListener('input', (e) => {
-                    const ativa = document.querySelector('#filtrosContainer .ativo');
-                    const cat = ativa ? ativa.dataset.filtro : 'todos';
-                    const noticiasAtuais = DataService.getNoticias();
-                    const configAtual = DataService.getConfig();
-                    renderFeed(noticiasAtuais, e.target.value, cat, configAtual.palavrasChave, configAtual.categoriasAtivas);
-                });
+        // Eventos de busca
+        document.getElementById('buscaInput').addEventListener('input', async (e) => {
+            const ativa = document.querySelector('#filtrosContainer .ativo');
+            const cat = ativa ? ativa.dataset.filtro : 'todos';
+            const noticiasAtuais = DataService.getNoticias();
+            const configAtual = await DataService.getConfig();
+            await renderFeed(noticiasAtuais, e.target.value, cat, configAtual.palavrasChave, configAtual.categoriasAtivas);
+        });
 
-                document.querySelectorAll('#filtrosContainer button').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        document.querySelectorAll('#filtrosContainer button').forEach(b => b.classList.remove('ativo'));
-                        btn.classList.add('ativo');
-                        const categoria = btn.dataset.filtro;
-                        const busca = document.getElementById('buscaInput').value;
-                        const noticiasAtuais = DataService.getNoticias();
-                        const configAtual = DataService.getConfig();
-                        renderFeed(noticiasAtuais, busca, categoria, configAtual.palavrasChave, configAtual.categoriasAtivas);
-                    });
-                });
+        // Eventos de filtros
+        document.querySelectorAll('#filtrosContainer button').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                document.querySelectorAll('#filtrosContainer button').forEach(b => b.classList.remove('ativo'));
+                btn.classList.add('ativo');
+                const categoria = btn.dataset.filtro;
+                const busca = document.getElementById('buscaInput').value;
+                const noticiasAtuais = DataService.getNoticias();
+                const configAtual = await DataService.getConfig();
+                await renderFeed(noticiasAtuais, busca, categoria, configAtual.palavrasChave, configAtual.categoriasAtivas);
+            });
+        });
 
-                document.getElementById('addPalavraBtn').addEventListener('click', () => {
-                    const input = document.getElementById('novaPalavra');
-                    const val = input.value.trim().toLowerCase();
-                    if (!val) return;
-                    const configAtual = DataService.getConfig();
-                    if (configAtual.palavrasChave.includes(val)) {
-                        alert('Essa palavra já está na lista.');
-                        return;
-                    }
-                    DataService.addPalavraChave(val);
-                    input.value = '';
-                    const novaConfig = DataService.getConfig();
-                    renderizarPalavras(novaConfig);
-                    const busca = document.getElementById('buscaInput').value;
-                    const ativa = document.querySelector('#filtrosContainer .ativo');
-                    const cat = ativa ? ativa.dataset.filtro : 'todos';
-                    const noticiasAtuais = DataService.getNoticias();
-                    renderFeed(noticiasAtuais, busca, cat, novaConfig.palavrasChave, novaConfig.categoriasAtivas);
-                    atualizarDashboard(noticiasAtuais, novaConfig.palavrasChave);
-                });
-
-                document.getElementById('novaPalavra').addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') document.getElementById('addPalavraBtn').click();
-                });
-
-                document.querySelectorAll('.tab-btn').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('ativo'));
-                        btn.classList.add('ativo');
-                        const tab = btn.dataset.tab;
-                        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('ativo'));
-                        document.getElementById('tab-' + tab).classList.add('ativo');
-                        if (tab === 'noticias') {
-                            setTimeout(() => { if (map) map.invalidateSize(); }, 200);
-                        }
-                    });
-                });
-            }
-        }, 300);
+        // Abas
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('ativo'));
+                btn.classList.add('ativo');
+                const tab = btn.dataset.tab;
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('ativo'));
+                document.getElementById('tab-' + tab).classList.add('ativo');
+                if (tab === 'noticias') {
+                    setTimeout(() => { if (map) map.invalidateSize(); }, 200);
+                }
+            });
+        });
     }
 
-    document.addEventListener('DOMContentLoaded', init);
+    // Inicialização é chamada pelo onAuthStateChanged
 </script>
 </body>
 </html>
