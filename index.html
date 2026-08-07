@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
     <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
@@ -89,6 +89,8 @@
         .contador { font-size:0.6rem; color:#4a5b76; min-width:14px; }
         .btn-acao { background:none; border:1px solid #d0d7e2; padding:2px 10px; border-radius:40px; font-size:0.55rem; font-weight:500; cursor:pointer; background:white; transition:all 0.15s ease; font-family:inherit; color:#2c3e4e; }
         .btn-acao:hover { background:#f0f3f9; border-color:#b0baca; }
+        .btn-apagar { color:#dc2626 !important; border-color:#dc2626 !important; }
+        .btn-apagar:hover { background:#fee2e2 !important; }
         #mapa { height:280px; border-radius:14px; background:#e8ecf2; border:1px solid #e2e6ee; margin-bottom:6px; overflow:hidden; }
         .card-mapa { background:white; border-radius:16px; padding:14px 16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
         .card-mapa h3 { font-size:0.8rem; margin-bottom:8px; color:#1e2a3a; font-weight:600; }
@@ -162,6 +164,8 @@
             <div class="dashboard-extras">
                 <div class="card-extra"><h4>📰 Top fontes</h4><div id="topFontes"></div></div>
             </div>
+            
+            <!-- FILTROS (apenas o botão "Todos" vem com class="ativo") -->
             <div class="filtros-rapidos" id="filtrosContainer">
                 <button data-filtro="todos" class="ativo">📋 Todos</button>
                 <button data-filtro="clima">🌧️ Clima</button>
@@ -171,6 +175,7 @@
                 <button data-filtro="acidente">⚠️ Acidentes</button>
                 <button data-filtro="policial">🚔 Policial</button>
             </div>
+
             <div class="barra-busca">
                 🔍 <input type="text" id="buscaInput" placeholder="Buscar notícias...">
             </div>
@@ -207,7 +212,7 @@
                 <div class="toggle-group" id="categoriasToggle"></div>
             </div>
 
-            <!-- ÁREA DO ADMINISTRADOR - APAGAR NOTÍCIAS -->
+            <!-- ÁREA DO ADMINISTRADOR - APAGAR TODAS AS NOTÍCIAS -->
             <div class="config-section" id="secaoApagar" style="border: 2px solid #dc2626; display: none; margin-top: 20px;">
                 <h3 style="color: #dc2626;">⚠️ Área do Administrador</h3>
                 <p style="color: #6b7a93; font-size: 0.8rem;">Apague todas as notícias do banco de dados. Esta ação é irreversível!</p>
@@ -221,7 +226,7 @@
     </div>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
     // ============================================================
     // FIREBASE CONFIG
@@ -240,7 +245,7 @@
     const auth = firebase.auth();
 
     // ===== ADMINISTRADOR =====
-    const ADMIN_EMAIL = "admin@monitor.com"; // ⚠️ SUBSTITUA PELO SEU E-MAIL
+    const ADMIN_EMAIL = "SEU_EMAIL_AQUI"; // ⚠️ SUBSTITUA PELO SEU E-MAIL
 
     // ===== ELEMENTOS DA TELA =====
     const telaLogin = document.getElementById('telaLogin');
@@ -511,7 +516,103 @@
         return sorted.slice(0, 15).map(function(p) { return [p, palavras[p]]; });
     }
 
-    // ===== RENDER FEED =====
+    // ===== APAGAR NOTÍCIA INDIVIDUAL (APENAS ADMIN) =====
+    function apagarNoticia(id) {
+        var user = auth.currentUser;
+        if (!user || user.email !== ADMIN_EMAIL) {
+            alert('Apenas administradores podem apagar notícias.');
+            return;
+        }
+        
+        if (confirm('⚠️ Tem certeza que deseja apagar esta notícia?\n\nEsta ação é irreversível.')) {
+            db.collection('noticias').doc(id).delete()
+                .then(function() {
+                    alert('✅ Notícia apagada com sucesso!');
+                    var busca = document.getElementById('buscaInput').value;
+                    var ativa = document.querySelector('#filtrosContainer .ativo');
+                    var cat = ativa ? ativa.dataset.filtro : 'todos';
+                    DataService.getConfig().then(function(config) {
+                        var noticiasAtuais = DataService.getNoticias();
+                        renderFeed(noticiasAtuais, busca, cat, config.palavrasChave, config.categoriasAtivas);
+                        atualizarDashboard(noticiasAtuais, config.palavrasChave);
+                    });
+                })
+                .catch(function(error) {
+                    alert('❌ Erro ao apagar notícia: ' + error.message);
+                });
+        }
+    }
+
+    // ===== APAGAR TODAS AS NOTÍCIAS (APENAS ADMIN) =====
+    function initApagarNoticias() {
+        var user = auth.currentUser;
+        if (!user) return;
+        
+        var isAdmin = user.email === ADMIN_EMAIL;
+        var secao = document.getElementById('secaoApagar');
+        var btn = document.getElementById('apagarNoticiasBtn');
+        var status = document.getElementById('apagarStatus');
+        
+        if (isAdmin) {
+            secao.style.display = 'block';
+            
+            btn.addEventListener('click', function() {
+                if (confirm('⚠️ Tem certeza que deseja APAGAR TODAS as notícias?\n\nEsta ação é irreversível e não pode ser desfeita.')) {
+                    if (confirm('Última confirmação: Apagar TUDO?')) {
+                        status.style.display = 'block';
+                        status.textContent = '⏳ Apagando notícias...';
+                        status.style.color = '#d97706';
+                        btn.disabled = true;
+                        
+                        apagarTodasNoticias()
+                            .then(function(total) {
+                                status.textContent = '✅ ' + total + ' notícias apagadas com sucesso!';
+                                status.style.color = '#16a34a';
+                                btn.disabled = false;
+                            })
+                            .catch(function(error) {
+                                status.textContent = '❌ Erro ao apagar: ' + error.message;
+                                status.style.color = '#dc2626';
+                                btn.disabled = false;
+                            });
+                    }
+                }
+            });
+        } else {
+            secao.style.display = 'none';
+        }
+    }
+
+    function apagarTodasNoticias() {
+        return new Promise(function(resolve, reject) {
+            var collectionRef = db.collection('noticias');
+            
+            collectionRef.get()
+                .then(function(snapshot) {
+                    if (snapshot.empty) {
+                        resolve(0);
+                        return;
+                    }
+                    
+                    var batch = db.batch();
+                    var count = 0;
+                    
+                    snapshot.forEach(function(doc) {
+                        batch.delete(doc.ref);
+                        count++;
+                    });
+                    
+                    return batch.commit().then(function() {
+                        resolve(count);
+                    });
+                })
+                .catch(function(error) {
+                    reject(error);
+                });
+        });
+    }
+
+    // ===== RENDER FEED (COM BOTÃO APAGAR INDIVIDUAL) =====
     function renderFeed(noticias, filtroTexto, categoriaAtiva, palavrasChave, categoriasAtivas) {
         var feedDiv = document.getElementById('feedNoticias');
         if (!feedDiv) return;
@@ -543,7 +644,9 @@
         }
 
         var user = auth.currentUser;
+        var isAdmin = user && user.email === ADMIN_EMAIL;
         var html = '';
+        
         for (var j = 0; j < filtradas.length; j++) {
             var n = filtradas[j];
             var severidade = classificarSeveridade(n.titulo, n.resumo, palavrasChave);
@@ -565,13 +668,15 @@
             html += '<button class="emoji-btn" data-emoji="⚠️">⚠️ <span class="contador" id="cont-' + n.id + '-⚠️">' + (reacoes['⚠️'] || 0) + '</span></button>';
             html += '<button class="emoji-btn" data-emoji="🔥">🔥 <span class="contador" id="cont-' + n.id + '-🔥">' + (reacoes['🔥'] || 0) + '</span></button>';
             html += '<button class="btn-acao" onclick="compartilharNoticia(\'' + n.id + '\')">📤 Compartilhar</button>';
-            // Contador de vistos
             html += '<div style="display:flex; align-items:center; gap:6px; margin-left:auto;">';
             html += '<span style="font-size:0.65rem; color:#6b7a93;">👁️ ' + (totalVistos > 0 ? totalVistos : '') + '</span>';
             html += '<button class="btn-acao toggle-lida" data-id="' + n.id + '">' + (lida ? '✅ Lida' : '📖 Marcar lida') + '</button>';
-            html += '</div>';
-            html += '</div></div>';
+            if (isAdmin) {
+                html += '<button class="btn-acao btn-apagar" data-id="' + n.id + '" style="color:#dc2626; border-color:#dc2626;">🗑️</button>';
+            }
+            html += '</div></div></div>';
         }
+        
         feedDiv.innerHTML = html;
 
         // Eventos de reação
@@ -609,6 +714,17 @@
                     });
                 });
             })(lidaBtns[l]);
+        }
+
+        // Eventos de apagar notícia (apenas admin)
+        var apagarBtns = feedDiv.querySelectorAll('.btn-apagar');
+        for (var a = 0; a < apagarBtns.length; a++) {
+            (function(btn) {
+                btn.addEventListener('click', function() {
+                    var id = btn.dataset.id;
+                    apagarNoticia(id);
+                });
+            })(apagarBtns[a]);
         }
     }
 
@@ -708,75 +824,6 @@
         } else {
             prompt('Copie o link manualmente:', url);
         }
-    }
-
-    // ===== APAGAR NOTÍCIAS (APENAS ADMIN) =====
-    function initApagarNoticias() {
-        var user = auth.currentUser;
-        if (!user) return;
-        
-        var isAdmin = user.email === ADMIN_EMAIL;
-        var secao = document.getElementById('secaoApagar');
-        var btn = document.getElementById('apagarNoticiasBtn');
-        var status = document.getElementById('apagarStatus');
-        
-        if (isAdmin) {
-            secao.style.display = 'block';
-            
-            btn.addEventListener('click', function() {
-                if (confirm('⚠️ Tem certeza que deseja APAGAR TODAS as notícias?\n\nEsta ação é irreversível e não pode ser desfeita.')) {
-                    if (confirm('Última confirmação: Apagar TUDO?')) {
-                        status.style.display = 'block';
-                        status.textContent = '⏳ Apagando notícias...';
-                        status.style.color = '#d97706';
-                        btn.disabled = true;
-                        
-                        apagarTodasNoticias()
-                            .then(function(total) {
-                                status.textContent = '✅ ' + total + ' notícias apagadas com sucesso!';
-                                status.style.color = '#16a34a';
-                                btn.disabled = false;
-                            })
-                            .catch(function(error) {
-                                status.textContent = '❌ Erro ao apagar: ' + error.message;
-                                status.style.color = '#dc2626';
-                                btn.disabled = false;
-                            });
-                    }
-                }
-            });
-        } else {
-            secao.style.display = 'none';
-        }
-    }
-
-    function apagarTodasNoticias() {
-        return new Promise(function(resolve, reject) {
-            var collectionRef = db.collection('noticias');
-            
-            collectionRef.get()
-                .then(function(snapshot) {
-                    if (snapshot.empty) {
-                        resolve(0);
-                        return;
-                    }
-                    
-                    var batch = db.batch();
-                    var count = 0;
-                    
-                    snapshot.forEach(function(doc) {
-                        batch.delete(doc.ref);
-                        count++;
-                    });
-                    
-                    return batch.commit().then(function() {
-                        resolve(count);
-                    });
-                })
-                .catch(function(error) {
-                    reject(error);
-                });
-        });
     }
 
     // ===== PREFERÊNCIAS =====
@@ -1013,7 +1060,6 @@
             atualizarDashboard(noticias, configAtual.palavrasChave);
             initMapa(noticias);
             
-            // Inicializa o botão de apagar notícias
             initApagarNoticias();
 
             document.getElementById('buscaInput').addEventListener('input', function(e) {
