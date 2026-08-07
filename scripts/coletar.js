@@ -5,10 +5,10 @@
 const { initializeApp } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 const Parser = require('rss-parser');
+const axios = require('axios');
 
 // ===== CONFIGURAÇÕES =====
-const DIAS_PADRAO = 7;
-const DIAS_CRITICO = 15;
+const DIAS_PADRAO = 2;
 
 // ===== FONTES DE NOTÍCIAS =====
 const FONTES = [
@@ -40,19 +40,10 @@ async function carregarPalavrasChave(db) {
 }
 
 // ===== FUNÇÃO: CALCULAR EXPIRAÇÃO =====
-function calcularDataExpiracao(titulo, resumo, categoria) {
+function calcularDataExpiracao() {
   const agora = new Date();
-  const texto = (titulo + ' ' + resumo).toLowerCase();
-  let dias = DIAS_PADRAO;
-
-  if (categoria === 'policial' || categoria === 'acidente') dias = 15;
-  else if (categoria === 'greve') dias = 20;
-  if (['interdição', 'greve', 'acidente', 'enchente', 'vazou', 'paralisação', 'blitz', 'operação', 'PRF'].some(p => texto.includes(p))) {
-    dias = DIAS_CRITICO;
-  }
-
   const expira = new Date(agora);
-  expira.setDate(expira.getDate() + dias);
+  expira.setDate(expira.getDate() + DIAS_PADRAO);
   return expira;
 }
 
@@ -66,6 +57,50 @@ function detectarCategoria(titulo, resumo) {
   if (texto.includes('PRF') || texto.includes('policial') || texto.includes('blitz') || texto.includes('operação')) return 'policial';
   if (texto.includes('fábrica') || texto.includes('produção') || texto.includes('indústria')) return 'fabrica';
   return 'geral';
+}
+
+// ===== FUNÇÃO: EXTRAIR CIDADE DO TEXTO =====
+function extrairCidade(titulo, resumo) {
+  const texto = (titulo + ' ' + resumo);
+  const cidades = [
+    'São Paulo', 'Rio de Janeiro', 'Belo Horizonte', 'Porto Alegre',
+    'Curitiba', 'Brasília', 'Salvador', 'Fortaleza', 'Recife',
+    'Manaus', 'Belém', 'Goiânia', 'Campinas', 'Santos',
+    'Congonhas', 'Ribeirão Preto', 'São José dos Campos',
+    'Uberlândia', 'Contagem', 'Betim', 'Nova Lima',
+    'SP', 'RJ', 'MG', 'RS', 'PR', 'DF', 'BA', 'PE', 'CE'
+  ];
+  
+  for (const cidade of cidades) {
+    if (texto.includes(cidade)) {
+      return cidade;
+    }
+  }
+  return null;
+}
+
+// ===== FUNÇÃO: GEOCODIFICAR CIDADE (Nominatim) =====
+async function geocodificar(cidade) {
+  try {
+    const response = await axios.get('https://nominatim.openstreetmap.org/search', {
+      params: {
+        q: cidade + ', Brasil',
+        format: 'json',
+        limit: 1
+      },
+      headers: { 'User-Agent': 'Monitor-Frotas-PepsiCo' }
+    });
+    if (response.data.length > 0) {
+      return {
+        lat: parseFloat(response.data[0].lat),
+        lng: parseFloat(response.data[0].lon),
+        cidade: response.data[0].display_name
+      };
+    }
+  } catch (error) {
+    console.log(`⚠️ Erro ao geocodificar "${cidade}":`, error.message);
+  }
+  return null;
 }
 
 // ===== FUNÇÃO: VERIFICAR RELEVÂNCIA =====
@@ -82,7 +117,6 @@ async function coletarNoticias() {
   const parser = new Parser();
   const db = getFirestore();
 
-  // Carrega as palavras-chave do Firestore
   const palavrasChave = await carregarPalavrasChave(db);
   if (palavrasChave.length === 0) {
     console.warn('⚠️ Nenhuma palavra-chave configurada. Nenhuma notícia será coletada.');
@@ -103,13 +137,11 @@ async function coletarNoticias() {
         const link = item.link || '#';
         const dataPub = item.pubDate ? new Date(item.pubDate) : new Date();
 
-        // === FILTRO DE RELEVÂNCIA ===
         if (!isRelevante(titulo, resumo, palavrasChave)) {
           console.log(`⏭️ Ignorando notícia irrelevante: "${titulo.slice(0, 30)}..."`);
           continue;
         }
 
-        // Verifica duplicata
         const existing = await db.collection('noticias').where('link', '==', link).get();
         if (!existing.empty) {
           console.log(`⏭️ Notícia já existe: "${titulo.slice(0, 30)}..."`);
@@ -117,7 +149,19 @@ async function coletarNoticias() {
         }
 
         const categoria = fonte.categoria !== 'geral' ? fonte.categoria : detectarCategoria(titulo, resumo);
-        const expiracao = calcularDataExpiracao(titulo, resumo, categoria);
+        const expiracao = calcularDataExpiracao();
+
+        // ===== EXTRAIR LOCALIZAÇÃO =====
+        const cidade = extrairCidade(titulo, resumo);
+        let localizacao = null;
+        if (cidade) {
+          localizacao = await geocodificar(cidade);
+          if (localizacao) {
+            console.log(`📍 Localização encontrada: ${cidade} → ${localizacao.lat}, ${localizacao.lng}`);
+          } else {
+            console.log(`⚠️ Não foi possível geocodificar: ${cidade}`);
+          }
+        }
 
         const texto = (titulo + ' ' + resumo).toLowerCase();
         const palavrasEncontradas = [];
@@ -134,7 +178,8 @@ async function coletarNoticias() {
           titulo, resumo, link, fonte: fonte.nome, categoria,
           dataPublicacao: dataPub, dataColeta: new Date(), dataExpiracao: expiracao,
           lidaPor: [], reacoes: { '👍': 0, '⚠️': 0, '🔥': 0 },
-          palavrasChaveEncontradas: palavrasEncontradas.length > 0 ? palavrasEncontradas : ['geral']
+          palavrasChaveEncontradas: palavrasEncontradas.length > 0 ? palavrasEncontradas : ['geral'],
+          localizacao: localizacao // <--- NOVO CAMPO
         });
       }
 
