@@ -55,19 +55,16 @@ function detectarCategoria(titulo, resumo) {
 // ===== FUNÇÃO PRINCIPAL =====
 async function coletarNoticias() {
   console.log('📡 Iniciando coleta de notícias...');
+
+  // ===== INICIALIZA O FIREBASE ADMIN =====
+  // O GitHub Actions já define a variável GOOGLE_APPLICATION_CREDENTIALS
+  // apontando para o arquivo serviceAccount.json que criamos.
+  // O SDK do Firebase Admin vai detectar automaticamente.
+  initializeApp();
+
   const parser = new Parser();
   const db = getFirestore();
   let total = 0;
-
-  // Inicializa o Firebase Admin com a chave da conta de serviço
-  // A variável de ambiente GOOGLE_APPLICATION_CREDENTIALS aponta para o arquivo JSON
-  // Portanto, não precisamos chamar initializeApp explicitamente com as credenciais
-  // O SDK do Firebase Admin já detecta automaticamente.
-  // Mas vamos garantir:
-  if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-    console.error('❌ Variável GOOGLE_APPLICATION_CREDENTIALS não definida');
-    process.exit(1);
-  }
 
   for (const fonte of FONTES) {
     try {
