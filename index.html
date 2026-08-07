@@ -12,520 +12,124 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: "Inter", system-ui, -apple-system, sans-serif;
-            background: #f2f4f8;
-            padding: 16px;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-        }
-        .container { max-width: 1280px; width: 100%; margin: 0 auto; }
-        header {
-            background: linear-gradient(135deg, #003da5 0%, #0057c7 100%);
-            color: white;
-            padding: 16px 20px;
-            border-radius: 20px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            box-shadow: 0 8px 24px rgba(0, 61, 165, 0.25);
-        }
-        header h1 { font-size: 1.3rem; font-weight: 700; display: flex; align-items: center; gap: 6px; }
-        header h1 span { font-weight: 300; color: rgba(255,255,255,0.7); }
-        header .sub { font-size: 0.7rem; opacity: 0.85; margin-top: 2px; }
-        .badge {
-            background: rgba(255,255,255,0.15);
-            padding: 4px 14px;
-            border-radius: 40px;
-            font-size: 0.7rem;
-            border: 1px solid rgba(255,255,255,0.2);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            cursor: pointer;
-        }
-        .badge::before {
-            content: '';
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            background: #4ade80;
-            border-radius: 50%;
-            animation: pulse-dot 1.8s infinite;
-        }
-        @keyframes pulse-dot {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(0.8); }
-        }
-        .logout-btn {
-            background: rgba(255,255,255,0.15);
-            color: white;
-            border: 1px solid rgba(255,255,255,0.3);
-            padding: 4px 12px;
-            border-radius: 40px;
-            font-size: 0.7rem;
-            cursor: pointer;
-            font-family: inherit;
-        }
-        .logout-btn:hover { background: rgba(255,255,255,0.25); }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: "Inter", system-ui, sans-serif; background:#f2f4f8; padding:16px; min-height:100vh; display:flex; justify-content:center; align-items:flex-start; }
+        .container { max-width:1280px; width:100%; margin:0 auto; }
+        header { background:linear-gradient(135deg, #003da5 0%, #0057c7 100%); color:white; padding:16px 20px; border-radius:20px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; box-shadow:0 8px 24px rgba(0,61,165,0.25); }
+        header h1 { font-size:1.3rem; font-weight:700; display:flex; align-items:center; gap:6px; }
+        header h1 span { font-weight:300; color:rgba(255,255,255,0.7); }
+        header .sub { font-size:0.7rem; opacity:0.85; margin-top:2px; }
+        .badge { background:rgba(255,255,255,0.15); padding:4px 14px; border-radius:40px; font-size:0.7rem; border:1px solid rgba(255,255,255,0.2); display:flex; align-items:center; gap:6px; cursor:pointer; }
+        .badge::before { content:''; display:inline-block; width:8px; height:8px; background:#4ade80; border-radius:50%; animation:pulse-dot 1.8s infinite; }
+        @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.5;transform:scale(0.8);} }
+        .logout-btn { background:rgba(255,255,255,0.15); color:white; border:1px solid rgba(255,255,255,0.3); padding:4px 12px; border-radius:40px; font-size:0.7rem; cursor:pointer; font-family:inherit; }
+        .logout-btn:hover { background:rgba(255,255,255,0.25); }
 
-        #telaLogin {
-            max-width: 400px;
-            margin: 60px auto;
-            background: white;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
-        }
-        #telaLogin h2 {
-            text-align: center;
-            color: #003da5;
-            margin-bottom: 8px;
-        }
-        #telaLogin .subtitle {
-            text-align: center;
-            color: #6b7a93;
-            font-size: 0.9rem;
-            margin-bottom: 24px;
-        }
-        #telaLogin input {
-            width: 100%;
-            padding: 12px 16px;
-            border: 1px solid #d0d7e2;
-            border-radius: 10px;
-            font-size: 1rem;
-            margin-bottom: 12px;
-            font-family: inherit;
-            outline: none;
-            transition: border 0.15s ease;
-        }
-        #telaLogin input:focus {
-            border-color: #003da5;
-            box-shadow: 0 0 0 3px rgba(0, 61, 165, 0.1);
-        }
-        #loginBtn {
-            width: 100%;
-            background: #003da5;
-            color: white;
-            border: none;
-            padding: 14px;
-            border-radius: 10px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            font-family: inherit;
-            transition: background 0.15s ease;
-        }
-        #loginBtn:hover { background: #002d7a; }
-        #loginBtn:disabled { opacity: 0.6; cursor: not-allowed; }
-        #cadastrarBtn {
-            width: 100%;
-            background: transparent;
-            color: #003da5;
-            border: none;
-            padding: 10px;
-            font-size: 0.85rem;
-            cursor: pointer;
-            font-family: inherit;
-            margin-top: 4px;
-        }
-        #cadastrarBtn:hover { text-decoration: underline; }
-        #loginErro {
-            color: #dc2626;
-            font-size: 0.85rem;
-            text-align: center;
-            display: none;
-            margin-top: 8px;
-        }
+        #telaLogin { max-width:400px; margin:60px auto; background:white; padding:30px; border-radius:20px; box-shadow:0 8px 30px rgba(0,0,0,0.1); }
+        #telaLogin h2 { text-align:center; color:#003da5; margin-bottom:8px; }
+        #telaLogin .subtitle { text-align:center; color:#6b7a93; font-size:0.9rem; margin-bottom:24px; }
+        #telaLogin input { width:100%; padding:12px 16px; border:1px solid #d0d7e2; border-radius:10px; font-size:1rem; margin-bottom:12px; font-family:inherit; outline:none; transition:border 0.15s ease; }
+        #telaLogin input:focus { border-color:#003da5; box-shadow:0 0 0 3px rgba(0,61,165,0.1); }
+        #loginBtn { width:100%; background:#003da5; color:white; border:none; padding:14px; border-radius:10px; font-size:1rem; font-weight:600; cursor:pointer; font-family:inherit; transition:background 0.15s ease; }
+        #loginBtn:hover { background:#002d7a; }
+        #loginBtn:disabled { opacity:0.6; cursor:not-allowed; }
+        #cadastrarBtn { width:100%; background:transparent; color:#003da5; border:none; padding:10px; font-size:0.85rem; cursor:pointer; font-family:inherit; margin-top:4px; }
+        #cadastrarBtn:hover { text-decoration:underline; }
+        #loginErro { color:#dc2626; font-size:0.85rem; text-align:center; display:none; margin-top:8px; }
 
-        .conteudo-site { display: none; }
+        .conteudo-site { display:none; }
 
-        .tabs {
-            display: flex;
-            gap: 4px;
-            margin-bottom: 20px;
-            background: white;
-            padding: 6px;
-            border-radius: 50px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        }
-        .tab-btn {
-            flex: 1;
-            border: none;
-            background: transparent;
-            padding: 10px 16px;
-            border-radius: 40px;
-            font-weight: 600;
-            font-size: 0.8rem;
-            cursor: pointer;
-            color: #4a5b76;
-            transition: all 0.2s ease;
-            font-family: inherit;
-        }
-        .tab-btn:hover { background: #f0f3f9; }
-        .tab-btn.ativo {
-            background: #003da5;
-            color: white;
-            box-shadow: 0 4px 12px rgba(0, 61, 165, 0.25);
-        }
-        .tab-content { display: none; animation: fadeUp 0.3s ease; }
-        .tab-content.ativo { display: block; }
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .dashboard {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        .card-metrica {
-            background: white;
-            padding: 12px 10px;
-            border-radius: 16px;
-            text-align: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        }
-        .card-metrica .numero { font-size: 1.5rem; font-weight: 700; line-height: 1.2; }
-        .card-metrica .rotulo { font-size: 0.55rem; color: #6b7a93; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600; margin-top: 2px; }
-        .card-metrica .icone { font-size: 1.3rem; display: block; }
-        .card-metrica.critico .numero { color: #dc2626; }
-        .card-metrica.atencao .numero { color: #d97706; }
-        .card-metrica.info .numero { color: #2563eb; }
-        .card-metrica.total .numero { color: #003da5; }
-        .dashboard-extras {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-        .card-extra {
-            background: white;
-            padding: 12px 14px;
-            border-radius: 16px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        }
-        .card-extra h4 { font-size: 0.6rem; color: #6b7a93; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600; margin-bottom: 6px; }
-        .fonte-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 3px 0;
-            border-bottom: 1px solid #f0f2f6;
-            font-size: 0.8rem;
-        }
-        .fonte-item:last-child { border-bottom: none; }
-        .fonte-item strong { color: #003da5; }
-        .filtros-rapidos {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            margin-bottom: 12px;
-        }
-        .filtros-rapidos button {
-            background: white;
-            border: 1px solid #e2e6ee;
-            padding: 5px 12px;
-            border-radius: 40px;
-            font-size: 0.7rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.15s ease;
-            font-family: inherit;
-            color: #2c3e4e;
-        }
-        .filtros-rapidos button:hover { background: #f0f3f9; border-color: #bcc4d4; }
-        .filtros-rapidos button.ativo {
-            background: #003da5;
-            color: white;
-            border-color: #003da5;
-            box-shadow: 0 4px 12px rgba(0, 61, 165, 0.2);
-        }
-        .barra-busca {
-            background: white;
-            padding: 6px 14px;
-            border-radius: 60px;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        }
-        .barra-busca input {
-            flex: 1;
-            border: none;
-            outline: none;
-            font-size: 0.85rem;
-            padding: 8px 0;
-            font-family: inherit;
-            background: transparent;
-            color: #1e2a3a;
-        }
-        .barra-busca input::placeholder { color: #9aa8bc; }
-        .grid-2colunas {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 16px;
-        }
-        @media (min-width: 820px) { .grid-2colunas { grid-template-columns: 1fr 1fr; } }
-        .card {
-            background: white;
-            border-radius: 16px;
-            padding: 14px 14px;
-            margin-bottom: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-            border-left: 4px solid #003da5;
-            transition: all 0.2s ease;
-        }
-        .card:hover {
-            box-shadow: 0 8px 24px rgba(0,0,0,0.06);
-            transform: translateY(-1px);
-        }
-        .card.lida {
-            opacity: 0.6;
-            background: #f8f9fc;
-            border-left-color: #bcc4d4;
-        }
-        .card.lida:hover { transform: none; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-        .selo {
-            display: inline-block;
-            font-size: 0.5rem;
-            font-weight: 700;
-            padding: 2px 8px;
-            border-radius: 40px;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-        .selo.critico { background: #fee2e2; color: #991b1b; }
-        .selo.atencao { background: #fef9c3; color: #854d0e; }
-        .selo.info { background: #dbeafe; color: #1e40af; }
-        .titulo { font-size: 0.9rem; font-weight: 600; margin: 4px 0 3px; color: #1e2a3a; line-height: 1.3; }
-        .fonte {
-            font-size: 0.6rem;
-            color: #6b7a93;
-            margin-bottom: 4px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 4px;
-            align-items: center;
-        }
-        .fonte a { color: #003da5; text-decoration: none; font-weight: 500; }
-        .fonte a:hover { text-decoration: underline; }
-        .resumo { color: #2c3e4e; line-height: 1.4; font-size: 0.78rem; margin-bottom: 8px; }
-        .acoes {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 4px;
-            border-top: 1px solid #eef0f4;
-            padding-top: 8px;
-        }
-        .emoji-btn {
-            background: none;
-            border: none;
-            font-size: 1rem;
-            cursor: pointer;
-            padding: 2px 6px;
-            border-radius: 30px;
-            display: inline-flex;
-            align-items: center;
-            gap: 3px;
-            transition: background 0.15s ease;
-            font-family: inherit;
-        }
-        .emoji-btn:hover { background: #f0f3f9; }
-        .contador { font-size: 0.6rem; color: #4a5b76; min-width: 14px; }
-        .btn-acao {
-            background: none;
-            border: 1px solid #d0d7e2;
-            padding: 2px 10px;
-            border-radius: 40px;
-            font-size: 0.55rem;
-            font-weight: 500;
-            cursor: pointer;
-            background: white;
-            transition: all 0.15s ease;
-            font-family: inherit;
-            color: #2c3e4e;
-        }
-        .btn-acao:hover { background: #f0f3f9; border-color: #b0baca; }
-        #mapa {
-            height: 280px;
-            border-radius: 14px;
-            background: #e8ecf2;
-            border: 1px solid #e2e6ee;
-            margin-bottom: 6px;
-            overflow: hidden;
-        }
-        .card-mapa {
-            background: white;
-            border-radius: 16px;
-            padding: 14px 16px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        }
-        .card-mapa h3 { font-size: 0.8rem; margin-bottom: 8px; color: #1e2a3a; font-weight: 600; }
-        .config-section {
-            background: white;
-            border-radius: 20px;
-            padding: 18px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-            margin-bottom: 16px;
-        }
-        .config-section h3 { font-size: 0.95rem; margin-bottom: 8px; color: #1e2a3a; font-weight: 600; }
-        .config-section p { font-size: 0.75rem; color: #6b7a93; margin-bottom: 10px; }
-        .config-section .campo {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        .config-section input[type="text"] {
-            flex: 1;
-            padding: 6px 12px;
-            border: 1px solid #d0d7e2;
-            border-radius: 40px;
-            font-size: 0.8rem;
-            outline: none;
-            font-family: inherit;
-            min-width: 120px;
-            transition: border 0.15s ease;
-        }
-        .config-section input[type="text"]:focus {
-            border-color: #003da5;
-            box-shadow: 0 0 0 3px rgba(0, 61, 165, 0.1);
-        }
-        .config-section button {
-            background: #003da5;
-            color: white;
-            border: none;
-            padding: 6px 16px;
-            border-radius: 40px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background 0.15s ease;
-            font-family: inherit;
-        }
-        .config-section button:hover { background: #002d7a; }
-        .config-section button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        .lista-itens {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            margin-top: 10px;
-        }
-        .item-chip {
-            background: #f0f3f9;
-            padding: 3px 12px;
-            border-radius: 40px;
-            font-size: 0.75rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-weight: 500;
-        }
-        .item-chip .remover {
-            background: none;
-            border: none;
-            color: #991b1b;
-            cursor: pointer;
-            font-weight: 700;
-            font-size: 0.8rem;
-            line-height: 1;
-            padding: 0 2px;
-        }
-        .toggle-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin: 8px 0;
-        }
-        .toggle-group label {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 0.8rem;
-            cursor: pointer;
-            font-weight: 500;
-        }
-        .toggle-group input[type="checkbox"] {
-            width: 15px;
-            height: 15px;
-            accent-color: #003da5;
-            cursor: pointer;
-        }
-        .palavra-sugestao {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            background: #f0f3f9;
-            padding: 3px 10px 3px 12px;
-            border-radius: 40px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            margin: 2px 3px 2px 0;
-        }
-        .palavra-sugestao .add-btn {
-            background: none;
-            border: none;
-            color: #003da5;
-            cursor: pointer;
-            font-weight: 700;
-            font-size: 0.9rem;
-            line-height: 1;
-            padding: 0 2px;
-        }
-        .palavra-sugestao .add-btn:hover { color: #002d7a; }
-        .mensagem-bloqueio {
-            color: #6b7a93;
-            font-size: 0.8rem;
-            margin-top: 8px;
-            padding: 8px 12px;
-            background: #f0f3f9;
-            border-radius: 8px;
-            text-align: center;
-        }
-        footer {
-            text-align: center;
-            font-size: 0.6rem;
-            color: #8a9bb0;
-            margin-top: 24px;
-            padding-top: 12px;
-            border-top: 1px solid #e2e6ee;
-        }
-        @media (max-width: 480px) {
-            body { padding: 8px; }
-            header { padding: 10px 14px; }
-            header h1 { font-size: 1rem; }
-            .tab-btn { font-size: 0.65rem; padding: 6px 8px; }
-            .card { padding: 10px; }
-            #mapa { height: 200px; }
-            #telaLogin { margin: 30px 16px; padding: 20px; }
-        }
+        .tabs { display:flex; gap:4px; margin-bottom:20px; background:white; padding:6px; border-radius:50px; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
+        .tab-btn { flex:1; border:none; background:transparent; padding:10px 16px; border-radius:40px; font-weight:600; font-size:0.8rem; cursor:pointer; color:#4a5b76; transition:all 0.2s ease; font-family:inherit; }
+        .tab-btn:hover { background:#f0f3f9; }
+        .tab-btn.ativo { background:#003da5; color:white; box-shadow:0 4px 12px rgba(0,61,165,0.25); }
+        .tab-content { display:none; animation:fadeUp 0.3s ease; }
+        .tab-content.ativo { display:block; }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
+        .dashboard { display:grid; grid-template-columns:repeat(auto-fit, minmax(90px,1fr)); gap:10px; margin-bottom:20px; }
+        .card-metrica { background:white; padding:12px 10px; border-radius:16px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
+        .card-metrica .numero { font-size:1.5rem; font-weight:700; line-height:1.2; }
+        .card-metrica .rotulo { font-size:0.55rem; color:#6b7a93; text-transform:uppercase; letter-spacing:0.3px; font-weight:600; margin-top:2px; }
+        .card-metrica .icone { font-size:1.3rem; display:block; }
+        .card-metrica.critico .numero { color:#dc2626; }
+        .card-metrica.atencao .numero { color:#d97706; }
+        .card-metrica.info .numero { color:#2563eb; }
+        .card-metrica.total .numero { color:#003da5; }
+        .dashboard-extras { display:grid; grid-template-columns:1fr; gap:12px; margin-bottom:20px; }
+        .card-extra { background:white; padding:12px 14px; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
+        .card-extra h4 { font-size:0.6rem; color:#6b7a93; text-transform:uppercase; letter-spacing:0.3px; font-weight:600; margin-bottom:6px; }
+        .fonte-item { display:flex; justify-content:space-between; padding:3px 0; border-bottom:1px solid #f0f2f6; font-size:0.8rem; }
+        .fonte-item:last-child { border-bottom:none; }
+        .fonte-item strong { color:#003da5; }
+        .filtros-rapidos { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:12px; }
+        .filtros-rapidos button { background:white; border:1px solid #e2e6ee; padding:5px 12px; border-radius:40px; font-size:0.7rem; font-weight:500; cursor:pointer; transition:all 0.15s ease; font-family:inherit; color:#2c3e4e; }
+        .filtros-rapidos button:hover { background:#f0f3f9; border-color:#bcc4d4; }
+        .filtros-rapidos button.ativo { background:#003da5; color:white; border-color:#003da5; box-shadow:0 4px 12px rgba(0,61,165,0.2); }
+        .barra-busca { background:white; padding:6px 14px; border-radius:60px; margin-bottom:16px; display:flex; align-items:center; gap:8px; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
+        .barra-busca input { flex:1; border:none; outline:none; font-size:0.85rem; padding:8px 0; font-family:inherit; background:transparent; color:#1e2a3a; }
+        .barra-busca input::placeholder { color:#9aa8bc; }
+        .grid-2colunas { display:grid; grid-template-columns:1fr; gap:16px; }
+        @media (min-width:820px) { .grid-2colunas { grid-template-columns:1fr 1fr; } }
+        .card { background:white; border-radius:16px; padding:14px 14px; margin-bottom:12px; box-shadow:0 2px 8px rgba(0,0,0,0.04); border-left:4px solid #003da5; transition:all 0.2s ease; }
+        .card:hover { box-shadow:0 8px 24px rgba(0,0,0,0.06); transform:translateY(-1px); }
+        .card.lida { opacity:0.6; background:#f8f9fc; border-left-color:#bcc4d4; }
+        .card.lida:hover { transform:none; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
+        .selo { display:inline-block; font-size:0.5rem; font-weight:700; padding:2px 8px; border-radius:40px; text-transform:uppercase; letter-spacing:0.3px; }
+        .selo.critico { background:#fee2e2; color:#991b1b; }
+        .selo.atencao { background:#fef9c3; color:#854d0e; }
+        .selo.info { background:#dbeafe; color:#1e40af; }
+        .titulo { font-size:0.9rem; font-weight:600; margin:4px 0 3px; color:#1e2a3a; line-height:1.3; }
+        .fonte { font-size:0.6rem; color:#6b7a93; margin-bottom:4px; display:flex; flex-wrap:wrap; gap:4px; align-items:center; }
+        .fonte a { color:#003da5; text-decoration:none; font-weight:500; }
+        .fonte a:hover { text-decoration:underline; }
+        .resumo { color:#2c3e4e; line-height:1.4; font-size:0.78rem; margin-bottom:8px; }
+        .acoes { display:flex; flex-wrap:wrap; align-items:center; gap:4px; border-top:1px solid #eef0f4; padding-top:8px; }
+        .emoji-btn { background:none; border:none; font-size:1rem; cursor:pointer; padding:2px 6px; border-radius:30px; display:inline-flex; align-items:center; gap:3px; transition:background 0.15s ease; font-family:inherit; }
+        .emoji-btn:hover { background:#f0f3f9; }
+        .contador { font-size:0.6rem; color:#4a5b76; min-width:14px; }
+        .btn-acao { background:none; border:1px solid #d0d7e2; padding:2px 10px; border-radius:40px; font-size:0.55rem; font-weight:500; cursor:pointer; background:white; transition:all 0.15s ease; font-family:inherit; color:#2c3e4e; }
+        .btn-acao:hover { background:#f0f3f9; border-color:#b0baca; }
+        #mapa { height:280px; border-radius:14px; background:#e8ecf2; border:1px solid #e2e6ee; margin-bottom:6px; overflow:hidden; }
+        .card-mapa { background:white; border-radius:16px; padding:14px 16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
+        .card-mapa h3 { font-size:0.8rem; margin-bottom:8px; color:#1e2a3a; font-weight:600; }
+        .config-section { background:white; border-radius:20px; padding:18px; box-shadow:0 2px 8px rgba(0,0,0,0.04); margin-bottom:16px; }
+        .config-section h3 { font-size:0.95rem; margin-bottom:8px; color:#1e2a3a; font-weight:600; }
+        .config-section p { font-size:0.75rem; color:#6b7a93; margin-bottom:10px; }
+        .config-section .campo { display:flex; gap:8px; flex-wrap:wrap; }
+        .config-section input[type=text] { flex:1; padding:6px 12px; border:1px solid #d0d7e2; border-radius:40px; font-size:0.8rem; outline:none; font-family:inherit; min-width:120px; transition:border 0.15s ease; }
+        .config-section input[type=text]:focus { border-color:#003da5; box-shadow:0 0 0 3px rgba(0,61,165,0.1); }
+        .config-section button { background:#003da5; color:white; border:none; padding:6px 16px; border-radius:40px; font-size:0.75rem; font-weight:500; cursor:pointer; transition:background 0.15s ease; font-family:inherit; }
+        .config-section button:hover { background:#002d7a; }
+        .config-section button:disabled { opacity:0.5; cursor:not-allowed; }
+        .lista-itens { display:flex; flex-wrap:wrap; gap:5px; margin-top:10px; }
+        .item-chip { background:#f0f3f9; padding:3px 12px; border-radius:40px; font-size:0.75rem; display:inline-flex; align-items:center; gap:6px; font-weight:500; }
+        .item-chip .remover { background:none; border:none; color:#991b1b; cursor:pointer; font-weight:700; font-size:0.8rem; line-height:1; padding:0 2px; }
+        .toggle-group { display:flex; flex-wrap:wrap; gap:12px; margin:8px 0; }
+        .toggle-group label { display:flex; align-items:center; gap:5px; font-size:0.8rem; cursor:pointer; font-weight:500; }
+        .toggle-group input[type=checkbox] { width:15px; height:15px; accent-color:#003da5; cursor:pointer; }
+        .palavra-sugestao { display:inline-flex; align-items:center; gap:5px; background:#f0f3f9; padding:3px 10px 3px 12px; border-radius:40px; font-size:0.75rem; font-weight:500; margin:2px 3px 2px 0; }
+        .palavra-sugestao .add-btn { background:none; border:none; color:#003da5; cursor:pointer; font-weight:700; font-size:0.9rem; line-height:1; padding:0 2px; }
+        .palavra-sugestao .add-btn:hover { color:#002d7a; }
+        .mensagem-bloqueio { color:#6b7a93; font-size:0.8rem; margin-top:8px; padding:8px 12px; background:#f0f3f9; border-radius:8px; text-align:center; }
+        footer { text-align:center; font-size:0.6rem; color:#8a9bb0; margin-top:24px; padding-top:12px; border-top:1px solid #e2e6ee; }
+        @media (max-width:480px) { body{ padding:8px; } header{ padding:10px 14px; } header h1{ font-size:1rem; } .tab-btn{ font-size:0.65rem; padding:6px 8px; } .card{ padding:10px; } #mapa{ height:200px; } #telaLogin{ margin:30px 16px; padding:20px; } }
     </style>
 </head>
 <body>
 <div class="container">
 
+    <!-- TELA DE LOGIN -->
     <div id="telaLogin">
         <h2>🚛 Monitor de Impactos</h2>
         <p class="subtitle">Faça login para acessar o sistema</p>
-        <div>
-            <input type="email" id="emailInput" placeholder="E-mail">
-            <input type="password" id="senhaInput" placeholder="Senha">
-            <button id="loginBtn">Entrar</button>
-            <button id="cadastrarBtn">Criar nova conta</button>
-            <div id="loginErro"></div>
-        </div>
+        <input type="email" id="emailInput" placeholder="E-mail">
+        <input type="password" id="senhaInput" placeholder="Senha">
+        <button id="loginBtn">Entrar</button>
+        <button id="cadastrarBtn">Criar nova conta</button>
+        <div id="loginErro"></div>
     </div>
 
+    <!-- CONTEÚDO PRINCIPAL -->
     <div class="conteudo-site" id="conteudoSite">
         <header>
             <div>
@@ -586,9 +190,7 @@
                     <button id="addPalavraBtn">➕ Adicionar</button>
                 </div>
                 <div class="lista-itens" id="listaPalavras"></div>
-                <div id="mensagemBloqueio" class="mensagem-bloqueio" style="display:none;">
-                    🔒 Apenas administradores podem editar as palavras-chave.
-                </div>
+                <div id="mensagemBloqueio" class="mensagem-bloqueio" style="display:none;">🔒 Apenas administradores podem editar as palavras-chave.</div>
             </div>
             <div class="config-section">
                 <h3>📊 Palavras em alta</h3>
@@ -600,7 +202,6 @@
                 <div class="toggle-group" id="categoriasToggle"></div>
             </div>
         </div>
-
         <footer>✅ Lidas compartilhadas • Reações persistem no banco</footer>
     </div>
 </div>
@@ -608,7 +209,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
     // ============================================================
-    //  FIREBASE CONFIG (SUAS CREDENCIAIS)
+    // FIREBASE CONFIG
     // ============================================================
     const firebaseConfig = {
         apiKey: "AIzaSyCYh4_MyqFITFDJDg36eFHTU2VqJ8JeIuc",
@@ -623,157 +224,10 @@
     const db = firebase.firestore();
     const auth = firebase.auth();
 
-    // ===== ADMINISTRADOR (substitua pelo seu e-mail) =====
+    // ===== ADMINISTRADOR =====
     const ADMIN_EMAIL = "SEU_EMAIL_AQUI"; // ⚠️ SUBSTITUA PELO SEU E-MAIL
 
-    // ===== DATA SERVICE =====
-    const DataService = {
-        _noticias: [],
-        _listeners: [],
-        _unsubscribe: null,
-        _initialized: false,
-
-        init() {
-            this._unsubscribe = db.collection('noticias')
-                .orderBy('dataPublicacao', 'desc')
-                .onSnapshot((snapshot) => {
-                    this._noticias = snapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    }));
-                    this._notify();
-                }, (error) => {
-                    console.error('Erro no Firestore:', error);
-                });
-            this._initialized = true;
-        },
-
-        getNoticias() { return this._noticias; },
-
-        async isLida(id) {
-            try {
-                const doc = await db.collection('noticias').doc(id).get();
-                if (doc.exists) {
-                    const lidaPor = doc.data().lidaPor || [];
-                    const user = auth.currentUser;
-                    if (!user) return false;
-                    return lidaPor.includes(user.uid);
-                }
-                return false;
-            } catch (error) {
-                console.error('Erro ao verificar lida:', error);
-                return false;
-            }
-        },
-
-        async toggleLida(id) {
-            try {
-                const user = auth.currentUser;
-                if (!user) {
-                    alert('Você precisa estar logado para marcar como lida.');
-                    return;
-                }
-                const docRef = db.collection('noticias').doc(id);
-                const doc = await docRef.get();
-                const lidaPor = doc.data().lidaPor || [];
-                
-                if (lidaPor.includes(user.uid)) {
-                    await docRef.update({
-                        lidaPor: firebase.firestore.FieldValue.arrayRemove(user.uid)
-                    });
-                } else {
-                    await docRef.update({
-                        lidaPor: firebase.firestore.FieldValue.arrayUnion(user.uid)
-                    });
-                }
-                this._notify();
-            } catch (error) {
-                console.error('Erro ao marcar lida:', error);
-                alert('Erro ao marcar como lida. Tente novamente.');
-            }
-        },
-
-        async reagirNoticia(id, emoji) {
-            try {
-                const docRef = db.collection('noticias').doc(id);
-                await docRef.update({
-                    [`reacoes.${emoji}`]: firebase.firestore.FieldValue.increment(1)
-                });
-            } catch (error) {
-                console.error('Erro ao reagir:', error);
-                alert('Erro ao reagir. Tente novamente.');
-            }
-        },
-
-        async getConfig() {
-            try {
-                const doc = await db.collection('configuracoes').doc('geral').get();
-                if (doc.exists) {
-                    const data = doc.data();
-                    return {
-                        palavrasChave: data.palavrasChave || ['interdição', 'greve', 'acidente', 'enchente', 'blitz', 'operação', 'PRF'],
-                        categoriasAtivas: data.categoriasAtivas || ['clima', 'transito', 'greve', 'fabrica', 'acidente', 'policial']
-                    };
-                } else {
-                    await db.collection('configuracoes').doc('geral').set({
-                        palavrasChave: ['interdição', 'greve', 'acidente', 'enchente', 'blitz', 'operação', 'PRF'],
-                        categoriasAtivas: ['clima', 'transito', 'greve', 'fabrica', 'acidente', 'policial']
-                    });
-                    return {
-                        palavrasChave: ['interdição', 'greve', 'acidente', 'enchente', 'blitz', 'operação', 'PRF'],
-                        categoriasAtivas: ['clima', 'transito', 'greve', 'fabrica', 'acidente', 'policial']
-                    };
-                }
-            } catch (error) {
-                console.error('Erro ao carregar configurações:', error);
-                return {
-                    palavrasChave: ['interdição', 'greve', 'acidente', 'enchente', 'blitz', 'operação', 'PRF'],
-                    categoriasAtivas: ['clima', 'transito', 'greve', 'fabrica', 'acidente', 'policial']
-                };
-            }
-        },
-
-        async saveConfig(config) {
-            try {
-                await db.collection('configuracoes').doc('geral').set(config, { merge: true });
-                console.log('✅ Configurações salvas no Firestore');
-            } catch (error) {
-                console.error('Erro ao salvar configurações:', error);
-                throw error;
-            }
-        },
-
-        async addPalavraChave(palavra) {
-            const config = await this.getConfig();
-            if (!config.palavrasChave.includes(palavra)) {
-                config.palavrasChave.push(palavra);
-                await this.saveConfig(config);
-            }
-            return config;
-        },
-
-        async removePalavraChave(palavra) {
-            const config = await this.getConfig();
-            config.palavrasChave = config.palavrasChave.filter(p => p !== palavra);
-            await this.saveConfig(config);
-            return config;
-        },
-
-        async setCategoriasAtivas(categorias) {
-            const config = await this.getConfig();
-            config.categoriasAtivas = categorias;
-            await this.saveConfig(config);
-            return config;
-        },
-
-        onChange(callback) { this._listeners.push(callback); },
-
-        _notify() {
-            this._listeners.forEach(cb => cb(this._noticias));
-        }
-    };
-
-    // ===== AUTENTICAÇÃO =====
+    // ===== ELEMENTOS DA TELA =====
     const telaLogin = document.getElementById('telaLogin');
     const conteudoSite = document.getElementById('conteudoSite');
     const emailInput = document.getElementById('emailInput');
@@ -783,17 +237,154 @@
     const loginErro = document.getElementById('loginErro');
     const authStatus = document.getElementById('authStatus');
 
-    emailInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') loginBtn.click(); });
-    senhaInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') loginBtn.click(); });
+    // ===== DATA SERVICE =====
+    const DataService = {
+        _noticias: [],
+        _listeners: [],
+        _unsubscribe: null,
+        _initialized: false,
 
-    auth.onAuthStateChanged(user => {
+        init: function() {
+            this._unsubscribe = db.collection('noticias')
+                .orderBy('dataPublicacao', 'desc')
+                .onSnapshot(function(snapshot) {
+                    var docs = snapshot.docs.map(function(doc) {
+                        var data = doc.data();
+                        data.id = doc.id;
+                        return data;
+                    });
+                    this._noticias = docs;
+                    this._notify();
+                }.bind(this), function(error) {
+                    console.error('Erro no Firestore:', error);
+                });
+            this._initialized = true;
+        },
+
+        getNoticias: function() {
+            return this._noticias;
+        },
+
+        isLida: function(id) {
+            var user = auth.currentUser;
+            if (!user) return false;
+            var noticia = this._noticias.find(function(n) { return n.id === id; });
+            if (!noticia) return false;
+            var lidaPor = noticia.lidaPor || [];
+            return lidaPor.indexOf(user.uid) !== -1;
+        },
+
+        toggleLida: function(id) {
+            var user = auth.currentUser;
+            if (!user) {
+                alert('Você precisa estar logado.');
+                return;
+            }
+            var docRef = db.collection('noticias').doc(id);
+            var self = this;
+            docRef.get().then(function(doc) {
+                if (!doc.exists) return;
+                var lidaPor = doc.data().lidaPor || [];
+                if (lidaPor.indexOf(user.uid) !== -1) {
+                    return docRef.update({ lidaPor: firebase.firestore.FieldValue.arrayRemove(user.uid) });
+                } else {
+                    return docRef.update({ lidaPor: firebase.firestore.FieldValue.arrayUnion(user.uid) });
+                }
+            }).then(function() {
+                self._notify();
+            }).catch(function(error) {
+                console.error('Erro ao marcar lida:', error);
+                alert('Erro ao marcar como lida.');
+            });
+        },
+
+        reagirNoticia: function(id, emoji) {
+            var docRef = db.collection('noticias').doc(id);
+            var update = {};
+            update['reacoes.' + emoji] = firebase.firestore.FieldValue.increment(1);
+            docRef.update(update).catch(function(error) {
+                console.error('Erro ao reagir:', error);
+                alert('Erro ao reagir.');
+            });
+        },
+
+        getConfig: function() {
+            return db.collection('configuracoes').doc('geral').get().then(function(doc) {
+                if (doc.exists) {
+                    var data = doc.data();
+                    return {
+                        palavrasChave: data.palavrasChave || ['interdição', 'greve', 'acidente', 'enchente', 'blitz', 'operação', 'PRF'],
+                        categoriasAtivas: data.categoriasAtivas || ['clima', 'transito', 'greve', 'fabrica', 'acidente', 'policial']
+                    };
+                } else {
+                    return db.collection('configuracoes').doc('geral').set({
+                        palavrasChave: ['interdição', 'greve', 'acidente', 'enchente', 'blitz', 'operação', 'PRF'],
+                        categoriasAtivas: ['clima', 'transito', 'greve', 'fabrica', 'acidente', 'policial']
+                    }).then(function() {
+                        return {
+                            palavrasChave: ['interdição', 'greve', 'acidente', 'enchente', 'blitz', 'operação', 'PRF'],
+                            categoriasAtivas: ['clima', 'transito', 'greve', 'fabrica', 'acidente', 'policial']
+                        };
+                    });
+                }
+            }).catch(function(error) {
+                console.error('Erro ao carregar configurações:', error);
+                return {
+                    palavrasChave: ['interdição', 'greve', 'acidente', 'enchente', 'blitz', 'operação', 'PRF'],
+                    categoriasAtivas: ['clima', 'transito', 'greve', 'fabrica', 'acidente', 'policial']
+                };
+            });
+        },
+
+        saveConfig: function(config) {
+            return db.collection('configuracoes').doc('geral').set(config, { merge: true });
+        },
+
+        addPalavraChave: function(palavra) {
+            var self = this;
+            return this.getConfig().then(function(config) {
+                if (config.palavrasChave.indexOf(palavra) === -1) {
+                    config.palavrasChave.push(palavra);
+                    return self.saveConfig(config);
+                }
+                return config;
+            });
+        },
+
+        removePalavraChave: function(palavra) {
+            var self = this;
+            return this.getConfig().then(function(config) {
+                config.palavrasChave = config.palavrasChave.filter(function(p) { return p !== palavra; });
+                return self.saveConfig(config);
+            });
+        },
+
+        setCategoriasAtivas: function(categorias) {
+            var self = this;
+            return this.getConfig().then(function(config) {
+                config.categoriasAtivas = categorias;
+                return self.saveConfig(config);
+            });
+        },
+
+        onChange: function(callback) {
+            this._listeners.push(callback);
+        },
+
+        _notify: function() {
+            for (var i = 0; i < this._listeners.length; i++) {
+                this._listeners[i](this._noticias);
+            }
+        }
+    };
+
+    // ===== AUTENTICAÇÃO =====
+    auth.onAuthStateChanged(function(user) {
         if (user) {
             telaLogin.style.display = 'none';
             conteudoSite.style.display = 'block';
-            const email = user.email || 'Usuário';
-            authStatus.textContent = `✅ ${email}`;
+            authStatus.textContent = '✅ ' + (user.email || 'Usuário');
             authStatus.style.background = 'rgba(74, 222, 128, 0.2)';
-            
             if (!DataService._initialized) {
                 DataService.init();
                 initApp();
@@ -808,58 +399,52 @@
         }
     });
 
-    loginBtn.addEventListener('click', async () => {
-        const email = emailInput.value.trim();
-        const senha = senhaInput.value.trim();
-        
+    loginBtn.addEventListener('click', function() {
+        var email = emailInput.value.trim();
+        var senha = senhaInput.value.trim();
         if (!email || !senha) {
             loginErro.textContent = 'Preencha e-mail e senha.';
             loginErro.style.display = 'block';
             return;
         }
-        
         loginErro.style.display = 'none';
         loginBtn.textContent = '⏳ Entrando...';
         loginBtn.disabled = true;
-        
-        try {
-            await auth.signInWithEmailAndPassword(email, senha);
-        } catch (error) {
+        auth.signInWithEmailAndPassword(email, senha).catch(function(error) {
             loginErro.textContent = getMensagemErro(error.code);
             loginErro.style.display = 'block';
             loginBtn.textContent = 'Entrar';
             loginBtn.disabled = false;
-        }
+        });
     });
 
-    cadastrarBtn.addEventListener('click', async () => {
-        const email = prompt('Digite o e-mail do novo usuário:');
+    cadastrarBtn.addEventListener('click', function() {
+        var email = prompt('Digite o e-mail do novo usuário:');
         if (!email) return;
-        const senha = prompt('Digite a senha (mínimo 6 caracteres):');
+        var senha = prompt('Digite a senha (mínimo 6 caracteres):');
         if (!senha || senha.length < 6) {
             alert('A senha deve ter pelo menos 6 caracteres.');
             return;
         }
-        try {
-            await auth.createUserWithEmailAndPassword(email, senha);
-            alert(`✅ Usuário ${email} criado com sucesso!`);
-        } catch (error) {
-            alert(`❌ Erro ao criar usuário: ${getMensagemErro(error.code)}`);
-        }
+        auth.createUserWithEmailAndPassword(email, senha).then(function() {
+            alert('✅ Usuário ' + email + ' criado com sucesso!');
+        }).catch(function(error) {
+            alert('❌ Erro ao criar usuário: ' + getMensagemErro(error.code));
+        });
     });
 
-    document.getElementById('logoutBtn').addEventListener('click', async () => {
-        await auth.signOut();
+    document.getElementById('logoutBtn').addEventListener('click', function() {
+        auth.signOut();
     });
 
     function getMensagemErro(code) {
-        const erros = {
+        var erros = {
             'auth/user-not-found': 'Usuário não encontrado.',
             'auth/wrong-password': 'Senha incorreta.',
             'auth/invalid-email': 'E-mail inválido.',
             'auth/user-disabled': 'Usuário desativado.',
             'auth/too-many-requests': 'Muitas tentativas. Aguarde alguns minutos.',
-            'auth/network-request-failed': 'Erro de rede. Verifique sua conexão.',
+            'auth/network-request-failed': 'Erro de rede.',
             'auth/email-already-in-use': 'Este e-mail já está em uso.'
         };
         return erros[code] || 'Erro ao fazer login. Tente novamente.';
@@ -868,188 +453,236 @@
     // ===== FUNÇÕES GLOBAIS =====
     function escapeHtml(text) {
         if (!text) return '';
-        return text.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m] || m));
+        return text.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
     }
 
     function classificarSeveridade(titulo, resumo, palavrasChave) {
-        const texto = (titulo + ' ' + resumo).toLowerCase();
-        const palavras = palavrasChave.map(p => p.toLowerCase());
-        const encontrou = palavras.some(p => texto.includes(p));
+        var texto = (titulo + ' ' + resumo).toLowerCase();
+        var encontrou = false;
+        for (var i = 0; i < palavrasChave.length; i++) {
+            if (texto.indexOf(palavrasChave[i].toLowerCase()) !== -1) {
+                encontrou = true;
+                break;
+            }
+        }
         if (!encontrou) return { label: 'Informativo', classe: 'info' };
-        const criticas = ['interdição', 'greve', 'acidente', 'enchente', 'vazou', 'paralisação', 'blitz', 'operação', 'PRF'];
-        const temCritica = criticas.some(p => texto.includes(p));
-        if (temCritica) return { label: 'Crítico', classe: 'critico' };
+        var criticas = ['interdição', 'greve', 'acidente', 'enchente', 'vazou', 'paralisação', 'blitz', 'operação', 'PRF'];
+        for (var j = 0; j < criticas.length; j++) {
+            if (texto.indexOf(criticas[j]) !== -1) {
+                return { label: 'Crítico', classe: 'critico' };
+            }
+        }
         return { label: 'Atenção', classe: 'atencao' };
     }
 
     function getPalavrasFrequentes(noticias) {
-        const palavras = {};
-        noticias.forEach(n => {
-            const texto = (n.titulo + ' ' + n.resumo).toLowerCase();
-            const tokens = texto.split(/\s+/).filter(p => p.length > 3 && !['para','com','sem','sobre','pelo','pela','entre','contra','através','porque','quando','como','mais','muito','depois','antes','durante','dentro','fora'].includes(p));
-            tokens.forEach(p => { palavras[p] = (palavras[p] || 0) + 1; });
-        });
-        return Object.entries(palavras).sort((a,b) => b[1] - a[1]).slice(0, 15);
+        var palavras = {};
+        for (var i = 0; i < noticias.length; i++) {
+            var texto = (noticias[i].titulo + ' ' + noticias[i].resumo).toLowerCase();
+            var tokens = texto.split(/\s+/);
+            for (var j = 0; j < tokens.length; j++) {
+                var p = tokens[j];
+                if (p.length > 3 && ['para','com','sem','sobre','pelo','pela','entre','contra','através','porque','quando','como','mais','muito','depois','antes','durante','dentro','fora'].indexOf(p) === -1) {
+                    palavras[p] = (palavras[p] || 0) + 1;
+                }
+            }
+        }
+        var sorted = Object.keys(palavras).sort(function(a, b) { return palavras[b] - palavras[a]; });
+        return sorted.slice(0, 15).map(function(p) { return [p, palavras[p]]; });
     }
 
     // ===== RENDER FEED =====
-    async function renderFeed(noticias, filtroTexto = '', categoriaAtiva = 'todos', palavrasChave, categoriasAtivas) {
-        const feedDiv = document.getElementById('feedNoticias');
+    function renderFeed(noticias, filtroTexto, categoriaAtiva, palavrasChave, categoriasAtivas) {
+        var feedDiv = document.getElementById('feedNoticias');
         if (!feedDiv) return;
 
-        let filtradas = [];
-        for (const n of noticias) {
-            const matchTexto = !filtroTexto.trim() ||
-                (n.titulo + ' ' + n.resumo).toLowerCase().includes(filtroTexto.toLowerCase());
-            const matchCategoria = categoriaAtiva === 'todos' || n.categoria === categoriaAtiva;
-            if (categoriaAtiva !== 'todos' && !categoriasAtivas.includes(categoriaAtiva)) {
+        filtroTexto = filtroTexto || '';
+        categoriaAtiva = categoriaAtiva || 'todos';
+        palavrasChave = palavrasChave || [];
+        categoriasAtivas = categoriasAtivas || [];
+
+        var filtradas = [];
+        for (var i = 0; i < noticias.length; i++) {
+            var n = noticias[i];
+            var matchTexto = !filtroTexto.trim() || (n.titulo + ' ' + n.resumo).toLowerCase().indexOf(filtroTexto.toLowerCase()) !== -1;
+            var matchCategoria = categoriaAtiva === 'todos' || n.categoria === categoriaAtiva;
+            if (categoriaAtiva !== 'todos' && categoriasAtivas.indexOf(categoriaAtiva) === -1) {
                 continue;
             }
-            const matchPalavraChave = palavrasChave.length === 0 || palavrasChave.some(p =>
-                (n.titulo + ' ' + n.resumo).toLowerCase().includes(p.toLowerCase())
-            );
+            var matchPalavraChave = palavrasChave.length === 0 || palavrasChave.some(function(p) {
+                return (n.titulo + ' ' + n.resumo).toLowerCase().indexOf(p.toLowerCase()) !== -1;
+            });
             if (matchTexto && matchCategoria && matchPalavraChave) {
                 filtradas.push(n);
             }
         }
 
         if (filtradas.length === 0) {
-            feedDiv.innerHTML = `<div style="background:white; border-radius:16px; padding:30px; text-align:center; color:#8a9bb0;">📭 Nenhuma notícia</div>`;
+            feedDiv.innerHTML = '<div style="background:white; border-radius:16px; padding:30px; text-align:center; color:#8a9bb0;">📭 Nenhuma notícia</div>';
             return;
         }
 
-        const user = auth.currentUser;
-        let html = '';
-        for (const n of filtradas) {
-            const severidade = classificarSeveridade(n.titulo, n.resumo, palavrasChave);
-            const dataFmt = n.dataPublicacao ? new Date(n.dataPublicacao.seconds * 1000).toLocaleString('pt-BR') : 'Data desconhecida';
-            const lidaPor = n.lidaPor || [];
-            const lida = user ? lidaPor.includes(user.uid) : false;
-            const lidaClass = lida ? 'lida' : '';
-            const reacoes = n.reacoes || {};
+        var user = auth.currentUser;
+        var html = '';
+        for (var j = 0; j < filtradas.length; j++) {
+            var n = filtradas[j];
+            var severidade = classificarSeveridade(n.titulo, n.resumo, palavrasChave);
+            var dataFmt = n.dataPublicacao ? new Date(n.dataPublicacao.seconds * 1000).toLocaleString('pt-BR') : 'Data desconhecida';
+            var lidaPor = n.lidaPor || [];
+            var lida = user ? lidaPor.indexOf(user.uid) !== -1 : false;
+            var lidaClass = lida ? 'lida' : '';
+            var reacoes = n.reacoes || {};
 
-            html += `
-                <div class="card ${lidaClass}" data-id="${n.id}">
-                    <span class="selo ${severidade.classe}">${severidade.label}</span>
-                    <div class="titulo">${escapeHtml(n.titulo)}</div>
-                    <div class="fonte">
-                        📰 ${escapeHtml(n.fonte)} • 🕒 ${dataFmt}
-                        <a href="${n.link}" target="_blank" style="margin-left:auto;">🔗 Ver original</a>
-                    </div>
-                    <div class="resumo">${escapeHtml(n.resumo)}</div>
-                    <div class="acoes">
-                        <button class="emoji-btn" data-emoji="👍">👍 <span class="contador" id="cont-${n.id}-👍">${reacoes['👍'] || 0}</span></button>
-                        <button class="emoji-btn" data-emoji="⚠️">⚠️ <span class="contador" id="cont-${n.id}-⚠️">${reacoes['⚠️'] || 0}</span></button>
-                        <button class="emoji-btn" data-emoji="🔥">🔥 <span class="contador" id="cont-${n.id}-🔥">${reacoes['🔥'] || 0}</span></button>
-                        <button class="btn-acao" onclick="compartilharNoticia('${n.id}')">📤 Compartilhar</button>
-                        <button class="btn-acao toggle-lida" data-id="${n.id}" style="margin-left:auto;">${lida ? '✅ Lida' : '📖 Marcar lida'}</button>
-                    </div>
-                </div>
-            `;
+            html += '<div class="card ' + lidaClass + '" data-id="' + n.id + '">';
+            html += '<span class="selo ' + severidade.classe + '">' + severidade.label + '</span>';
+            html += '<div class="titulo">' + escapeHtml(n.titulo) + '</div>';
+            html += '<div class="fonte">📰 ' + escapeHtml(n.fonte) + ' • 🕒 ' + dataFmt;
+            html += '<a href="' + n.link + '" target="_blank" style="margin-left:auto;">🔗 Ver original</a></div>';
+            html += '<div class="resumo">' + escapeHtml(n.resumo) + '</div>';
+            html += '<div class="acoes">';
+            html += '<button class="emoji-btn" data-emoji="👍">👍 <span class="contador" id="cont-' + n.id + '-👍">' + (reacoes['👍'] || 0) + '</span></button>';
+            html += '<button class="emoji-btn" data-emoji="⚠️">⚠️ <span class="contador" id="cont-' + n.id + '-⚠️">' + (reacoes['⚠️'] || 0) + '</span></button>';
+            html += '<button class="emoji-btn" data-emoji="🔥">🔥 <span class="contador" id="cont-' + n.id + '-🔥">' + (reacoes['🔥'] || 0) + '</span></button>';
+            html += '<button class="btn-acao" onclick="compartilharNoticia(\'' + n.id + '\')">📤 Compartilhar</button>';
+            html += '<button class="btn-acao toggle-lida" data-id="' + n.id + '" style="margin-left:auto;">' + (lida ? '✅ Lida' : '📖 Marcar lida') + '</button>';
+            html += '</div></div>';
         }
-
         feedDiv.innerHTML = html;
 
-        feedDiv.querySelectorAll('.emoji-btn').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const card = btn.closest('.card');
-                const id = card.dataset.id;
-                const emoji = btn.dataset.emoji;
-                await DataService.reagirNoticia(id, emoji);
-                const span = document.getElementById(`cont-${id}-${emoji}`);
-                if (span) {
-                    const current = parseInt(span.innerText) || 0;
-                    span.innerText = current + 1;
-                }
-            });
-        });
+        // Eventos de reação
+        var emojiBtns = feedDiv.querySelectorAll('.emoji-btn');
+        for (var k = 0; k < emojiBtns.length; k++) {
+            (function(btn) {
+                btn.addEventListener('click', function() {
+                    var card = btn.closest('.card');
+                    var id = card.dataset.id;
+                    var emoji = btn.dataset.emoji;
+                    DataService.reagirNoticia(id, emoji);
+                    var span = document.getElementById('cont-' + id + '-' + emoji);
+                    if (span) {
+                        var current = parseInt(span.innerText) || 0;
+                        span.innerText = current + 1;
+                    }
+                });
+            })(emojiBtns[k]);
+        }
 
-        feedDiv.querySelectorAll('.toggle-lida').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const id = btn.dataset.id;
-                await DataService.toggleLida(id);
-                const busca = document.getElementById('buscaInput').value;
-                const ativa = document.querySelector('#filtrosContainer .ativo');
-                const cat = ativa ? ativa.dataset.filtro : 'todos';
-                const config = await DataService.getConfig();
-                const noticiasAtuais = DataService.getNoticias();
-                await renderFeed(noticiasAtuais, busca, cat, config.palavrasChave, config.categoriasAtivas);
-                await atualizarDashboard(noticiasAtuais, config.palavrasChave);
-            });
-        });
+        // Eventos de toggle lida
+        var lidaBtns = feedDiv.querySelectorAll('.toggle-lida');
+        for (var l = 0; l < lidaBtns.length; l++) {
+            (function(btn) {
+                btn.addEventListener('click', function() {
+                    var id = btn.dataset.id;
+                    DataService.toggleLida(id);
+                    var busca = document.getElementById('buscaInput').value;
+                    var ativa = document.querySelector('#filtrosContainer .ativo');
+                    var cat = ativa ? ativa.dataset.filtro : 'todos';
+                    DataService.getConfig().then(function(config) {
+                        var noticiasAtuais = DataService.getNoticias();
+                        renderFeed(noticiasAtuais, busca, cat, config.palavrasChave, config.categoriasAtivas);
+                        atualizarDashboard(noticiasAtuais, config.palavrasChave);
+                    });
+                });
+            })(lidaBtns[l]);
+        }
     }
 
     // ===== DASHBOARD =====
-    async function atualizarDashboard(noticias, palavrasChave) {
-        const total = noticias.length;
-        let criticos = 0, atencao = 0, info = 0;
-        const contagemFontes = {};
+    function atualizarDashboard(noticias, palavrasChave) {
+        var total = noticias.length;
+        var criticos = 0, atencao = 0, info = 0;
+        var contagemFontes = {};
 
-        noticias.forEach(n => {
-            const sev = classificarSeveridade(n.titulo, n.resumo, palavrasChave);
+        for (var i = 0; i < noticias.length; i++) {
+            var n = noticias[i];
+            var sev = classificarSeveridade(n.titulo, n.resumo, palavrasChave);
             if (sev.classe === 'critico') criticos++;
             else if (sev.classe === 'atencao') atencao++;
             else info++;
             contagemFontes[n.fonte] = (contagemFontes[n.fonte] || 0) + 1;
-        });
+        }
 
         document.getElementById('totalCount').textContent = total;
         document.getElementById('criticoCount').textContent = criticos;
         document.getElementById('atencaoCount').textContent = atencao;
         document.getElementById('infoCount').textContent = info;
 
-        const fontesSorted = Object.entries(contagemFontes).sort((a,b) => b[1] - a[1]).slice(0, 5);
-        document.getElementById('topFontes').innerHTML = fontesSorted.map(([nome, qtd]) =>
-            `<div class="fonte-item"><span>${nome}</span><span><strong>${qtd}</strong></span></div>`
-        ).join('') || "<span style='color:#999;'>Nenhuma fonte</span>";
+        var fontesSorted = Object.keys(contagemFontes).sort(function(a, b) { return contagemFontes[b] - contagemFontes[a]; }).slice(0, 5);
+        var topHtml = '';
+        for (var j = 0; j < fontesSorted.length; j++) {
+            var nome = fontesSorted[j];
+            topHtml += '<div class="fonte-item"><span>' + nome + '</span><span><strong>' + contagemFontes[nome] + '</strong></span></div>';
+        }
+        document.getElementById('topFontes').innerHTML = topHtml || "<span style='color:#999;'>Nenhuma fonte</span>";
 
-        const tags = getPalavrasFrequentes(noticias);
-        const sugeridasDiv = document.getElementById('palavrasSugeridas');
+        var tags = getPalavrasFrequentes(noticias);
+        var sugeridasDiv = document.getElementById('palavrasSugeridas');
         if (sugeridasDiv) {
-            const config = await DataService.getConfig();
-            const palavrasAtuais = config.palavrasChave || [];
-            const user = auth.currentUser;
-            const isAdmin = user && user.email === ADMIN_EMAIL;
-            
-            sugeridasDiv.innerHTML = tags.map(([palavra, freq]) => {
-                const jaExiste = palavrasAtuais.includes(palavra);
-                return `<span class="palavra-sugestao">
-                            ${palavra} <span style="color:#6b7a93; font-size:0.65rem;">(${freq})</span>
-                            ${!jaExiste && isAdmin ? `<button class="add-btn" data-palavra="${palavra}">➕</button>` : ''}
-                        </span>`;
-            }).join('');
-            
-            if (isAdmin) {
-                sugeridasDiv.querySelectorAll('.add-btn').forEach(btn => {
-                    btn.addEventListener('click', async () => {
-                        const palavra = btn.dataset.palavra;
-                        await DataService.addPalavraChave(palavra);
-                        await renderizarPalavras();
-                        const busca = document.getElementById('buscaInput').value;
-                        const ativa = document.querySelector('#filtrosContainer .ativo');
-                        const cat = ativa ? ativa.dataset.filtro : 'todos';
-                        const noticiasAtuais = DataService.getNoticias();
-                        const configAtual = await DataService.getConfig();
-                        await renderFeed(noticiasAtuais, busca, cat, configAtual.palavrasChave, configAtual.categoriasAtivas);
-                        await atualizarDashboard(noticiasAtuais, configAtual.palavrasChave);
-                    });
-                });
-            }
+            DataService.getConfig().then(function(config) {
+                var palavrasAtuais = config.palavrasChave || [];
+                var user = auth.currentUser;
+                var isAdmin = user && user.email === ADMIN_EMAIL;
+                var sugHtml = '';
+                for (var k = 0; k < tags.length; k++) {
+                    var palavra = tags[k][0];
+                    var freq = tags[k][1];
+                    var jaExiste = palavrasAtuais.indexOf(palavra) !== -1;
+                    sugHtml += '<span class="palavra-sugestao">' + palavra + ' <span style="color:#6b7a93;font-size:0.65rem;">(' + freq + ')</span>';
+                    if (!jaExiste && isAdmin) {
+                        sugHtml += '<button class="add-btn" data-palavra="' + palavra + '">➕</button>';
+                    }
+                    sugHtml += '</span>';
+                }
+                sugeridasDiv.innerHTML = sugHtml;
+
+                if (isAdmin) {
+                    var addBtns = sugeridasDiv.querySelectorAll('.add-btn');
+                    for (var m = 0; m < addBtns.length; m++) {
+                        (function(btn) {
+                            btn.addEventListener('click', function() {
+                                var palavra = btn.dataset.palavra;
+                                DataService.addPalavraChave(palavra).then(function() {
+                                    renderizarPalavras();
+                                    var busca = document.getElementById('buscaInput').value;
+                                    var ativa = document.querySelector('#filtrosContainer .ativo');
+                                    var cat = ativa ? ativa.dataset.filtro : 'todos';
+                                    var noticiasAtuais = DataService.getNoticias();
+                                    DataService.getConfig().then(function(configAtual) {
+                                        renderFeed(noticiasAtuais, busca, cat, configAtual.palavrasChave, configAtual.categoriasAtivas);
+                                        atualizarDashboard(noticiasAtuais, configAtual.palavrasChave);
+                                    });
+                                });
+                            });
+                        })(addBtns[m]);
+                    }
+                }
+            });
         }
     }
 
     function compartilharNoticia(id) {
-        const noticias = DataService.getNoticias();
-        const noticia = noticias.find(n => n.id === id);
+        var noticias = DataService.getNoticias();
+        var noticia = null;
+        for (var i = 0; i < noticias.length; i++) {
+            if (noticias[i].id === id) {
+                noticia = noticias[i];
+                break;
+            }
+        }
         if (!noticia) {
             alert('Notícia não encontrada.');
             return;
         }
-        const url = noticia.link || '#';
+        var url = noticia.link || '#';
         if (navigator.clipboard) {
-            navigator.clipboard.writeText(url).then(() => {
-                alert('🔗 Link original da notícia copiado! Envie para sua equipe.\n' + url);
-            }).catch(() => {
+            navigator.clipboard.writeText(url).then(function() {
+                alert('🔗 Link original da notícia copiado!\n' + url);
+            }).catch(function() {
                 prompt('Copie o link manualmente:', url);
             });
         } else {
@@ -1058,79 +691,95 @@
     }
 
     // ===== PREFERÊNCIAS =====
-    async function renderizarPalavras() {
-        const config = await DataService.getConfig();
-        const palavras = config.palavrasChave || [];
-        const container = document.getElementById('listaPalavras');
-        const user = auth.currentUser;
-        const isAdmin = user && user.email === ADMIN_EMAIL;
-        const addBtn = document.getElementById('addPalavraBtn');
-        const input = document.getElementById('novaPalavra');
-        const bloqueio = document.getElementById('mensagemBloqueio');
+    function renderizarPalavras() {
+        DataService.getConfig().then(function(config) {
+            var palavras = config.palavrasChave || [];
+            var container = document.getElementById('listaPalavras');
+            var user = auth.currentUser;
+            var isAdmin = user && user.email === ADMIN_EMAIL;
+            var addBtn = document.getElementById('addPalavraBtn');
+            var input = document.getElementById('novaPalavra');
+            var bloqueio = document.getElementById('mensagemBloqueio');
 
-        if (isAdmin) {
-            addBtn.style.display = '';
-            input.style.display = '';
-            bloqueio.style.display = 'none';
-            document.getElementById('palavrasDescricao').textContent = 'Adicione termos para classificar notícias. Você é administrador.';
-        } else {
-            addBtn.style.display = 'none';
-            input.style.display = 'none';
-            bloqueio.style.display = 'block';
-            document.getElementById('palavrasDescricao').textContent = 'Adicione termos para classificar notícias. Apenas administradores podem editar.';
-        }
+            if (isAdmin) {
+                addBtn.style.display = '';
+                input.style.display = '';
+                bloqueio.style.display = 'none';
+                document.getElementById('palavrasDescricao').textContent = 'Adicione termos para classificar notícias. Você é administrador.';
+            } else {
+                addBtn.style.display = 'none';
+                input.style.display = 'none';
+                bloqueio.style.display = 'block';
+                document.getElementById('palavrasDescricao').textContent = 'Adicione termos para classificar notícias. Apenas administradores podem editar.';
+            }
 
-        container.innerHTML = palavras.map(p =>
-            `<span class="item-chip">${p} ${isAdmin ? `<button class="remover" data-palavra="${p}">✕</button>` : ''}</span>`
-        ).join('');
-
-        if (isAdmin) {
-            container.querySelectorAll('.remover').forEach(btn => {
-                btn.addEventListener('click', async () => {
-                    const palavra = btn.dataset.palavra;
-                    await DataService.removePalavraChave(palavra);
-                    await renderizarPalavras();
-                    const busca = document.getElementById('buscaInput').value;
-                    const ativa = document.querySelector('#filtrosContainer .ativo');
-                    const cat = ativa ? ativa.dataset.filtro : 'todos';
-                    const noticiasAtuais = DataService.getNoticias();
-                    const configAtual = await DataService.getConfig();
-                    await renderFeed(noticiasAtuais, busca, cat, configAtual.palavrasChave, configAtual.categoriasAtivas);
-                    await atualizarDashboard(noticiasAtuais, configAtual.palavrasChave);
-                });
-            });
-
-            addBtn.onclick = async () => {
-                const val = input.value.trim().toLowerCase();
-                if (!val) return;
-                const configAtual = await DataService.getConfig();
-                if (configAtual.palavrasChave.includes(val)) {
-                    alert('Essa palavra já está na lista.');
-                    return;
+            var html = '';
+            for (var i = 0; i < palavras.length; i++) {
+                var p = palavras[i];
+                html += '<span class="item-chip">' + p;
+                if (isAdmin) {
+                    html += '<button class="remover" data-palavra="' + p + '">✕</button>';
                 }
-                await DataService.addPalavraChave(val);
-                input.value = '';
-                await renderizarPalavras();
-                const busca = document.getElementById('buscaInput').value;
-                const ativa = document.querySelector('#filtrosContainer .ativo');
-                const cat = ativa ? ativa.dataset.filtro : 'todos';
-                const noticiasAtuais = DataService.getNoticias();
-                const configAtual = await DataService.getConfig();
-                await renderFeed(noticiasAtuais, busca, cat, configAtual.palavrasChave, configAtual.categoriasAtivas);
-                await atualizarDashboard(noticiasAtuais, configAtual.palavrasChave);
-            };
+                html += '</span>';
+            }
+            container.innerHTML = html;
 
-            input.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') addBtn.click();
-            });
-        }
+            if (isAdmin) {
+                var removers = container.querySelectorAll('.remover');
+                for (var j = 0; j < removers.length; j++) {
+                    (function(btn) {
+                        btn.addEventListener('click', function() {
+                            var palavra = btn.dataset.palavra;
+                            DataService.removePalavraChave(palavra).then(function() {
+                                renderizarPalavras();
+                                var busca = document.getElementById('buscaInput').value;
+                                var ativa = document.querySelector('#filtrosContainer .ativo');
+                                var cat = ativa ? ativa.dataset.filtro : 'todos';
+                                var noticiasAtuais = DataService.getNoticias();
+                                DataService.getConfig().then(function(configAtual) {
+                                    renderFeed(noticiasAtuais, busca, cat, configAtual.palavrasChave, configAtual.categoriasAtivas);
+                                    atualizarDashboard(noticiasAtuais, configAtual.palavrasChave);
+                                });
+                            });
+                        });
+                    })(removers[j]);
+                }
 
-        await renderizarCategorias(config);
+                addBtn.onclick = function() {
+                    var val = input.value.trim().toLowerCase();
+                    if (!val) return;
+                    DataService.getConfig().then(function(configAtual) {
+                        if (configAtual.palavrasChave.indexOf(val) !== -1) {
+                            alert('Essa palavra já está na lista.');
+                            return;
+                        }
+                        DataService.addPalavraChave(val).then(function() {
+                            input.value = '';
+                            renderizarPalavras();
+                            var busca = document.getElementById('buscaInput').value;
+                            var ativa = document.querySelector('#filtrosContainer .ativo');
+                            var cat = ativa ? ativa.dataset.filtro : 'todos';
+                            var noticiasAtuais = DataService.getNoticias();
+                            DataService.getConfig().then(function(configAtual) {
+                                renderFeed(noticiasAtuais, busca, cat, configAtual.palavrasChave, configAtual.categoriasAtivas);
+                                atualizarDashboard(noticiasAtuais, configAtual.palavrasChave);
+                            });
+                        });
+                    });
+                };
+
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') addBtn.click();
+                });
+            }
+
+            renderizarCategorias(config);
+        });
     }
 
-    async function renderizarCategorias(config) {
-        const container = document.getElementById('categoriasToggle');
-        const todas = [
+    function renderizarCategorias(config) {
+        var container = document.getElementById('categoriasToggle');
+        var todas = [
             { id: 'clima', label: '🌧️ Clima' },
             { id: 'transito', label: '🚧 Trânsito' },
             { id: 'greve', label: '🚛 Greve' },
@@ -1138,56 +787,66 @@
             { id: 'acidente', label: '⚠️ Acidentes' },
             { id: 'policial', label: '🚔 Policial' }
         ];
-        const ativas = config.categoriasAtivas || [];
-        
-        container.innerHTML = todas.map(cat =>
-            `<label>
-                <input type="checkbox" value="${cat.id}" ${ativas.includes(cat.id) ? 'checked' : ''}>
-                ${cat.label}
-            </label>`
-        ).join('');
+        var ativas = config.categoriasAtivas || [];
 
-        container.querySelectorAll('input[type="checkbox"]').forEach(chk => {
-            chk.addEventListener('change', async () => {
-                let novasAtivas = [];
-                container.querySelectorAll('input[type="checkbox"]:checked').forEach(cb => novasAtivas.push(cb.value));
-                await DataService.setCategoriasAtivas(novasAtivas);
-                atualizarFiltrosRapidos(novasAtivas);
-                const busca = document.getElementById('buscaInput').value;
-                const ativa = document.querySelector('#filtrosContainer .ativo');
-                const cat = ativa ? ativa.dataset.filtro : 'todos';
-                const noticiasAtuais = DataService.getNoticias();
-                const configAtual = await DataService.getConfig();
-                await renderFeed(noticiasAtuais, busca, cat, configAtual.palavrasChave, configAtual.categoriasAtivas);
-                await atualizarDashboard(noticiasAtuais, configAtual.palavrasChave);
-            });
-        });
+        var html = '';
+        for (var i = 0; i < todas.length; i++) {
+            var cat = todas[i];
+            var checked = ativas.indexOf(cat.id) !== -1 ? 'checked' : '';
+            html += '<label><input type="checkbox" value="' + cat.id + '" ' + checked + '> ' + cat.label + '</label>';
+        }
+        container.innerHTML = html;
+
+        var checkboxes = container.querySelectorAll('input[type="checkbox"]');
+        for (var j = 0; j < checkboxes.length; j++) {
+            (function(chk) {
+                chk.addEventListener('change', function() {
+                    var novasAtivas = [];
+                    var allChecked = container.querySelectorAll('input[type="checkbox"]:checked');
+                    for (var k = 0; k < allChecked.length; k++) {
+                        novasAtivas.push(allChecked[k].value);
+                    }
+                    DataService.setCategoriasAtivas(novasAtivas).then(function() {
+                        atualizarFiltrosRapidos(novasAtivas);
+                        var busca = document.getElementById('buscaInput').value;
+                        var ativa = document.querySelector('#filtrosContainer .ativo');
+                        var cat = ativa ? ativa.dataset.filtro : 'todos';
+                        var noticiasAtuais = DataService.getNoticias();
+                        DataService.getConfig().then(function(configAtual) {
+                            renderFeed(noticiasAtuais, busca, cat, configAtual.palavrasChave, configAtual.categoriasAtivas);
+                            atualizarDashboard(noticiasAtuais, configAtual.palavrasChave);
+                        });
+                    });
+                });
+            })(checkboxes[j]);
+        }
     }
 
     function atualizarFiltrosRapidos(categoriasAtivas) {
-        const container = document.getElementById('filtrosContainer');
-        const botoes = container.querySelectorAll('button[data-filtro]');
-        botoes.forEach(btn => {
-            const filtro = btn.dataset.filtro;
-            if (filtro === 'todos') return;
-            if (categoriasAtivas.includes(filtro)) {
+        var container = document.getElementById('filtrosContainer');
+        var botoes = container.querySelectorAll('button[data-filtro]');
+        for (var i = 0; i < botoes.length; i++) {
+            var btn = botoes[i];
+            var filtro = btn.dataset.filtro;
+            if (filtro === 'todos') continue;
+            if (categoriasAtivas.indexOf(filtro) !== -1) {
                 btn.style.display = '';
             } else {
                 btn.style.display = 'none';
                 if (btn.classList.contains('ativo')) {
                     btn.classList.remove('ativo');
-                    const todosBtn = container.querySelector('[data-filtro="todos"]');
+                    var todosBtn = container.querySelector('[data-filtro="todos"]');
                     if (todosBtn) todosBtn.classList.add('ativo');
                 }
             }
-        });
+        }
     }
 
     // ===== MAPA =====
-    let map;
+    var map;
 
     function initMapa(noticias) {
-        const mapaDiv = document.getElementById('mapa');
+        var mapaDiv = document.getElementById('mapa');
         if (!mapaDiv) return;
 
         if (map) {
@@ -1196,22 +855,20 @@
         }
 
         if (!noticias || noticias.length === 0) {
-            mapaDiv.innerHTML = `
-                <div style="display:flex; align-items:center; justify-content:center; height:100%; color:#6b7a93; font-size:0.9rem;">
-                    🗺️ Aguardando notícias...
-                </div>
-            `;
+            mapaDiv.innerHTML = '<div style="display:flex; align-items:center; justify-content:center; height:100%; color:#6b7a93; font-size:0.9rem;">🗺️ Aguardando notícias...</div>';
             return;
         }
 
-        const noticiasComLocalizacao = noticias.filter(n => n.localizacao && n.localizacao.lat);
-        
+        var noticiasComLocalizacao = [];
+        for (var i = 0; i < noticias.length; i++) {
+            var n = noticias[i];
+            if (n.localizacao && n.localizacao.lat) {
+                noticiasComLocalizacao.push(n);
+            }
+        }
+
         if (noticiasComLocalizacao.length === 0) {
-            mapaDiv.innerHTML = `
-                <div style="display:flex; align-items:center; justify-content:center; height:100%; color:#6b7a93; font-size:0.9rem;">
-                    🗺️ Nenhuma notícia com localização disponível
-                </div>
-            `;
+            mapaDiv.innerHTML = '<div style="display:flex; align-items:center; justify-content:center; height:100%; color:#6b7a93; font-size:0.9rem;">🗺️ Nenhuma notícia com localização disponível</div>';
             return;
         }
 
@@ -1220,86 +877,106 @@
             attribution: '© OpenStreetMap'
         }).addTo(map);
 
-        const markers = [];
-        noticiasComLocalizacao.forEach(n => {
-            const dataFmt = n.dataPublicacao ? new Date(n.dataPublicacao.seconds * 1000).toLocaleDateString('pt-BR') : 'Data desconhecida';
-            const popupContent = `
-                <b>${escapeHtml(n.titulo)}</b><br>
-                <span style="font-size:0.8rem;">📍 ${n.localizacao.cidade || 'Localização'}</span><br>
-                <span style="font-size:0.7rem; color:#666;">${escapeHtml(n.fonte)} • ${dataFmt}</span><br>
-                <a href="${n.link}" target="_blank" style="font-size:0.7rem; color:#003da5;">🔗 Ver notícia</a>
-            `;
-            
-            const marker = L.marker([n.localizacao.lat, n.localizacao.lng])
+        var markers = [];
+        for (var j = 0; j < noticiasComLocalizacao.length; j++) {
+            var n = noticiasComLocalizacao[j];
+            var dataFmt = n.dataPublicacao ? new Date(n.dataPublicacao.seconds * 1000).toLocaleDateString('pt-BR') : 'Data desconhecida';
+            var popupContent = '<b>' + escapeHtml(n.titulo) + '</b><br>';
+            popupContent += '<span style="font-size:0.8rem;">📍 ' + (n.localizacao.cidade || 'Localização') + '</span><br>';
+            popupContent += '<span style="font-size:0.7rem; color:#666;">' + escapeHtml(n.fonte) + ' • ' + dataFmt + '</span><br>';
+            popupContent += '<a href="' + n.link + '" target="_blank" style="font-size:0.7rem; color:#003da5;">🔗 Ver notícia</a>';
+
+            var marker = L.marker([n.localizacao.lat, n.localizacao.lng])
                 .addTo(map)
                 .bindPopup(popupContent);
             markers.push(marker);
-        });
+        }
 
         if (markers.length > 1) {
-            const group = L.featureGroup(markers);
+            var group = L.featureGroup(markers);
             map.fitBounds(group.getBounds().pad(0.2));
         } else if (markers.length === 1) {
             map.setZoom(10);
         }
 
-        setTimeout(() => { if (map) map.invalidateSize(); }, 300);
+        setTimeout(function() { if (map) map.invalidateSize(); }, 300);
     }
 
     // ===== INICIALIZAÇÃO =====
-    async function initApp() {
-        const configAtual = await DataService.getConfig();
-        await renderizarPalavras();
-        atualizarFiltrosRapidos(configAtual.categoriasAtivas);
+    function initApp() {
+        DataService.getConfig().then(function(configAtual) {
+            renderizarPalavras();
+            atualizarFiltrosRapidos(configAtual.categoriasAtivas);
 
-        DataService.onChange(async (noticias) => {
-            const busca = document.getElementById('buscaInput').value;
-            const ativa = document.querySelector('#filtrosContainer .ativo');
-            const cat = ativa ? ativa.dataset.filtro : 'todos';
-            const config = await DataService.getConfig();
-            await renderFeed(noticias, busca, cat, config.palavrasChave, config.categoriasAtivas);
-            await atualizarDashboard(noticias, config.palavrasChave);
+            DataService.onChange(function(noticias) {
+                var busca = document.getElementById('buscaInput').value;
+                var ativa = document.querySelector('#filtrosContainer .ativo');
+                var cat = ativa ? ativa.dataset.filtro : 'todos';
+                DataService.getConfig().then(function(config) {
+                    renderFeed(noticias, busca, cat, config.palavrasChave, config.categoriasAtivas);
+                    atualizarDashboard(noticias, config.palavrasChave);
+                    initMapa(noticias);
+                });
+            });
+
+            var noticias = DataService.getNoticias();
+            renderFeed(noticias, '', 'todos', configAtual.palavrasChave, configAtual.categoriasAtivas);
+            atualizarDashboard(noticias, configAtual.palavrasChave);
             initMapa(noticias);
-        });
 
-        const noticias = DataService.getNoticias();
-        await renderFeed(noticias, '', 'todos', configAtual.palavrasChave, configAtual.categoriasAtivas);
-        await atualizarDashboard(noticias, configAtual.palavrasChave);
-        initMapa(noticias);
-
-        document.getElementById('buscaInput').addEventListener('input', async (e) => {
-            const ativa = document.querySelector('#filtrosContainer .ativo');
-            const cat = ativa ? ativa.dataset.filtro : 'todos';
-            const noticiasAtuais = DataService.getNoticias();
-            const config = await DataService.getConfig();
-            await renderFeed(noticiasAtuais, e.target.value, cat, config.palavrasChave, config.categoriasAtivas);
-        });
-
-        document.querySelectorAll('#filtrosContainer button').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                document.querySelectorAll('#filtrosContainer button').forEach(b => b.classList.remove('ativo'));
-                btn.classList.add('ativo');
-                const categoria = btn.dataset.filtro;
-                const busca = document.getElementById('buscaInput').value;
-                const noticiasAtuais = DataService.getNoticias();
-                const config = await DataService.getConfig();
-                await renderFeed(noticiasAtuais, busca, categoria, config.palavrasChave, config.categoriasAtivas);
+            document.getElementById('buscaInput').addEventListener('input', function(e) {
+                var ativa = document.querySelector('#filtrosContainer .ativo');
+                var cat = ativa ? ativa.dataset.filtro : 'todos';
+                var noticiasAtuais = DataService.getNoticias();
+                DataService.getConfig().then(function(config) {
+                    renderFeed(noticiasAtuais, e.target.value, cat, config.palavrasChave, config.categoriasAtivas);
+                });
             });
-        });
 
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('ativo'));
-                btn.classList.add('ativo');
-                const tab = btn.dataset.tab;
-                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('ativo'));
-                document.getElementById('tab-' + tab).classList.add('ativo');
-                if (tab === 'noticias') {
-                    setTimeout(() => { if (map) map.invalidateSize(); }, 200);
-                }
-            });
+            var filtrosBtns = document.querySelectorAll('#filtrosContainer button');
+            for (var i = 0; i < filtrosBtns.length; i++) {
+                (function(btn) {
+                    btn.addEventListener('click', function() {
+                        var allBtns = document.querySelectorAll('#filtrosContainer button');
+                        for (var j = 0; j < allBtns.length; j++) {
+                            allBtns[j].classList.remove('ativo');
+                        }
+                        btn.classList.add('ativo');
+                        var categoria = btn.dataset.filtro;
+                        var busca = document.getElementById('buscaInput').value;
+                        var noticiasAtuais = DataService.getNoticias();
+                        DataService.getConfig().then(function(config) {
+                            renderFeed(noticiasAtuais, busca, categoria, config.palavrasChave, config.categoriasAtivas);
+                        });
+                    });
+                })(filtrosBtns[i]);
+            }
+
+            var tabBtns = document.querySelectorAll('.tab-btn');
+            for (var k = 0; k < tabBtns.length; k++) {
+                (function(btn) {
+                    btn.addEventListener('click', function() {
+                        var allTabs = document.querySelectorAll('.tab-btn');
+                        for (var l = 0; l < allTabs.length; l++) {
+                            allTabs[l].classList.remove('ativo');
+                        }
+                        btn.classList.add('ativo');
+                        var tab = btn.dataset.tab;
+                        var allContents = document.querySelectorAll('.tab-content');
+                        for (var m = 0; m < allContents.length; m++) {
+                            allContents[m].classList.remove('ativo');
+                        }
+                        document.getElementById('tab-' + tab).classList.add('ativo');
+                        if (tab === 'noticias') {
+                            setTimeout(function() { if (map) map.invalidateSize(); }, 200);
+                        }
+                    });
+                })(tabBtns[k]);
+            }
         });
     }
 </script>
+</body>
+</html>
 </body>
 </html>
