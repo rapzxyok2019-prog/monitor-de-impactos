@@ -74,7 +74,6 @@
         }
         .logout-btn:hover { background: rgba(255,255,255,0.25); }
 
-        /* ===== TELA DE LOGIN ===== */
         #telaLogin {
             max-width: 400px;
             margin: 60px auto;
@@ -515,11 +514,9 @@
 <body>
 <div class="container">
 
-    <!-- ===== TELA DE LOGIN ===== -->
     <div id="telaLogin">
         <h2>🚛 Monitor de Impactos</h2>
         <p class="subtitle">Faça login para acessar o sistema</p>
-        
         <div>
             <input type="email" id="emailInput" placeholder="E-mail">
             <input type="password" id="senhaInput" placeholder="Senha">
@@ -529,9 +526,7 @@
         </div>
     </div>
 
-    <!-- ===== CONTEÚDO PRINCIPAL ===== -->
     <div class="conteudo-site" id="conteudoSite">
-
         <header>
             <div>
                 <h1>🚛 Monitor <span>| PepsiCo</span></h1>
@@ -548,7 +543,6 @@
             <button class="tab-btn" data-tab="preferencias">⚙️ Preferências</button>
         </div>
 
-        <!-- ===== ABA NOTÍCIAS ===== -->
         <div id="tab-noticias" class="tab-content ativo">
             <div class="dashboard" id="dashboardMetricas">
                 <div class="card-metrica total"><span class="icone">📰</span><div class="numero" id="totalCount">0</div><div class="rotulo">Total</div></div>
@@ -583,7 +577,6 @@
             </div>
         </div>
 
-        <!-- ===== ABA PREFERÊNCIAS ===== -->
         <div id="tab-preferencias" class="tab-content">
             <div class="config-section">
                 <h3>🔑 Palavras-chave</h3>
@@ -631,7 +624,7 @@
     const auth = firebase.auth();
 
     // ===== ADMINISTRADOR (substitua pelo seu e-mail) =====
-    const ADMIN_EMAIL = "admin@monitor.com"; // ⚠️ SUBSTITUA PELO SEU E-MAIL
+    const ADMIN_EMAIL = "SEU_EMAIL_AQUI"; // ⚠️ SUBSTITUA PELO SEU E-MAIL
 
     // ===== DATA SERVICE =====
     const DataService = {
@@ -657,7 +650,6 @@
 
         getNoticias() { return this._noticias; },
 
-        // ===== LIDA GLOBAL (Firestore) =====
         async isLida(id) {
             try {
                 const doc = await db.collection('noticias').doc(id).get();
@@ -713,7 +705,6 @@
             }
         },
 
-        // ===== CONFIGURAÇÕES (Firestore) =====
         async getConfig() {
             try {
                 const doc = await db.collection('configuracoes').doc('geral').get();
@@ -724,7 +715,6 @@
                         categoriasAtivas: data.categoriasAtivas || ['clima', 'transito', 'greve', 'fabrica', 'acidente', 'policial']
                     };
                 } else {
-                    // Cria o documento padrão
                     await db.collection('configuracoes').doc('geral').set({
                         palavrasChave: ['interdição', 'greve', 'acidente', 'enchente', 'blitz', 'operação', 'PRF'],
                         categoriasAtivas: ['clima', 'transito', 'greve', 'fabrica', 'acidente', 'policial']
@@ -783,7 +773,7 @@
         }
     };
 
-    // ===== AUTENTICAÇÃO COM E-MAIL/SENHA =====
+    // ===== AUTENTICAÇÃO =====
     const telaLogin = document.getElementById('telaLogin');
     const conteudoSite = document.getElementById('conteudoSite');
     const emailInput = document.getElementById('emailInput');
@@ -793,7 +783,6 @@
     const loginErro = document.getElementById('loginErro');
     const authStatus = document.getElementById('authStatus');
 
-    // Login com Enter
     emailInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') loginBtn.click(); });
     senhaInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') loginBtn.click(); });
 
@@ -807,7 +796,6 @@
             
             if (!DataService._initialized) {
                 DataService.init();
-                // Inicializa a interface após login
                 initApp();
             }
         } else {
@@ -909,7 +897,6 @@
         const feedDiv = document.getElementById('feedNoticias');
         if (!feedDiv) return;
 
-        // Filtra as notícias
         let filtradas = [];
         for (const n of noticias) {
             const matchTexto = !filtroTexto.trim() ||
@@ -932,7 +919,6 @@
         }
 
         const user = auth.currentUser;
-
         let html = '';
         for (const n of filtradas) {
             const severidade = classificarSeveridade(n.titulo, n.resumo, palavrasChave);
@@ -964,7 +950,6 @@
 
         feedDiv.innerHTML = html;
 
-        // Eventos de reação
         feedDiv.querySelectorAll('.emoji-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const card = btn.closest('.card');
@@ -979,12 +964,10 @@
             });
         });
 
-        // Eventos de toggle lida (agora global)
         feedDiv.querySelectorAll('.toggle-lida').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const id = btn.dataset.id;
                 await DataService.toggleLida(id);
-                // Re-renderiza tudo para atualizar os estados
                 const busca = document.getElementById('buscaInput').value;
                 const ativa = document.querySelector('#filtrosContainer .ativo');
                 const cat = ativa ? ativa.dataset.filtro : 'todos';
@@ -1020,13 +1003,13 @@
             `<div class="fonte-item"><span>${nome}</span><span><strong>${qtd}</strong></span></div>`
         ).join('') || "<span style='color:#999;'>Nenhuma fonte</span>";
 
-        // Palavras sugeridas
         const tags = getPalavrasFrequentes(noticias);
         const sugeridasDiv = document.getElementById('palavrasSugeridas');
         if (sugeridasDiv) {
             const config = await DataService.getConfig();
             const palavrasAtuais = config.palavrasChave || [];
-            const isAdmin = auth.currentUser && auth.currentUser.email === ADMIN_EMAIL;
+            const user = auth.currentUser;
+            const isAdmin = user && user.email === ADMIN_EMAIL;
             
             sugeridasDiv.innerHTML = tags.map(([palavra, freq]) => {
                 const jaExiste = palavrasAtuais.includes(palavra);
@@ -1055,7 +1038,6 @@
         }
     }
 
-    // ===== COMPARTILHAR (agora copia o link original da notícia) =====
     function compartilharNoticia(id) {
         const noticias = DataService.getNoticias();
         const noticia = noticias.find(n => n.id === id);
@@ -1063,7 +1045,6 @@
             alert('Notícia não encontrada.');
             return;
         }
-        // Copia o link original da notícia (não o link do site)
         const url = noticia.link || '#';
         if (navigator.clipboard) {
             navigator.clipboard.writeText(url).then(() => {
@@ -1087,7 +1068,6 @@
         const input = document.getElementById('novaPalavra');
         const bloqueio = document.getElementById('mensagemBloqueio');
 
-        // Mostra/oculta controles baseado no admin
         if (isAdmin) {
             addBtn.style.display = '';
             input.style.display = '';
@@ -1100,12 +1080,10 @@
             document.getElementById('palavrasDescricao').textContent = 'Adicione termos para classificar notícias. Apenas administradores podem editar.';
         }
 
-        // Renderiza as palavras
         container.innerHTML = palavras.map(p =>
             `<span class="item-chip">${p} ${isAdmin ? `<button class="remover" data-palavra="${p}">✕</button>` : ''}</span>`
         ).join('');
 
-        // Eventos de remover (apenas admin)
         if (isAdmin) {
             container.querySelectorAll('.remover').forEach(btn => {
                 btn.addEventListener('click', async () => {
@@ -1122,7 +1100,6 @@
                 });
             });
 
-            // Adicionar palavra
             addBtn.onclick = async () => {
                 const val = input.value.trim().toLowerCase();
                 if (!val) return;
@@ -1148,7 +1125,6 @@
             });
         }
 
-        // Categorias
         await renderizarCategorias(config);
     }
 
@@ -1272,36 +1248,33 @@
 
     // ===== INICIALIZAÇÃO =====
     async function initApp() {
-        const config = await DataService.getConfig();
+        const configAtual = await DataService.getConfig();
         await renderizarPalavras();
-        atualizarFiltrosRapidos(config.categoriasAtivas);
+        atualizarFiltrosRapidos(configAtual.categoriasAtivas);
 
         DataService.onChange(async (noticias) => {
             const busca = document.getElementById('buscaInput').value;
             const ativa = document.querySelector('#filtrosContainer .ativo');
             const cat = ativa ? ativa.dataset.filtro : 'todos';
-            const configAtual = await DataService.getConfig();
-            await renderFeed(noticias, busca, cat, configAtual.palavrasChave, configAtual.categoriasAtivas);
-            await atualizarDashboard(noticias, configAtual.palavrasChave);
+            const config = await DataService.getConfig();
+            await renderFeed(noticias, busca, cat, config.palavrasChave, config.categoriasAtivas);
+            await atualizarDashboard(noticias, config.palavrasChave);
             initMapa(noticias);
         });
 
         const noticias = DataService.getNoticias();
-        const configAtual = await DataService.getConfig();
         await renderFeed(noticias, '', 'todos', configAtual.palavrasChave, configAtual.categoriasAtivas);
         await atualizarDashboard(noticias, configAtual.palavrasChave);
         initMapa(noticias);
 
-        // Eventos de busca
         document.getElementById('buscaInput').addEventListener('input', async (e) => {
             const ativa = document.querySelector('#filtrosContainer .ativo');
             const cat = ativa ? ativa.dataset.filtro : 'todos';
             const noticiasAtuais = DataService.getNoticias();
-            const configAtual = await DataService.getConfig();
-            await renderFeed(noticiasAtuais, e.target.value, cat, configAtual.palavrasChave, configAtual.categoriasAtivas);
+            const config = await DataService.getConfig();
+            await renderFeed(noticiasAtuais, e.target.value, cat, config.palavrasChave, config.categoriasAtivas);
         });
 
-        // Eventos de filtros
         document.querySelectorAll('#filtrosContainer button').forEach(btn => {
             btn.addEventListener('click', async () => {
                 document.querySelectorAll('#filtrosContainer button').forEach(b => b.classList.remove('ativo'));
@@ -1309,12 +1282,11 @@
                 const categoria = btn.dataset.filtro;
                 const busca = document.getElementById('buscaInput').value;
                 const noticiasAtuais = DataService.getNoticias();
-                const configAtual = await DataService.getConfig();
-                await renderFeed(noticiasAtuais, busca, categoria, configAtual.palavrasChave, configAtual.categoriasAtivas);
+                const config = await DataService.getConfig();
+                await renderFeed(noticiasAtuais, busca, categoria, config.palavrasChave, config.categoriasAtivas);
             });
         });
 
-        // Abas
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('ativo'));
@@ -1328,8 +1300,6 @@
             });
         });
     }
-
-    // Inicialização é chamada pelo onAuthStateChanged
 </script>
 </body>
 </html>
