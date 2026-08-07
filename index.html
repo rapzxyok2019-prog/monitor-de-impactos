@@ -101,6 +101,8 @@
         .config-section button { background:#003da5; color:white; border:none; padding:6px 16px; border-radius:40px; font-size:0.75rem; font-weight:500; cursor:pointer; transition:background 0.15s ease; font-family:inherit; }
         .config-section button:hover { background:#002d7a; }
         .config-section button:disabled { opacity:0.5; cursor:not-allowed; }
+        .config-section button.danger { background:#dc2626; }
+        .config-section button.danger:hover { background:#b91c1c; }
         .lista-itens { display:flex; flex-wrap:wrap; gap:5px; margin-top:10px; }
         .item-chip { background:#f0f3f9; padding:3px 12px; border-radius:40px; font-size:0.75rem; display:inline-flex; align-items:center; gap:6px; font-weight:500; }
         .item-chip .remover { background:none; border:none; color:#991b1b; cursor:pointer; font-weight:700; font-size:0.8rem; line-height:1; padding:0 2px; }
@@ -111,6 +113,9 @@
         .palavra-sugestao .add-btn { background:none; border:none; color:#003da5; cursor:pointer; font-weight:700; font-size:0.9rem; line-height:1; padding:0 2px; }
         .palavra-sugestao .add-btn:hover { color:#002d7a; }
         .mensagem-bloqueio { color:#6b7a93; font-size:0.8rem; margin-top:8px; padding:8px 12px; background:#f0f3f9; border-radius:8px; text-align:center; }
+        #secaoApagar { border: 2px solid #dc2626; margin-top: 20px; }
+        #secaoApagar h3 { color: #dc2626; }
+        #apagarStatus { margin-top: 8px; font-size: 0.85rem; display: none; }
         footer { text-align:center; font-size:0.6rem; color:#8a9bb0; margin-top:24px; padding-top:12px; border-top:1px solid #e2e6ee; }
         @media (max-width:480px) { body{ padding:8px; } header{ padding:10px 14px; } header h1{ font-size:1rem; } .tab-btn{ font-size:0.65rem; padding:6px 8px; } .card{ padding:10px; } #mapa{ height:200px; } #telaLogin{ margin:30px 16px; padding:20px; } }
     </style>
@@ -201,6 +206,16 @@
                 <h3>📌 Categorias ativas</h3>
                 <div class="toggle-group" id="categoriasToggle"></div>
             </div>
+
+            <!-- ÁREA DO ADMINISTRADOR - APAGAR NOTÍCIAS -->
+            <div class="config-section" id="secaoApagar" style="border: 2px solid #dc2626; display: none; margin-top: 20px;">
+                <h3 style="color: #dc2626;">⚠️ Área do Administrador</h3>
+                <p style="color: #6b7a93; font-size: 0.8rem;">Apague todas as notícias do banco de dados. Esta ação é irreversível!</p>
+                <button id="apagarNoticiasBtn" class="danger" style="background: #dc2626; color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 600; cursor: pointer; font-family: inherit; margin-top: 8px;">
+                    🗑️ Apagar todas as notícias
+                </button>
+                <div id="apagarStatus" style="margin-top: 8px; font-size: 0.85rem; display: none;"></div>
+            </div>
         </div>
         <footer>✅ Lidas compartilhadas • Reações persistem no banco</footer>
     </div>
@@ -225,7 +240,7 @@
     const auth = firebase.auth();
 
     // ===== ADMINISTRADOR =====
-    const ADMIN_EMAIL = "admin@monitor.com"; // ⚠️ SUBSTITUA PELO SEU E-MAIL
+    const ADMIN_EMAIL = "SEU_EMAIL_AQUI"; // ⚠️ SUBSTITUA PELO SEU E-MAIL
 
     // ===== ELEMENTOS DA TELA =====
     const telaLogin = document.getElementById('telaLogin');
@@ -537,6 +552,7 @@
             var lida = user ? lidaPor.indexOf(user.uid) !== -1 : false;
             var lidaClass = lida ? 'lida' : '';
             var reacoes = n.reacoes || {};
+            var totalVistos = lidaPor.length;
 
             html += '<div class="card ' + lidaClass + '" data-id="' + n.id + '">';
             html += '<span class="selo ' + severidade.classe + '">' + severidade.label + '</span>';
@@ -549,7 +565,11 @@
             html += '<button class="emoji-btn" data-emoji="⚠️">⚠️ <span class="contador" id="cont-' + n.id + '-⚠️">' + (reacoes['⚠️'] || 0) + '</span></button>';
             html += '<button class="emoji-btn" data-emoji="🔥">🔥 <span class="contador" id="cont-' + n.id + '-🔥">' + (reacoes['🔥'] || 0) + '</span></button>';
             html += '<button class="btn-acao" onclick="compartilharNoticia(\'' + n.id + '\')">📤 Compartilhar</button>';
-            html += '<button class="btn-acao toggle-lida" data-id="' + n.id + '" style="margin-left:auto;">' + (lida ? '✅ Lida' : '📖 Marcar lida') + '</button>';
+            // Contador de vistos
+            html += '<div style="display:flex; align-items:center; gap:6px; margin-left:auto;">';
+            html += '<span style="font-size:0.65rem; color:#6b7a93;">👁️ ' + (totalVistos > 0 ? totalVistos : '') + '</span>';
+            html += '<button class="btn-acao toggle-lida" data-id="' + n.id + '">' + (lida ? '✅ Lida' : '📖 Marcar lida') + '</button>';
+            html += '</div>';
             html += '</div></div>';
         }
         feedDiv.innerHTML = html;
@@ -688,6 +708,75 @@
         } else {
             prompt('Copie o link manualmente:', url);
         }
+    }
+
+    // ===== APAGAR NOTÍCIAS (APENAS ADMIN) =====
+    function initApagarNoticias() {
+        var user = auth.currentUser;
+        if (!user) return;
+        
+        var isAdmin = user.email === ADMIN_EMAIL;
+        var secao = document.getElementById('secaoApagar');
+        var btn = document.getElementById('apagarNoticiasBtn');
+        var status = document.getElementById('apagarStatus');
+        
+        if (isAdmin) {
+            secao.style.display = 'block';
+            
+            btn.addEventListener('click', function() {
+                if (confirm('⚠️ Tem certeza que deseja APAGAR TODAS as notícias?\n\nEsta ação é irreversível e não pode ser desfeita.')) {
+                    if (confirm('Última confirmação: Apagar TUDO?')) {
+                        status.style.display = 'block';
+                        status.textContent = '⏳ Apagando notícias...';
+                        status.style.color = '#d97706';
+                        btn.disabled = true;
+                        
+                        apagarTodasNoticias()
+                            .then(function(total) {
+                                status.textContent = '✅ ' + total + ' notícias apagadas com sucesso!';
+                                status.style.color = '#16a34a';
+                                btn.disabled = false;
+                            })
+                            .catch(function(error) {
+                                status.textContent = '❌ Erro ao apagar: ' + error.message;
+                                status.style.color = '#dc2626';
+                                btn.disabled = false;
+                            });
+                    }
+                }
+            });
+        } else {
+            secao.style.display = 'none';
+        }
+    }
+
+    function apagarTodasNoticias() {
+        return new Promise(function(resolve, reject) {
+            var collectionRef = db.collection('noticias');
+            
+            collectionRef.get()
+                .then(function(snapshot) {
+                    if (snapshot.empty) {
+                        resolve(0);
+                        return;
+                    }
+                    
+                    var batch = db.batch();
+                    var count = 0;
+                    
+                    snapshot.forEach(function(doc) {
+                        batch.delete(doc.ref);
+                        count++;
+                    });
+                    
+                    return batch.commit().then(function() {
+                        resolve(count);
+                    });
+                })
+                .catch(function(error) {
+                    reject(error);
+                });
+        });
     }
 
     // ===== PREFERÊNCIAS =====
@@ -923,6 +1012,9 @@
             renderFeed(noticias, '', 'todos', configAtual.palavrasChave, configAtual.categoriasAtivas);
             atualizarDashboard(noticias, configAtual.palavrasChave);
             initMapa(noticias);
+            
+            // Inicializa o botão de apagar notícias
+            initApagarNoticias();
 
             document.getElementById('buscaInput').addEventListener('input', function(e) {
                 var ativa = document.querySelector('#filtrosContainer .ativo');
@@ -976,7 +1068,5 @@
         });
     }
 </script>
-</body>
-</html>
 </body>
 </html>
