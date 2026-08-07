@@ -2,7 +2,7 @@
 // SCRIPT DE COLETA DE NOTÍCIAS (GitHub Actions)
 // ============================================================
 
-const { initializeApp, cert } = require('firebase-admin/app');
+const { initializeApp } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 const Parser = require('rss-parser');
 
@@ -10,21 +10,34 @@ const Parser = require('rss-parser');
 const DIAS_PADRAO = 7;
 const DIAS_CRITICO = 15;
 
-const PALAVRAS_CRITICAS = [
-  'interdição', 'greve', 'acidente', 'enchente', 
-  'vazou', 'paralisação', 'blitz', 'operação', 'PRF'
-];
-
 // ===== FONTES DE NOTÍCIAS =====
 const FONTES = [
   { nome: 'G1 - Minas Gerais', url: 'https://g1.globo.com/rss/g1/mg/minas-gerais/', categoria: 'transito' },
   { nome: 'G1 - São Paulo', url: 'https://g1.globo.com/rss/g1/sp/sao-paulo/', categoria: 'transito' },
   { nome: 'CNN Brasil', url: 'https://www.cnnbrasil.com.br/feed/', categoria: 'geral' },
-  { nome: 'Agência Brasil', url: 'https://agenciabrasil.ebc.com.br/feed', categoria: 'policial' },
+  { nome: 'Agência Brasil', url: 'https://agenciabrasil.ebc.com.br/ultimas/feed', categoria: 'policial' },
+  { nome: 'Band - Geral', url: 'https://band.com.br/feed/noticias', categoria: 'geral' },
   { nome: 'Folha de SP', url: 'https://feeds.folha.uol.com.br/folha/emcimadahora/rss091.xml', categoria: 'geral' },
-  { nome: 'JP News', url: 'https://jovempan.com.br/feed', categoria: 'geral' },
-  { nome: 'Band', url: 'https://band.com.br/feed', categoria: 'geral' }
+  { nome: 'JP News', url: 'https://jovempan.com.br/feed', categoria: 'geral' }
 ];
+
+// ===== FUNÇÃO: CARREGAR PALAVRAS-CHAVE DO FIRESTORE =====
+async function carregarPalavrasChave(db) {
+  try {
+    const doc = await db.collection('configuracoes').doc('geral').get();
+    if (doc.exists) {
+      const palavras = doc.data().palavrasChave || [];
+      console.log(`📋 Palavras-chave carregadas: ${palavras.join(', ')}`);
+      return palavras;
+    } else {
+      console.log('⚠️ Documento de configurações não encontrado. Usando lista padrão.');
+      return ['greve', 'acidente', 'chuva', 'interdição', 'PRF'];
+    }
+  } catch (error) {
+    console.error('❌ Erro ao carregar palavras-chave:', error);
+    return ['greve', 'acidente', 'chuva', 'interdição', 'PRF'];
+  }
+}
 
 // ===== FUNÇÃO: CALCULAR EXPIRAÇÃO =====
 function calcularDataExpiracao(titulo, resumo, categoria) {
@@ -34,7 +47,9 @@ function calcularDataExpiracao(titulo, resumo, categoria) {
 
   if (categoria === 'policial' || categoria === 'acidente') dias = 15;
   else if (categoria === 'greve') dias = 20;
-  if (PALAVRAS_CRITICAS.some(p => texto.includes(p))) dias = DIAS_CRITICO;
+  if (['interdição', 'greve', 'acidente', 'enchente', 'vazou', 'paralisação', 'blitz', 'operação', 'PRF'].some(p => texto.includes(p))) {
+    dias = DIAS_CRITICO;
+  }
 
   const expira = new Date(agora);
   expira.setDate(expira.getDate() + dias);
@@ -45,25 +60,35 @@ function calcularDataExpiracao(titulo, resumo, categoria) {
 function detectarCategoria(titulo, resumo) {
   const texto = (titulo + ' ' + resumo).toLowerCase();
   if (texto.includes('greve') || texto.includes('paralisação')) return 'greve';
-  if (texto.includes('chuva') || texto.includes('calor') || texto.includes('clima')) return 'clima';
-  if (texto.includes('interdição') || texto.includes('trânsito') || texto.includes('rodovia')) return 'transito';
-  if (texto.includes('acidente') || texto.includes('colisão')) return 'acidente';
-  if (texto.includes('PRF') || texto.includes('policial') || texto.includes('blitz')) return 'policial';
+  if (texto.includes('chuva') || texto.includes('calor') || texto.includes('clima') || texto.includes('temperatura')) return 'clima';
+  if (texto.includes('interdição') || texto.includes('trânsito') || texto.includes('rodovia') || texto.includes('br-')) return 'transito';
+  if (texto.includes('acidente') || texto.includes('colisão') || texto.includes('capotamento')) return 'acidente';
+  if (texto.includes('PRF') || texto.includes('policial') || texto.includes('blitz') || texto.includes('operação')) return 'policial';
+  if (texto.includes('fábrica') || texto.includes('produção') || texto.includes('indústria')) return 'fabrica';
   return 'geral';
+}
+
+// ===== FUNÇÃO: VERIFICAR RELEVÂNCIA =====
+function isRelevante(titulo, resumo, palavrasChave) {
+  const texto = (titulo + ' ' + resumo).toLowerCase();
+  return palavrasChave.some(palavra => texto.includes(palavra.toLowerCase()));
 }
 
 // ===== FUNÇÃO PRINCIPAL =====
 async function coletarNoticias() {
   console.log('📡 Iniciando coleta de notícias...');
 
-  // ===== INICIALIZA O FIREBASE ADMIN =====
-  // O GitHub Actions já define a variável GOOGLE_APPLICATION_CREDENTIALS
-  // apontando para o arquivo serviceAccount.json que criamos.
-  // O SDK do Firebase Admin vai detectar automaticamente.
   initializeApp();
-
   const parser = new Parser();
   const db = getFirestore();
+
+  // Carrega as palavras-chave do Firestore
+  const palavrasChave = await carregarPalavrasChave(db);
+  if (palavrasChave.length === 0) {
+    console.warn('⚠️ Nenhuma palavra-chave configurada. Nenhuma notícia será coletada.');
+    return 0;
+  }
+
   let total = 0;
 
   for (const fonte of FONTES) {
@@ -78,16 +103,26 @@ async function coletarNoticias() {
         const link = item.link || '#';
         const dataPub = item.pubDate ? new Date(item.pubDate) : new Date();
 
+        // === FILTRO DE RELEVÂNCIA ===
+        if (!isRelevante(titulo, resumo, palavrasChave)) {
+          console.log(`⏭️ Ignorando notícia irrelevante: "${titulo.slice(0, 30)}..."`);
+          continue;
+        }
+
         // Verifica duplicata
         const existing = await db.collection('noticias').where('link', '==', link).get();
-        if (!existing.empty) continue;
+        if (!existing.empty) {
+          console.log(`⏭️ Notícia já existe: "${titulo.slice(0, 30)}..."`);
+          continue;
+        }
 
         const categoria = fonte.categoria !== 'geral' ? fonte.categoria : detectarCategoria(titulo, resumo);
         const expiracao = calcularDataExpiracao(titulo, resumo, categoria);
 
         const texto = (titulo + ' ' + resumo).toLowerCase();
         const palavrasEncontradas = [];
-        PALAVRAS_CRITICAS.forEach(p => {
+        const criticas = ['interdição', 'greve', 'acidente', 'enchente', 'vazou', 'paralisação', 'blitz', 'operação', 'PRF'];
+        criticas.forEach(p => {
           if (texto.includes(p)) palavrasEncontradas.push(p);
         });
         if (palavrasEncontradas.length === 0) {
