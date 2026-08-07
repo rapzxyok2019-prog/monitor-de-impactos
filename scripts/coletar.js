@@ -44,15 +44,29 @@ const PALAVRAS_CHAVE_BLOQUEIO = [
   'celebridade', 'famoso', 'artista', 'novela', 'entretenimento'
 ];
 
-// ===== FONTES DE NOTÍCIAS =====
 const FONTES = [
+  // ===== FONTES EXISTENTES =====
   { nome: 'G1 - Minas Gerais', url: 'https://g1.globo.com/rss/g1/mg/minas-gerais/', categoria: 'transito' },
   { nome: 'G1 - São Paulo', url: 'https://g1.globo.com/rss/g1/sp/sao-paulo/', categoria: 'transito' },
   { nome: 'CNN Brasil', url: 'https://www.cnnbrasil.com.br/feed/', categoria: 'geral' },
   { nome: 'Agência Brasil', url: 'https://agenciabrasil.ebc.com.br/ultimas/feed', categoria: 'policial' },
   { nome: 'Band - Geral', url: 'https://band.com.br/feed/noticias', categoria: 'geral' },
   { nome: 'Folha de SP', url: 'https://feeds.folha.uol.com.br/folha/emcimadahora/rss091.xml', categoria: 'geral' },
-  { nome: 'JP News', url: 'https://jovempan.com.br/feed', categoria: 'geral' }
+  { nome: 'JP News', url: 'https://jovempan.com.br/feed', categoria: 'geral' },
+  
+  // ===== NOVAS FONTES =====
+  { nome: 'G1 - Rio de Janeiro', url: 'https://g1.globo.com/rss/g1/rj/rio-de-janeiro/', categoria: 'transito' },
+  { nome: 'G1 - Paraná', url: 'https://g1.globo.com/rss/g1/pr/parana/', categoria: 'transito' },
+  { nome: 'UOL - Notícias', url: 'https://feeds.uol.com.br/uol/noticias/index.xml', categoria: 'geral' },
+  { nome: 'UOL - Carros', url: 'https://feeds.uol.com.br/uol/carros/index.xml', categoria: 'transito' },
+  { nome: 'Estadão - Transporte', url: 'https://estadao.com.br/rss/transporte.xml', categoria: 'transito' },
+  { nome: 'Estadão - São Paulo', url: 'https://estadao.com.br/rss/sao-paulo.xml', categoria: 'transito' },
+  { nome: 'Jornal do Comércio - RS', url: 'https://www.jornaldocomercio.com/_rss/geral.xml', categoria: 'transito' },
+  { nome: 'Diário do Nordeste', url: 'https://diariodonordeste.verdesmares.com.br/rss/noticias', categoria: 'geral' },
+  { nome: 'Tribuna do Norte - RN', url: 'https://tribunadonorte.com.br/rss/geral.xml', categoria: 'geral' },
+  { nome: 'R7 - Notícias', url: 'https://noticias.r7.com/feed.xml', categoria: 'geral' },
+  { nome: 'R7 - São Paulo', url: 'https://noticias.r7.com/sao-paulo/feed.xml', categoria: 'transito' },
+  { nome: 'Meteorologia - Climatempo', url: 'https://www.climatempo.com.br/rss/noticias', categoria: 'clima' }
 ];
 
 // ===== FUNÇÃO: VERIFICAR RELEVÂNCIA =====
