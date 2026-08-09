@@ -131,16 +131,52 @@ function extrairCidade(titulo, resumo) {
 function detectarCategoria(titulo, resumo) {
   var texto = (titulo + ' ' + resumo).toLowerCase();
 
-  // Prioridade para segurança
+  // ===== 1º PRIORIDADE: SEGURANÇA (roubo, carga, criminalidade) =====
   if (texto.indexOf('roubo') !== -1 || texto.indexOf('assalto') !== -1 ||
       texto.indexOf('carga') !== -1 || texto.indexOf('criminalidade') !== -1 ||
-      texto.indexOf('violência') !== -1) return 'policial';
+      texto.indexOf('violência') !== -1 || texto.indexOf('tiroteio') !== -1 ||
+      texto.indexOf('confronto') !== -1 || texto.indexOf('operação policial') !== -1 ||
+      texto.indexOf('prf') !== -1 || texto.indexOf('blitz') !== -1 ||
+      texto.indexOf('policial') !== -1 || texto.indexOf('bandido') !== -1) {
+    return 'policial';
+  }
 
-  if (texto.indexOf('greve') !== -1 || texto.indexOf('paralisação') !== -1) return 'greve';
-  if (texto.indexOf('chuva') !== -1 || texto.indexOf('calor') !== -1 || texto.indexOf('clima') !== -1) return 'clima';
-  if (texto.indexOf('interdição') !== -1 || texto.indexOf('trânsito') !== -1 || texto.indexOf('rodovia') !== -1) return 'transito';
-  if (texto.indexOf('acidente') !== -1 || texto.indexOf('colisão') !== -1) return 'acidente';
-  if (texto.indexOf('fábrica') !== -1 || texto.indexOf('produção') !== -1) return 'fabrica';
+  // ===== 2º PRIORIDADE: GREVES =====
+  if (texto.indexOf('greve') !== -1 || texto.indexOf('paralisação') !== -1 ||
+      texto.indexOf('caminhoneiro') !== -1 || texto.indexOf('bloqueio') !== -1 ||
+      texto.indexOf('protesto') !== -1) {
+    return 'greve';
+  }
+
+  // ===== 3º PRIORIDADE: CLIMA (eventos extremos) =====
+  if (texto.indexOf('tornado') !== -1 || texto.indexOf('furacão') !== -1 ||
+      texto.indexOf('vendaval') !== -1 || texto.indexOf('tempestade') !== -1 ||
+      texto.indexOf('chuva') !== -1 || texto.indexOf('enchente') !== -1 ||
+      texto.indexOf('alagamento') !== -1 || texto.indexOf('inundação') !== -1 ||
+      texto.indexOf('deslizamento') !== -1 || texto.indexOf('granizo') !== -1 ||
+      texto.indexOf('calor') !== -1 || texto.indexOf('clima') !== -1 ||
+      texto.indexOf('temperatura') !== -1 || texto.indexOf('frente fria') !== -1) {
+    return 'clima';
+  }
+
+  // ===== 4º PRIORIDADE: ACIDENTES =====
+  if (texto.indexOf('acidente') !== -1 || texto.indexOf('colisão') !== -1 ||
+      texto.indexOf('capotamento') !== -1 || texto.indexOf('engavetamento') !== -1) {
+    return 'acidente';
+  }
+
+  // ===== 5º PRIORIDADE: TRÂNSITO =====
+  if (texto.indexOf('interdição') !== -1 || texto.indexOf('rodovia') !== -1 ||
+      texto.indexOf('br-') !== -1 || texto.indexOf('trânsito') !== -1) {
+    return 'transito';
+  }
+
+  // ===== 6º PRIORIDADE: FÁBRICAS =====
+  if (texto.indexOf('fábrica') !== -1 || texto.indexOf('produção') !== -1 ||
+      texto.indexOf('indústria') !== -1) {
+    return 'fabrica';
+  }
+
   return 'geral';
 }
 
