@@ -144,11 +144,11 @@ function detectarCategoria(titulo, resumo) {
   return 'geral';
 }
 
-// ===== FUNÇÃO: CALCULAR EXPIRAÇÃO =====
+// ===== FUNÇÃO: CALCULAR EXPIRAÇÃO (2 DIAS) =====
 function calcularDataExpiracao() {
   var agora = new Date();
   var expira = new Date(agora);
-  expira.setDate(expira.getDate() + DIAS_PADRAO);
+  expira.setDate(expira.getDate() + 2); // EXATAMENTE 2 DIAS
   return expira;
 }
 
