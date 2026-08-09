@@ -1,5 +1,5 @@
 // ============================================================
-// SCRIPT DE COLETA DE NOTÍCIAS (GitHub Actions) - FILTRO REFORÇADO
+// SCRIPT DE COLETA DE NOTÍCIAS - FOCO EM SEGURANÇA E MONITORAMENTO
 // ============================================================
 
 const { initializeApp } = require('firebase-admin/app');
@@ -9,85 +9,102 @@ const Parser = require('rss-parser');
 // ===== CONFIGURAÇÕES =====
 const DIAS_PADRAO = 2;
 
-// ===== PALAVRAS-CHAVE RELEVANTES (OBRIGATÓRIAS) =====
-// UMA NOTÍCIA PRECISA CONTER PELO MENOS UMA DESTAS PALAVRAS
-const PALAVRAS_CHAVE_RELEVANTES = [
-  // Greves e paralisações
-  'greve', 'paralisação', 'caminhoneiro', 'caminhoneiros',
-  
-  // Combustível e preços
-  'abastecimento', 'combustível', 'diesel', 'gasolina', 'preço',
-  
-  // Operações policiais
-  'operação', 'PRF', 'policial', 'blitz', 'abordagem', 'fiscalização',
-  
-  // Trânsito e rodovias
-  'interdição', 'rodovia', 'BR', 'trânsito', 'acidente', 'colisão',
-  'capotamento', 'engavetamento',
-  
-  // Clima
-  'chuva', 'enchente', 'alagamento', 'inundação', 'deslizamento',
-  'tempestade', 'granizo', 'calor', 'temperatura', 'clima',
-  
-  // Logística
-  'logística', 'transporte', 'entrega', 'carga', 'mercadoria',
-  'fábrica', 'indústria', 'produção'
+// ===== PALAVRAS-CHAVE OBRIGATÓRIAS (PELO MENOS UMA) =====
+const PALAVRAS_CHAVE_OBRIGATORIAS = [
+  // ===== SEGURANÇA E CRIMINALIDADE =====
+  'roubo', 'carga', 'caminhão', 'assalto', 'furto', 'carga roubada', 'desvio',
+  'criminalidade', 'violência', 'tiroteio', 'confronto', 'operação policial',
+  'segurança pública', 'monitoramento', 'vigilância', 'investigação',
+  'bandido', 'traficante', 'assaltante', 'ladrão', 'gangue',
+
+  // ===== GREVES E PARALISAÇÕES =====
+  'greve', 'paralisação', 'caminhoneiro', 'caminhoneiros', 'protesto', 'bloqueio',
+
+  // ===== TRÂNSITO E RODOVIAS =====
+  'interdição', 'rodovia', 'br-', 'trânsito', 'acidente', 'colisão', 'capotamento',
+
+  // ===== CLIMA =====
+  'chuva', 'enchente', 'alagamento', 'inundação', 'deslizamento', 'tempestade',
+  'calor extremo', 'granizo',
+
+  // ===== LOGÍSTICA E COMBUSTÍVEL =====
+  'abastecimento', 'combustível', 'diesel', 'gasolina', 'transporte', 'carga'
 ];
 
-// ===== PALAVRAS-CHAVE DE BLOQUEIO (EXCLUIR NOTÍCIAS) =====
-// SE UMA NOTÍCIA CONTIVER ALGUMA DESTAS PALAVRAS, ELA É DESCARTADA
-const PALAVRAS_CHAVE_BLOQUEIO = [
-  'política', 'político', 'eleição', 'voto', 'presidente', 'governo',
-  'partido', 'senado', 'câmara', 'deputado', 'senador', 'vereador',
-  'economia', 'inflação', 'ibovespa', 'dólar', 'mercado financeiro',
-  'futebol', 'campeonato', 'jogador', 'time', 'esporte',
-  'celebridade', 'famoso', 'artista', 'novela', 'entretenimento'
+// ===== PALAVRAS DE BLOQUEIO (SE TIVER, É DESCARTADA) =====
+const PALAVRAS_BLOQUEIO = [
+  // Política (que não impacta segurança)
+  'eleição', 'voto', 'presidente', 'governo', 'partido', 'senado', 'câmara',
+  'deputado', 'senador', 'vereador', 'ministro', 'governador',
+
+  // Economia geral (sem relação com segurança)
+  'inflação', 'ibovespa', 'dólar', 'mercado financeiro', 'bolsa de valores',
+
+  // Esportes
+  'futebol', 'campeonato', 'jogador', 'time', 'esporte', 'olimpíada',
+
+  // Entretenimento
+  'celebridade', 'famoso', 'artista', 'novela', 'cinema', 'shows',
+
+  // Safras e agronegócio
+  'safra', 'soja', 'milho', 'trigo', 'café', 'agronegócio', 'plantio', 'colheita',
+
+  // Saúde
+  'vacina', 'hospital', 'médico', 'tratamento', 'câncer', 'covid', 'pandemia'
 ];
 
+// ===== FONTES DE NOTÍCIAS (FOCO NACIONAL) =====
 const FONTES = [
-  // ===== FONTES EXISTENTES =====
-  { nome: 'G1 - Minas Gerais', url: 'https://g1.globo.com/rss/g1/mg/minas-gerais/', categoria: 'transito' },
-  { nome: 'G1 - São Paulo', url: 'https://g1.globo.com/rss/g1/sp/sao-paulo/', categoria: 'transito' },
+  // ===== PORTAIS NACIONAIS =====
+  { nome: 'G1 - Geral', url: 'https://g1.globo.com/rss/g1/', categoria: 'geral' },
+  { nome: 'G1 - Segurança Pública', url: 'https://g1.globo.com/rss/g1/seguranca/', categoria: 'policial' },
   { nome: 'CNN Brasil', url: 'https://www.cnnbrasil.com.br/feed/', categoria: 'geral' },
-  { nome: 'Agência Brasil', url: 'https://agenciabrasil.ebc.com.br/ultimas/feed', categoria: 'policial' },
-  { nome: 'Band - Geral', url: 'https://band.com.br/feed/noticias', categoria: 'geral' },
   { nome: 'Folha de SP', url: 'https://feeds.folha.uol.com.br/folha/emcimadahora/rss091.xml', categoria: 'geral' },
   { nome: 'JP News', url: 'https://jovempan.com.br/feed', categoria: 'geral' },
-  
-  // ===== NOVAS FONTES =====
-  { nome: 'G1 - Rio de Janeiro', url: 'https://g1.globo.com/rss/g1/rj/rio-de-janeiro/', categoria: 'transito' },
-  { nome: 'G1 - Paraná', url: 'https://g1.globo.com/rss/g1/pr/parana/', categoria: 'transito' },
-  { nome: 'UOL - Notícias', url: 'https://feeds.uol.com.br/uol/noticias/index.xml', categoria: 'geral' },
-  { nome: 'UOL - Carros', url: 'https://feeds.uol.com.br/uol/carros/index.xml', categoria: 'transito' },
-  { nome: 'Estadão - Transporte', url: 'https://estadao.com.br/rss/transporte.xml', categoria: 'transito' },
-  { nome: 'Estadão - São Paulo', url: 'https://estadao.com.br/rss/sao-paulo.xml', categoria: 'transito' },
-  { nome: 'Jornal do Comércio - RS', url: 'https://www.jornaldocomercio.com/_rss/geral.xml', categoria: 'transito' },
-  { nome: 'Diário do Nordeste', url: 'https://diariodonordeste.verdesmares.com.br/rss/noticias', categoria: 'geral' },
-  { nome: 'Tribuna do Norte - RN', url: 'https://tribunadonorte.com.br/rss/geral.xml', categoria: 'geral' },
+  { nome: 'Agência Brasil - EBC', url: 'https://www.ebc.com.br/feed', categoria: 'policial' },
   { nome: 'R7 - Notícias', url: 'https://noticias.r7.com/feed.xml', categoria: 'geral' },
+  { nome: 'R7 - Brasil', url: 'https://noticias.r7.com/brasil/feed.xml', categoria: 'geral' },
+  { nome: 'Metrópoles - DF', url: 'https://www.metropoles.com/feed', categoria: 'geral' },
+  { nome: 'Estadão - Geral', url: 'https://estadao.com.br/rss/geral.xml', categoria: 'geral' },
+  { nome: 'Estadão - Polícia', url: 'https://estadao.com.br/rss/policia.xml', categoria: 'policial' },
+
+  // ===== REGIONAIS ESTRATÉGICOS =====
+  { nome: 'G1 - São Paulo', url: 'https://g1.globo.com/rss/g1/sp/sao-paulo/', categoria: 'transito' },
+  { nome: 'G1 - Rio de Janeiro', url: 'https://g1.globo.com/rss/g1/rj/rio-de-janeiro/', categoria: 'transito' },
+  { nome: 'G1 - Minas Gerais', url: 'https://g1.globo.com/rss/g1/mg/minas-gerais/', categoria: 'transito' },
+  { nome: 'G1 - Paraná', url: 'https://g1.globo.com/rss/g1/pr/parana/', categoria: 'transito' },
+  { nome: 'G1 - Bahia', url: 'https://g1.globo.com/rss/g1/ba/bahia/', categoria: 'transito' },
+  { nome: 'G1 - Pernambuco', url: 'https://g1.globo.com/rss/g1/pe/pernambuco/', categoria: 'transito' },
+  { nome: 'G1 - Rio Grande do Sul', url: 'https://g1.globo.com/rss/g1/rs/rio-grande-do-sul/', categoria: 'transito' },
+  { nome: 'G1 - Ceará', url: 'https://g1.globo.com/rss/g1/ce/ceara/', categoria: 'transito' },
   { nome: 'R7 - São Paulo', url: 'https://noticias.r7.com/sao-paulo/feed.xml', categoria: 'transito' },
+  { nome: 'R7 - Rio de Janeiro', url: 'https://noticias.r7.com/rio-de-janeiro/feed.xml', categoria: 'transito' },
+  { nome: 'O Globo - Rio', url: 'https://oglobo.globo.com/rss/rio/', categoria: 'transito' },
+  { nome: 'O Globo - São Paulo', url: 'https://oglobo.globo.com/rss/sao-paulo/', categoria: 'transito' },
+
+  // ===== CLIMA =====
   { nome: 'Meteorologia - Climatempo', url: 'https://www.climatempo.com.br/rss/noticias', categoria: 'clima' }
 ];
 
 // ===== FUNÇÃO: VERIFICAR RELEVÂNCIA =====
 function isRelevante(titulo, resumo) {
-  const texto = (titulo + ' ' + resumo).toLowerCase();
-  
-  // Verifica se tem palavra de bloqueio
-  for (var i = 0; i < PALAVRAS_CHAVE_BLOQUEIO.length; i++) {
-    if (texto.indexOf(PALAVRAS_CHAVE_BLOQUEIO[i]) !== -1) {
-      return false; // Bloqueada
+  var texto = (titulo + ' ' + resumo).toLowerCase();
+
+  // Se tiver palavra de bloqueio, descarta
+  for (var b = 0; b < PALAVRAS_BLOQUEIO.length; b++) {
+    if (texto.indexOf(PALAVRAS_BLOQUEIO[b]) !== -1) {
+      return false;
     }
   }
-  
-  // Verifica se tem palavra relevante
-  for (var j = 0; j < PALAVRAS_CHAVE_RELEVANTES.length; j++) {
-    if (texto.indexOf(PALAVRAS_CHAVE_RELEVANTES[j]) !== -1) {
-      return true; // Relevante
+
+  // Se tiver pelo menos uma palavra obrigatória, salva
+  for (var o = 0; o < PALAVRAS_CHAVE_OBRIGATORIAS.length; o++) {
+    if (texto.indexOf(PALAVRAS_CHAVE_OBRIGATORIAS[o]) !== -1) {
+      return true;
     }
   }
-  
-  return false; // Não tem nenhuma palavra relevante
+
+  return false;
 }
 
 // ===== FUNÇÃO: EXTRAIR CIDADE =====
@@ -101,7 +118,7 @@ function extrairCidade(titulo, resumo) {
     'Uberlândia', 'Contagem', 'Betim', 'Nova Lima',
     'SP', 'RJ', 'MG', 'RS', 'PR', 'DF', 'BA', 'PE', 'CE'
   ];
-  
+
   for (var i = 0; i < cidades.length; i++) {
     if (texto.indexOf(cidades[i]) !== -1) {
       return cidades[i];
@@ -113,12 +130,17 @@ function extrairCidade(titulo, resumo) {
 // ===== FUNÇÃO: DETECTAR CATEGORIA =====
 function detectarCategoria(titulo, resumo) {
   var texto = (titulo + ' ' + resumo).toLowerCase();
+
+  // Prioridade para segurança
+  if (texto.indexOf('roubo') !== -1 || texto.indexOf('assalto') !== -1 ||
+      texto.indexOf('carga') !== -1 || texto.indexOf('criminalidade') !== -1 ||
+      texto.indexOf('violência') !== -1) return 'policial';
+
   if (texto.indexOf('greve') !== -1 || texto.indexOf('paralisação') !== -1) return 'greve';
-  if (texto.indexOf('chuva') !== -1 || texto.indexOf('calor') !== -1 || texto.indexOf('clima') !== -1 || texto.indexOf('temperatura') !== -1) return 'clima';
-  if (texto.indexOf('interdição') !== -1 || texto.indexOf('trânsito') !== -1 || texto.indexOf('rodovia') !== -1 || texto.indexOf('br-') !== -1) return 'transito';
-  if (texto.indexOf('acidente') !== -1 || texto.indexOf('colisão') !== -1 || texto.indexOf('capotamento') !== -1) return 'acidente';
-  if (texto.indexOf('PRF') !== -1 || texto.indexOf('policial') !== -1 || texto.indexOf('blitz') !== -1 || texto.indexOf('operação') !== -1) return 'policial';
-  if (texto.indexOf('fábrica') !== -1 || texto.indexOf('produção') !== -1 || texto.indexOf('indústria') !== -1) return 'fabrica';
+  if (texto.indexOf('chuva') !== -1 || texto.indexOf('calor') !== -1 || texto.indexOf('clima') !== -1) return 'clima';
+  if (texto.indexOf('interdição') !== -1 || texto.indexOf('trânsito') !== -1 || texto.indexOf('rodovia') !== -1) return 'transito';
+  if (texto.indexOf('acidente') !== -1 || texto.indexOf('colisão') !== -1) return 'acidente';
+  if (texto.indexOf('fábrica') !== -1 || texto.indexOf('produção') !== -1) return 'fabrica';
   return 'geral';
 }
 
@@ -130,7 +152,7 @@ function calcularDataExpiracao() {
   return expira;
 }
 
-// ===== FUNÇÃO: GEOCODIFICAR (USANDO NOMINATIM) =====
+// ===== FUNÇÃO: GEOCODIFICAR =====
 function geocodificar(cidade) {
   var axios = require('axios');
   return axios.get('https://nominatim.openstreetmap.org/search', {
@@ -205,14 +227,14 @@ async function coletarNoticias() {
         // Extrai palavras-chave encontradas
         var texto = (titulo + ' ' + resumo).toLowerCase();
         var palavrasEncontradas = [];
-        var criticas = ['interdição', 'greve', 'acidente', 'enchente', 'vazou', 'paralisação', 'blitz', 'operação', 'PRF'];
+        var criticas = ['roubo', 'carga', 'assalto', 'greve', 'acidente', 'interdição', 'enchente', 'prf'];
         for (var c = 0; c < criticas.length; c++) {
           if (texto.indexOf(criticas[c]) !== -1) {
             palavrasEncontradas.push(criticas[c]);
           }
         }
         if (palavrasEncontradas.length === 0) {
-          var comuns = ['chuva', 'calor', 'clima', 'greve', 'paralisação', 'interdição', 'acidente'];
+          var comuns = ['criminalidade', 'violência', 'chuva', 'paralisação', 'bloqueio'];
           for (var k = 0; k < comuns.length; k++) {
             if (texto.indexOf(comuns[k]) !== -1) {
               palavrasEncontradas.push(comuns[k]);
