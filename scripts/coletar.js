@@ -131,13 +131,12 @@ function extrairCidade(titulo, resumo) {
 function detectarCategoria(titulo, resumo) {
   var texto = (titulo + ' ' + resumo).toLowerCase();
 
-  // ===== 1º PRIORIDADE: SEGURANÇA (roubo, carga, criminalidade) =====
+  // ===== 1º PRIORIDADE: SEGURANÇA =====
   if (texto.indexOf('roubo') !== -1 || texto.indexOf('assalto') !== -1 ||
       texto.indexOf('carga') !== -1 || texto.indexOf('criminalidade') !== -1 ||
       texto.indexOf('violência') !== -1 || texto.indexOf('tiroteio') !== -1 ||
       texto.indexOf('confronto') !== -1 || texto.indexOf('operação policial') !== -1 ||
-      texto.indexOf('prf') !== -1 || texto.indexOf('blitz') !== -1 ||
-      texto.indexOf('policial') !== -1 || texto.indexOf('bandido') !== -1) {
+      texto.indexOf('prf') !== -1 || texto.indexOf('blitz') !== -1) {
     return 'policial';
   }
 
@@ -148,14 +147,15 @@ function detectarCategoria(titulo, resumo) {
     return 'greve';
   }
 
-  // ===== 3º PRIORIDADE: CLIMA (eventos extremos) =====
-  if (texto.indexOf('tornado') !== -1 || texto.indexOf('furacão') !== -1 ||
-      texto.indexOf('vendaval') !== -1 || texto.indexOf('tempestade') !== -1 ||
-      texto.indexOf('chuva') !== -1 || texto.indexOf('enchente') !== -1 ||
-      texto.indexOf('alagamento') !== -1 || texto.indexOf('inundação') !== -1 ||
-      texto.indexOf('deslizamento') !== -1 || texto.indexOf('granizo') !== -1 ||
-      texto.indexOf('calor') !== -1 || texto.indexOf('clima') !== -1 ||
-      texto.indexOf('temperatura') !== -1 || texto.indexOf('frente fria') !== -1) {
+  // ===== 3º PRIORIDADE: CLIMA (TODAS as palavras de clima) =====
+  if (texto.indexOf('vendaval') !== -1 || texto.indexOf('tornado') !== -1 ||
+      texto.indexOf('furacão') !== -1 || texto.indexOf('tempestade') !== -1 ||
+      texto.indexOf('chuva') !== -1 || texto.indexOf('chuvas') !== -1 ||
+      texto.indexOf('enchente') !== -1 || texto.indexOf('alagamento') !== -1 ||
+      texto.indexOf('inundação') !== -1 || texto.indexOf('deslizamento') !== -1 ||
+      texto.indexOf('granizo') !== -1 || texto.indexOf('calor') !== -1 ||
+      texto.indexOf('clima') !== -1 || texto.indexOf('temperatura') !== -1 ||
+      texto.indexOf('frente fria') !== -1) {
     return 'clima';
   }
 
@@ -165,7 +165,7 @@ function detectarCategoria(titulo, resumo) {
     return 'acidente';
   }
 
-  // ===== 5º PRIORIDADE: TRÂNSITO =====
+  // ===== 5º PRIORIDADE: TRÂNSITO (agora em último) =====
   if (texto.indexOf('interdição') !== -1 || texto.indexOf('rodovia') !== -1 ||
       texto.indexOf('br-') !== -1 || texto.indexOf('trânsito') !== -1) {
     return 'transito';
