@@ -614,120 +614,151 @@
 
     // ===== RENDER FEED (COM BOTÃO APAGAR INDIVIDUAL) =====
     function renderFeed(noticias, filtroTexto, categoriaAtiva, palavrasChave, categoriasAtivas) {
-        var feedDiv = document.getElementById('feedNoticias');
-        if (!feedDiv) return;
+    var feedDiv = document.getElementById('feedNoticias');
+    if (!feedDiv) return;
 
-        filtroTexto = filtroTexto || '';
-        categoriaAtiva = categoriaAtiva || 'todos';
-        palavrasChave = palavrasChave || [];
-        categoriasAtivas = categoriasAtivas || [];
+    filtroTexto = filtroTexto || '';
+    categoriaAtiva = categoriaAtiva || 'todos';
+    palavrasChave = palavrasChave || [];
+    categoriasAtivas = categoriasAtivas || [];
 
-        var filtradas = [];
-        for (var i = 0; i < noticias.length; i++) {
-            var n = noticias[i];
-            var matchTexto = !filtroTexto.trim() || (n.titulo + ' ' + n.resumo).toLowerCase().indexOf(filtroTexto.toLowerCase()) !== -1;
-            var matchCategoria = categoriaAtiva === 'todos' || n.categoria === categoriaAtiva;
-            if (categoriaAtiva !== 'todos' && categoriasAtivas.indexOf(categoriaAtiva) === -1) {
-                continue;
-            }
-            var matchPalavraChave = palavrasChave.length === 0 || palavrasChave.some(function(p) {
-                return (n.titulo + ' ' + n.resumo).toLowerCase().indexOf(p.toLowerCase()) !== -1;
-            });
-            if (matchTexto && matchCategoria && matchPalavraChave) {
-                filtradas.push(n);
-            }
+    // ===== NORMALIZAÇÃO DE TEXTO (remove acentos e deixa minúsculo) =====
+    function normalizar(texto) {
+        if (!texto) return '';
+        return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    }
+
+    var categoriaFiltro = normalizar(categoriaAtiva);
+
+    // ===== FILTRAGEM =====
+    var filtradas = [];
+    for (var i = 0; i < noticias.length; i++) {
+        var n = noticias[i];
+        var titulo = n.titulo || '';
+        var resumo = n.resumo || '';
+        var fonte = n.fonte || '';
+        var categoriaNoticia = normalizar(n.categoria);
+
+        // Busca por texto (título, resumo, fonte)
+        var textoCompleto = normalizar(titulo + ' ' + resumo + ' ' + fonte);
+        var termoBusca = normalizar(filtroTexto);
+        var matchTexto = !termoBusca || textoCompleto.indexOf(termoBusca) !== -1;
+
+        // Filtro por categoria
+        var matchCategoria = categoriaFiltro === 'todos' || categoriaNoticia === categoriaFiltro;
+
+        // Verifica se a categoria está ativa nas preferências
+        if (categoriaFiltro !== 'todos' && categoriasAtivas.indexOf(categoriaAtiva) === -1) {
+            continue;
         }
 
-        if (filtradas.length === 0) {
-            feedDiv.innerHTML = '<div style="background:white; border-radius:16px; padding:30px; text-align:center; color:#8a9bb0;">📭 Nenhuma notícia</div>';
-            return;
-        }
+        // Filtro por palavras-chave (se houver)
+        var matchPalavraChave = palavrasChave.length === 0 || palavrasChave.some(function(p) {
+            return normalizar(titulo + ' ' + resumo).indexOf(normalizar(p)) !== -1;
+        });
 
-        var user = auth.currentUser;
-        var isAdmin = user && user.email === ADMIN_EMAIL;
-        var html = '';
-        
-        for (var j = 0; j < filtradas.length; j++) {
-            var n = filtradas[j];
-            var severidade = classificarSeveridade(n.titulo, n.resumo, palavrasChave);
-            var dataFmt = n.dataPublicacao ? new Date(n.dataPublicacao.seconds * 1000).toLocaleString('pt-BR') : 'Data desconhecida';
-            var lidaPor = n.lidaPor || [];
-            var lida = user ? lidaPor.indexOf(user.uid) !== -1 : false;
-            var lidaClass = lida ? 'lida' : '';
-            var reacoes = n.reacoes || {};
-            var totalVistos = lidaPor.length;
-
-            html += '<div class="card ' + lidaClass + '" data-id="' + n.id + '">';
-            html += '<span class="selo ' + severidade.classe + '">' + severidade.label + '</span>';
-            html += '<div class="titulo">' + escapeHtml(n.titulo) + '</div>';
-            html += '<div class="fonte">📰 ' + escapeHtml(n.fonte) + ' • 🕒 ' + dataFmt;
-            html += '<a href="' + n.link + '" target="_blank" style="margin-left:auto;">🔗 Ver original</a></div>';
-            html += '<div class="resumo">' + escapeHtml(n.resumo) + '</div>';
-            html += '<div class="acoes">';
-            html += '<button class="emoji-btn" data-emoji="👍">👍 <span class="contador" id="cont-' + n.id + '-👍">' + (reacoes['👍'] || 0) + '</span></button>';
-            html += '<button class="emoji-btn" data-emoji="⚠️">⚠️ <span class="contador" id="cont-' + n.id + '-⚠️">' + (reacoes['⚠️'] || 0) + '</span></button>';
-            html += '<button class="emoji-btn" data-emoji="🔥">🔥 <span class="contador" id="cont-' + n.id + '-🔥">' + (reacoes['🔥'] || 0) + '</span></button>';
-            html += '<button class="btn-acao" onclick="compartilharNoticia(\'' + n.id + '\')">📤 Compartilhar</button>';
-            html += '<div style="display:flex; align-items:center; gap:6px; margin-left:auto;">';
-            html += '<span style="font-size:0.65rem; color:#6b7a93;">👁️ ' + (totalVistos > 0 ? totalVistos : '') + '</span>';
-            html += '<button class="btn-acao toggle-lida" data-id="' + n.id + '">' + (lida ? '✅ Lida' : '📖 Marcar lida') + '</button>';
-            if (isAdmin) {
-                html += '<button class="btn-acao btn-apagar" data-id="' + n.id + '" style="color:#dc2626; border-color:#dc2626;">🗑️</button>';
-            }
-            html += '</div></div></div>';
-        }
-        
-        feedDiv.innerHTML = html;
-
-        // Eventos de reação
-        var emojiBtns = feedDiv.querySelectorAll('.emoji-btn');
-        for (var k = 0; k < emojiBtns.length; k++) {
-            (function(btn) {
-                btn.addEventListener('click', function() {
-                    var card = btn.closest('.card');
-                    var id = card.dataset.id;
-                    var emoji = btn.dataset.emoji;
-                    DataService.reagirNoticia(id, emoji);
-                    var span = document.getElementById('cont-' + id + '-' + emoji);
-                    if (span) {
-                        var current = parseInt(span.innerText) || 0;
-                        span.innerText = current + 1;
-                    }
-                });
-            })(emojiBtns[k]);
-        }
-
-        // Eventos de toggle lida
-        var lidaBtns = feedDiv.querySelectorAll('.toggle-lida');
-        for (var l = 0; l < lidaBtns.length; l++) {
-            (function(btn) {
-                btn.addEventListener('click', function() {
-                    var id = btn.dataset.id;
-                    DataService.toggleLida(id);
-                    var busca = document.getElementById('buscaInput').value;
-                    var ativa = document.querySelector('#filtrosContainer .ativo');
-                    var cat = ativa ? ativa.dataset.filtro : 'todos';
-                    DataService.getConfig().then(function(config) {
-                        var noticiasAtuais = DataService.getNoticias();
-                        renderFeed(noticiasAtuais, busca, cat, config.palavrasChave, config.categoriasAtivas);
-                        atualizarDashboard(noticiasAtuais, config.palavrasChave);
-                    });
-                });
-            })(lidaBtns[l]);
-        }
-
-        // Eventos de apagar notícia (apenas admin)
-        var apagarBtns = feedDiv.querySelectorAll('.btn-apagar');
-        for (var a = 0; a < apagarBtns.length; a++) {
-            (function(btn) {
-                btn.addEventListener('click', function() {
-                    var id = btn.dataset.id;
-                    apagarNoticia(id);
-                });
-            })(apagarBtns[a]);
+        if (matchTexto && matchCategoria && matchPalavraChave) {
+            filtradas.push(n);
         }
     }
 
+    // ===== CONTADOR DE RESULTADOS =====
+    var contadorHtml = '<div style="background:white; border-radius:16px; padding:8px 16px; margin-bottom:12px; font-size:0.8rem; color:#6b7a93; box-shadow:0 2px 8px rgba(0,0,0,0.04);">';
+    contadorHtml += '📊 ' + filtradas.length + ' notícia' + (filtradas.length !== 1 ? 's' : '') + ' encontrada' + (filtradas.length !== 1 ? 's' : '');
+    contadorHtml += '</div>';
+
+    if (filtradas.length === 0) {
+        feedDiv.innerHTML = contadorHtml + '<div style="background:white; border-radius:16px; padding:30px; text-align:center; color:#8a9bb0;">📭 Nenhuma notícia encontrada com os filtros atuais</div>';
+        return;
+    }
+
+    // ===== RENDERIZAÇÃO DOS CARDS =====
+    var user = auth.currentUser;
+    var isAdmin = user && user.email === ADMIN_EMAIL;
+    var html = contadorHtml;
+    
+    for (var j = 0; j < filtradas.length; j++) {
+        var n = filtradas[j];
+        var severidade = classificarSeveridade(n.titulo, n.resumo, palavrasChave);
+        var dataFmt = n.dataPublicacao ? new Date(n.dataPublicacao.seconds * 1000).toLocaleString('pt-BR') : 'Data desconhecida';
+        var lidaPor = n.lidaPor || [];
+        var lida = user ? lidaPor.indexOf(user.uid) !== -1 : false;
+        var lidaClass = lida ? 'lida' : '';
+        var reacoes = n.reacoes || {};
+        var totalVistos = lidaPor.length;
+
+        html += '<div class="card ' + lidaClass + '" data-id="' + n.id + '">';
+        html += '<span class="selo ' + severidade.classe + '">' + severidade.label + '</span>';
+        html += '<div class="titulo">' + escapeHtml(n.titulo) + '</div>';
+        html += '<div class="fonte">📰 ' + escapeHtml(n.fonte) + ' • 🕒 ' + dataFmt;
+        html += '<a href="' + n.link + '" target="_blank" style="margin-left:auto;">🔗 Ver original</a></div>';
+        html += '<div class="resumo">' + escapeHtml(n.resumo) + '</div>';
+        html += '<div class="acoes">';
+        html += '<button class="emoji-btn" data-emoji="👍">👍 <span class="contador" id="cont-' + n.id + '-👍">' + (reacoes['👍'] || 0) + '</span></button>';
+        html += '<button class="emoji-btn" data-emoji="⚠️">⚠️ <span class="contador" id="cont-' + n.id + '-⚠️">' + (reacoes['⚠️'] || 0) + '</span></button>';
+        html += '<button class="emoji-btn" data-emoji="🔥">🔥 <span class="contador" id="cont-' + n.id + '-🔥">' + (reacoes['🔥'] || 0) + '</span></button>';
+        html += '<button class="btn-acao" onclick="compartilharNoticia(\'' + n.id + '\')">📤 Compartilhar</button>';
+        html += '<div style="display:flex; align-items:center; gap:6px; margin-left:auto;">';
+        html += '<span style="font-size:0.65rem; color:#6b7a93;">👁️ ' + (totalVistos > 0 ? totalVistos : '') + '</span>';
+        html += '<button class="btn-acao toggle-lida" data-id="' + n.id + '">' + (lida ? '✅ Lida' : '📖 Marcar lida') + '</button>';
+        if (isAdmin) {
+            html += '<button class="btn-acao btn-apagar" data-id="' + n.id + '" style="color:#dc2626; border-color:#dc2626;">🗑️</button>';
+        }
+        html += '</div></div></div>';
+    }
+    
+    feedDiv.innerHTML = html;
+
+    // ===== EVENTOS =====
+    // Reações
+    var emojiBtns = feedDiv.querySelectorAll('.emoji-btn');
+    for (var k = 0; k < emojiBtns.length; k++) {
+        (function(btn) {
+            btn.addEventListener('click', function() {
+                var card = btn.closest('.card');
+                var id = card.dataset.id;
+                var emoji = btn.dataset.emoji;
+                DataService.reagirNoticia(id, emoji);
+                var span = document.getElementById('cont-' + id + '-' + emoji);
+                if (span) {
+                    var current = parseInt(span.innerText) || 0;
+                    span.innerText = current + 1;
+                }
+            });
+        })(emojiBtns[k]);
+    }
+
+    // Toggle lida
+    var lidaBtns = feedDiv.querySelectorAll('.toggle-lida');
+    for (var l = 0; l < lidaBtns.length; l++) {
+        (function(btn) {
+            btn.addEventListener('click', function() {
+                var id = btn.dataset.id;
+                DataService.toggleLida(id);
+                var busca = document.getElementById('buscaInput').value;
+                var ativa = document.querySelector('#filtrosContainer .ativo');
+                var cat = ativa ? ativa.dataset.filtro : 'todos';
+                DataService.getConfig().then(function(config) {
+                    var noticiasAtuais = DataService.getNoticias();
+                    renderFeed(noticiasAtuais, busca, cat, config.palavrasChave, config.categoriasAtivas);
+                    atualizarDashboard(noticiasAtuais, config.palavrasChave);
+                });
+            });
+        })(lidaBtns[l]);
+    }
+
+    // Apagar notícia (admin)
+    var apagarBtns = feedDiv.querySelectorAll('.btn-apagar');
+    for (var a = 0; a < apagarBtns.length; a++) {
+        (function(btn) {
+            btn.addEventListener('click', function() {
+                var id = btn.dataset.id;
+                apagarNoticia(id);
+            });
+        })(apagarBtns[a]);
+    }
+}
+    
     // ===== DASHBOARD =====
     function atualizarDashboard(noticias, palavrasChave) {
         var total = noticias.length;
