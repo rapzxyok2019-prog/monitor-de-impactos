@@ -613,7 +613,7 @@
     }
 
     // ===== RENDER FEED (COM BOTÃO APAGAR INDIVIDUAL) =====
-    function renderFeed(noticias, filtroTexto, categoriaAtiva, palavrasChave, categoriasAtivas) {
+   function renderFeed(noticias, filtroTexto, categoriaAtiva, palavrasChave, categoriasAtivas) {
     var feedDiv = document.getElementById('feedNoticias');
     if (!feedDiv) return;
 
@@ -622,15 +622,21 @@
     palavrasChave = palavrasChave || [];
     categoriasAtivas = categoriasAtivas || [];
 
-    // ===== NORMALIZAÇÃO DE TEXTO (remove acentos e deixa minúsculo) =====
+    // ===== NORMALIZAÇÃO FORTE (remove acentos, maiúsculas, espaços extras) =====
     function normalizar(texto) {
         if (!texto) return '';
-        return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        return texto.normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .trim();
     }
 
+    // Normaliza a categoria ativa e as categorias ativas da preferência
     var categoriaFiltro = normalizar(categoriaAtiva);
+    var categoriasAtivasNormalizadas = categoriasAtivas.map(function(cat) {
+        return normalizar(cat);
+    });
 
-    // ===== FILTRAGEM =====
     var filtradas = [];
     for (var i = 0; i < noticias.length; i++) {
         var n = noticias[i];
@@ -639,20 +645,20 @@
         var fonte = n.fonte || '';
         var categoriaNoticia = normalizar(n.categoria);
 
-        // Busca por texto (título, resumo, fonte)
+        // Busca por texto
         var textoCompleto = normalizar(titulo + ' ' + resumo + ' ' + fonte);
         var termoBusca = normalizar(filtroTexto);
         var matchTexto = !termoBusca || textoCompleto.indexOf(termoBusca) !== -1;
 
-        // Filtro por categoria
+        // Filtro por categoria (com normalização)
         var matchCategoria = categoriaFiltro === 'todos' || categoriaNoticia === categoriaFiltro;
 
-        // Verifica se a categoria está ativa nas preferências
-        if (categoriaFiltro !== 'todos' && categoriasAtivas.indexOf(categoriaAtiva) === -1) {
+        // Verifica se a categoria está ativa nas preferências (normalizado)
+        if (categoriaFiltro !== 'todos' && categoriasAtivasNormalizadas.indexOf(categoriaFiltro) === -1) {
             continue;
         }
 
-        // Filtro por palavras-chave (se houver)
+        // Filtro por palavras-chave
         var matchPalavraChave = palavrasChave.length === 0 || palavrasChave.some(function(p) {
             return normalizar(titulo + ' ' + resumo).indexOf(normalizar(p)) !== -1;
         });
@@ -662,7 +668,7 @@
         }
     }
 
-    // ===== CONTADOR DE RESULTADOS =====
+    // Contador
     var contadorHtml = '<div style="background:white; border-radius:16px; padding:8px 16px; margin-bottom:12px; font-size:0.8rem; color:#6b7a93; box-shadow:0 2px 8px rgba(0,0,0,0.04);">';
     contadorHtml += '📊 ' + filtradas.length + ' notícia' + (filtradas.length !== 1 ? 's' : '') + ' encontrada' + (filtradas.length !== 1 ? 's' : '');
     contadorHtml += '</div>';
@@ -672,11 +678,11 @@
         return;
     }
 
-    // ===== RENDERIZAÇÃO DOS CARDS =====
+    // Renderização dos cards (mantida igual)
     var user = auth.currentUser;
     var isAdmin = user && user.email === ADMIN_EMAIL;
     var html = contadorHtml;
-    
+
     for (var j = 0; j < filtradas.length; j++) {
         var n = filtradas[j];
         var severidade = classificarSeveridade(n.titulo, n.resumo, palavrasChave);
@@ -706,11 +712,10 @@
         }
         html += '</div></div></div>';
     }
-    
+
     feedDiv.innerHTML = html;
 
-    // ===== EVENTOS =====
-    // Reações
+    // Eventos (mantidos iguais)
     var emojiBtns = feedDiv.querySelectorAll('.emoji-btn');
     for (var k = 0; k < emojiBtns.length; k++) {
         (function(btn) {
@@ -728,7 +733,6 @@
         })(emojiBtns[k]);
     }
 
-    // Toggle lida
     var lidaBtns = feedDiv.querySelectorAll('.toggle-lida');
     for (var l = 0; l < lidaBtns.length; l++) {
         (function(btn) {
@@ -747,7 +751,6 @@
         })(lidaBtns[l]);
     }
 
-    // Apagar notícia (admin)
     var apagarBtns = feedDiv.querySelectorAll('.btn-apagar');
     for (var a = 0; a < apagarBtns.length; a++) {
         (function(btn) {
