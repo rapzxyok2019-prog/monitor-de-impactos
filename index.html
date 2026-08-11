@@ -11,7 +11,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css" />
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
@@ -136,6 +138,7 @@
 <body>
 <div class="container">
 
+    <!-- TELA DE LOGIN -->
     <div id="telaLogin">
         <h2>🚛 Monitor de Impactos</h2>
         <p class="subtitle">Faça login para acessar o sistema</p>
@@ -146,6 +149,7 @@
         <div id="loginErro"></div>
     </div>
 
+    <!-- CONTEÚDO PRINCIPAL -->
     <div class="conteudo-site" id="conteudoSite">
         <header>
             <div>
@@ -164,6 +168,8 @@
         </div>
 
         <div id="tab-noticias" class="tab-content ativo">
+
+            <!-- DASHBOARD -->
             <div class="dashboard" id="dashboardMetricas">
                 <div class="card-metrica total"><span class="icone">📰</span><div class="numero" id="totalCount">0</div><div class="rotulo">Total</div></div>
                 <div class="card-metrica critico"><span class="icone">🔴</span><div class="numero" id="criticoCount">0</div><div class="rotulo">Crítico</div></div>
@@ -171,6 +177,7 @@
                 <div class="card-metrica info"><span class="icone">🟢</span><div class="numero" id="infoCount">0</div><div class="rotulo">Informativo</div></div>
             </div>
 
+            <!-- GRÁFICO + TOP FONTES -->
             <div class="dashboard-extras">
                 <div class="card-extra">
                     <h4>📊 Ocorrências por categoria (últimas 24h)</h4>
@@ -182,14 +189,18 @@
                 </div>
             </div>
 
+            <!-- FILTROS POR CATEGORIA -->
             <div class="filtros-rapidos" id="filtrosContainer">
                 <!-- Os botões serão gerados pelo JavaScript -->
             </div>
+            <div id="filtrosStatus" style="font-size:0.7rem; color:#6b7a93; margin-top:4px; margin-bottom:8px;"></div>
 
+            <!-- BUSCA -->
             <div class="barra-busca">
                 🔍 <input type="text" id="buscaInput" placeholder="Buscar notícias...">
             </div>
 
+            <!-- FEED + MAPA -->
             <div class="grid-2colunas">
                 <div id="feedNoticias"></div>
                 <div>
@@ -233,6 +244,7 @@
     </div>
 </div>
 
+<!-- SCRIPTS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
 <script>
@@ -669,33 +681,24 @@
         });
     }
 
-    // ===== GERAR FILTROS (VERSÃO CORRIGIDA) =====
-function gerarFiltros() {
-    var container = document.getElementById('filtrosContainer');
-    if (!container) {
-        console.error('❌ Container de filtros não encontrado.');
-        return;
-    }
+    // ===== GERAR FILTROS =====
+    function gerarFiltros() {
+        var container = document.getElementById('filtrosContainer');
+        var status = document.getElementById('filtrosStatus');
+        if (!container) return;
 
-    console.log('📡 Buscando categorias no Firestore...');
-    
-    db.collection('categorias').get()
-        .then(function(snapshot) {
-            console.log('✅ Categorias encontradas:', snapshot.size);
-            
-            var html = '<button data-filtro="todos" class="ativo">📋 Todos</button>';
-            
-            if (snapshot.size === 0) {
-                console.warn('⚠️ Nenhuma categoria encontrada no Firestore.');
-                container.innerHTML = html + '<span style="color:#6b7a93; font-size:0.8rem; margin-left:8px;">(Nenhuma categoria configurada)</span>';
-                return;
-            }
-            
-            snapshot.forEach(function(doc) {
-                var data = doc.data();
-                var nome = data.nome || doc.id;
-                
-                // Mapeamento de labels com emojis
+        status.textContent = '⏳ Carregando filtros...';
+
+        db.collection('categorias').get()
+            .then(function(snapshot) {
+                var html = '<button data-filtro="todos" class="ativo">📋 Todos</button>';
+
+                if (snapshot.size === 0) {
+                    status.textContent = '⚠️ Nenhuma categoria cadastrada.';
+                    container.innerHTML = html;
+                    return;
+                }
+
                 var labelMap = {
                     'clima': '🌧️ Clima',
                     'policial': '🚔 Policial',
@@ -704,39 +707,41 @@ function gerarFiltros() {
                     'transito': '🚧 Trânsito',
                     'fabrica': '🏭 Fábricas'
                 };
-                
-                var label = labelMap[nome] || data.label || data[nome] || nome;
-                
-                // Se `ativa` não existir ou for `true`, exibe o botão
-                if (data.ativa !== false) {
-                    html += '<button data-filtro="' + nome + '">' + label + '</button>';
+
+                snapshot.forEach(function(doc) {
+                    var data = doc.data();
+                    var nome = data.nome || doc.id;
+                    var label = labelMap[nome] || data.label || data[nome] || nome;
+
+                    if (data.ativa !== false) {
+                        html += '<button data-filtro="' + nome + '">' + label + '</button>';
+                    }
+                });
+
+                container.innerHTML = html;
+                status.textContent = '✅ ' + (container.querySelectorAll('button').length - 1) + ' categorias disponíveis';
+
+                var botoes = container.querySelectorAll('button');
+                for (var i = 0; i < botoes.length; i++) {
+                    (function(btn) {
+                        btn.addEventListener('click', function() {
+                            var todos = container.querySelectorAll('button');
+                            for (var j = 0; j < todos.length; j++) {
+                                todos[j].classList.remove('ativo');
+                            }
+                            btn.classList.add('ativo');
+                            atualizarFeed();
+                        });
+                    })(botoes[i]);
                 }
+            })
+            .catch(function(error) {
+                console.error('Erro ao carregar filtros:', error);
+                container.innerHTML = '<button data-filtro="todos" class="ativo">📋 Todos</button>';
+                status.textContent = '❌ Erro ao carregar categorias.';
             });
-            
-            container.innerHTML = html;
-            console.log('✅ Filtros gerados com sucesso. Botões:', container.querySelectorAll('button').length);
-            
-            // Reaplica os eventos
-            var filtrosBtns = container.querySelectorAll('button');
-            for (var i = 0; i < filtrosBtns.length; i++) {
-                (function(btn) {
-                    btn.addEventListener('click', function() {
-                        var allBtns = container.querySelectorAll('button');
-                        for (var j = 0; j < allBtns.length; j++) {
-                            allBtns[j].classList.remove('ativo');
-                        }
-                        btn.classList.add('ativo');
-                        atualizarFeed();
-                    });
-                })(filtrosBtns[i]);
-            }
-        })
-        .catch(function(error) {
-            console.error('❌ Erro ao gerar filtros:', error);
-            // Exibe mensagem amigável no lugar dos filtros
-            container.innerHTML = '<span style="color:#dc2626; font-size:0.8rem;">❌ Erro ao carregar filtros. Verifique a coleção "categorias" no Firestore.</span>';
-        });
-}
+    }
+
     // ===== RENDER FEED =====
     function renderFeed(noticias, filtroTexto, categoriaAtiva, palavrasChave, categoriasAtivas) {
         var feedDiv = document.getElementById('feedNoticias');
@@ -1036,7 +1041,7 @@ function gerarFiltros() {
         });
     }
 
-    // ===== RENDERIZAR CATEGORIAS (SUA VERSÃO FUNCIONAL) =====
+    // ===== RENDERIZAR CATEGORIAS =====
     function renderizarCategorias(config) {
         var container = document.getElementById('categoriasToggle');
         if (!container) return;
@@ -1045,9 +1050,19 @@ function gerarFiltros() {
             var todas = [];
             snapshot.forEach(function(doc) {
                 var data = doc.data();
+                var nome = data.nome || doc.id;
+                var labelMap = {
+                    'clima': '🌧️ Clima',
+                    'policial': '🚔 Policial',
+                    'greve': '🚛 Greve',
+                    'acidente': '⚠️ Acidentes',
+                    'transito': '🚧 Trânsito',
+                    'fabrica': '🏭 Fábricas'
+                };
+                var label = labelMap[nome] || data.label || data[nome] || nome;
                 todas.push({
-                    id: data.nome || doc.id,
-                    label: data.label || data.nome || doc.id,
+                    id: nome,
+                    label: label,
                     ativa: data.ativa !== false
                 });
             });
@@ -1072,20 +1087,14 @@ function gerarFiltros() {
                         }
                         DataService.setCategoriasAtivas(novasAtivas).then(function() {
                             atualizarFiltrosRapidos(novasAtivas);
-                            var busca = document.getElementById('buscaInput').value;
-                            var ativa = document.querySelector('#filtrosContainer .ativo');
-                            var cat = ativa ? ativa.dataset.filtro : 'todos';
-                            var noticiasAtuais = DataService.getNoticias();
-                            DataService.getConfig().then(function(configAtual) {
-                                renderFeed(noticiasAtuais, busca, cat, configAtual.palavrasChave, configAtual.categoriasAtivas);
-                                atualizarDashboard(noticiasAtuais, configAtual.palavrasChave);
-                            });
+                            atualizarFeed();
                         });
                     });
                 })(checkboxes[j]);
             }
         }).catch(function(error) {
             console.error('Erro ao carregar categorias:', error);
+            container.innerHTML = '<span style="color:#dc2626; font-size:0.8rem;">❌ Erro ao carregar categorias.</span>';
         });
     }
 
@@ -1098,7 +1107,7 @@ function gerarFiltros() {
             var btn = botoes[i];
             var filtro = btn.dataset.filtro;
             if (filtro === 'todos') continue;
-            if (categoriasAtivas.indexOf(filtro) !== -1) {
+            if (categoriasAtivas && categoriasAtivas.indexOf(filtro) !== -1) {
                 btn.style.display = '';
             } else {
                 btn.style.display = 'none';
