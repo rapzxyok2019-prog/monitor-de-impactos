@@ -72,7 +72,6 @@
         .fonte-item:last-child { border-bottom:none; }
         .fonte-item strong { color:#003da5; }
 
-        /* ===== FILTROS ===== */
         .filtros-rapidos { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:12px; }
         .filtros-rapidos button { background:white; border:1px solid #e2e6ee; padding:4px 12px; border-radius:40px; font-size:0.7rem; font-weight:500; cursor:pointer; transition:all 0.15s ease; font-family:inherit; color:#2c3e4e; }
         .filtros-rapidos button:hover { background:#f0f3f9; border-color:#bcc4d4; }
@@ -192,173 +191,7 @@
                 </div>
             </div>
 
-            <!-- FILTROS (gerados dinamicamente) -->
-            <div class="filtros-rapidos" id="filtrosContainer">
-                <!-- Os botões serão gerados pelo JavaScript -->
-            </div>
-
-            <!-- BUSCA -->
-            <div class="barra-busca">
-                🔍 <input type="text" id="buscaInput" placeholder="Buscar notícias...">
-            </div>
-
-            <!-- FEED + MAPA -->
-            <div class="grid-2colunas">
-                <div id="feedNoticias"></div>
-                <div>
-                    <div class="card-mapa">
-                        <h3>🗺️ Ocorrências por região</h3>
-                        <div id="mapa"></div>
-                        <p style="font-size:0.55rem; color:#8a9bb0; margin-top:4px;">📍 Marcadores com clusters</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="tab-preferencias" class="tab-content">
-            <div class="config-section">
-                <h3>🔑 Palavras-chave</h3>
-                <p id="palavrasDescricao">Adicione termos para classificar notícias. (Apenas administradores podem editar)</p>
-                <div class="campo">
-                    <input type="text" id="novaPalavra" placeholder="Ex: enchente, greve...">
-                    <button id="addPalavraBtn">➕ Adicionar</button>
-                </div>
-                <div class="lista-itens" id="listaPalavras"></div>
-                <div id="mensagemBloqueio" class="mensagem-bloqueio" style="display:none;">🔒 Apenas administradores podem editar as palavras-chave.</div>
-            </div>
-            <div class="config-section">
-                <h3>📊 Palavras em alta</h3>
-                <p>Clique em ➕ para adicionar à lista.</p>
-                <div id="palavrasSugeridas" style="display:flex; flex-wrap:wrap; gap:5px; margin-top:5px;"></div>
-            </div>
-            <div class="config-section">
-                <h3>📌 Categorias ativas</h3>
-                <div class="toggle-group" id="categoriasToggle"></div>
-            </div>
-            <div class="config-section" id="secaoApagar" style="border:2px solid #dc2626; display:none; margin-top:20px;">
-                <h3 style="color:#dc2626;">⚠️ Área do Administrador</h3>
-                <p style="color:#6b7a93; font-size:0.8rem;">Apague todas as notícias do banco de dados. Esta ação é irreversível!</p>
-                <button id="apagarNoticiasBtn" class="danger" style="background:#dc2626; color:white; border:none; padding:10px 20px; border-radius:10px; font-weight:600; cursor:pointer; font-family:inherit; margin-top:8px;">🗑️ Apagar todas as notícias</button>
-                <div id="apagarStatus" style="margin-top:8px; font-size:0.85rem; display:none;"></div>
-            </div>
-        </div>
-        <footer>✅ Lidas compartilhadas • Reações persistem no banco</footer>
-    </div>
-</div>
-
-<!-- SCRIPTS -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
-<script>
-    // ============================================================
-    // FIREBASE CONFIG
-    // ============================================================
-    const firebaseConfig = {
-        apiKey: "AIzaSyCYh4_MyqFITFDJDg36eFHTU2VqJ8JeIuc",
-        authDomain: "monitor-de-frotas-pepsic-8a7cc.firebaseapp.com",
-        projectId: "monitor-de-frotas-pepsic-8a7cc",
-        storageBucket: "monitor-de-frotas-pepsic-8a7cc.firebasestorage.app",
-        messagingSenderId: "1021524604061",
-        appId: "1:1021524604061:web:ec2de92564115f1f221074"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const auth = firebase.auth();
-
-    // ===== ADMINISTRADOR =====
-    const ADMIN_EMAIL = "admin@monitor.com";
-
-    // ===== ELEMENTOS DA TELA =====
-    const telaLogin = document.getElementById('telaLogin');
-    const contagar:hover { background:#fee2e2 !important; }
-        #mapa { height:280px; border-radius:14px; background:#e8ecf2; border:1px solid #e2e6ee; margin-bottom:6px; overflow:hidden; }
-        .card-mapa { background:white; border-radius:16px; padding:14px 16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
-        .card-mapa h3 { font-size:0.8rem; margin-bottom:8px; color:#1e2a3a; font-weight:600; }
-
-        .config-section { background:white; border-radius:20px; padding:18px; box-shadow:0 2px 8px rgba(0,0,0,0.04); margin-bottom:16px; }
-        .config-section h3 { font-size:0.95rem; margin-bottom:8px; color:#1e2a3a; font-weight:600; }
-        .config-section p { font-size:0.75rem; color:#6b7a93; margin-bottom:10px; }
-        .config-section .campo { display:flex; gap:8px; flex-wrap:wrap; }
-        .config-section input[type=text] { flex:1; padding:6px 12px; border:1px solid #d0d7e2; border-radius:40px; font-size:0.8rem; outline:none; font-family:inherit; min-width:120px; transition:border 0.15s ease; }
-        .config-section input[type=text]:focus { border-color:#003da5; box-shadow:0 0 0 3px rgba(0,61,165,0.1); }
-        .config-section button { background:#003da5; color:white; border:none; padding:6px 16px; border-radius:40px; font-size:0.75rem; font-weight:500; cursor:pointer; transition:background 0.15s ease; font-family:inherit; }
-        .config-section button:hover { background:#002d7a; }
-        .config-section button:disabled { opacity:0.5; cursor:not-allowed; }
-        .config-section button.danger { background:#dc2626; }
-        .config-section button.danger:hover { background:#b91c1c; }
-        .lista-itens { display:flex; flex-wrap:wrap; gap:5px; margin-top:10px; }
-        .item-chip { background:#f0f3f9; padding:3px 12px; border-radius:40px; font-size:0.75rem; display:inline-flex; align-items:center; gap:6px; font-weight:500; }
-        .item-chip .remover { background:none; border:none; color:#991b1b; cursor:pointer; font-weight:700; font-size:0.8rem; line-height:1; padding:0 2px; }
-        .toggle-group { display:flex; flex-wrap:wrap; gap:12px; margin:8px 0; }
-        .toggle-group label { display:flex; align-items:center; gap:5px; font-size:0.8rem; cursor:pointer; font-weight:500; }
-        .toggle-group input[type=checkbox] { width:15px; height:15px; accent-color:#003da5; cursor:pointer; }
-        .palavra-sugestao { display:inline-flex; align-items:center; gap:5px; background:#f0f3f9; padding:3px 10px 3px 12px; border-radius:40px; font-size:0.75rem; font-weight:500; margin:2px 3px 2px 0; }
-        .palavra-sugestao .add-btn { background:none; border:none; color:#003da5; cursor:pointer; font-weight:700; font-size:0.9rem; line-height:1; padding:0 2px; }
-        .palavra-sugestao .add-btn:hover { color:#002d7a; }
-        .mensagem-bloqueio { color:#6b7a93; font-size:0.8rem; margin-top:8px; padding:8px 12px; background:#f0f3f9; border-radius:8px; text-align:center; }
-        #secaoApagar { border:2px solid #dc2626; margin-top:20px; }
-        #secaoApagar h3 { color:#dc2626; }
-        #apagarStatus { margin-top:8px; font-size:0.85rem; display:none; }
-        footer { text-align:center; font-size:0.6rem; color:#8a9bb0; margin-top:24px; padding-top:12px; border-top:1px solid #e2e6ee; }
-        @media (max-width:480px) { body{ padding:8px; } header{ padding:10px 14px; } header h1{ font-size:1rem; } .tab-btn{ font-size:0.65rem; padding:6px 8px; } .card{ padding:10px; } #mapa{ height:200px; } #telaLogin{ margin:30px 16px; padding:20px; } }
-    </style>
-</head>
-<body>
-<div class="container">
-
-    <!-- TELA DE LOGIN -->
-    <div id="telaLogin">
-        <h2>🚛 Monitor de Impactos</h2>
-        <p class="subtitle">Faça login para acessar o sistema</p>
-        <input type="email" id="emailInput" placeholder="E-mail">
-        <input type="password" id="senhaInput" placeholder="Senha">
-        <button id="loginBtn">Entrar</button>
-        <button id="cadastrarBtn">Criar nova conta</button>
-        <div id="loginErro"></div>
-    </div>
-
-    <!-- CONTEÚDO PRINCIPAL -->
-    <div class="conteudo-site" id="conteudoSite">
-        <header>
-            <div>
-                <h1>🚛 Monitor <span>| PepsiCo</span></h1>
-                <div class="sub">Rodovias • Clima • Greves • Fábricas • Policial</div>
-            </div>
-            <div style="display:flex; align-items:center; gap:10px;">
-                <span class="badge" id="authStatus">⏳ Conectando...</span>
-                <button class="logout-btn" id="logoutBtn">Sair</button>
-            </div>
-        </header>
-
-        <div class="tabs">
-            <button class="tab-btn ativo" data-tab="noticias">📋 Notícias</button>
-            <button class="tab-btn" data-tab="preferencias">⚙️ Preferências</button>
-        </div>
-
-        <div id="tab-noticias" class="tab-content ativo">
-
-            <!-- DASHBOARD -->
-            <div class="dashboard" id="dashboardMetricas">
-                <div class="card-metrica total"><span class="icone">📰</span><div class="numero" id="totalCount">0</div><div class="rotulo">Total</div></div>
-                <div class="card-metrica critico"><span class="icone">🔴</span><div class="numero" id="criticoCount">0</div><div class="rotulo">Crítico</div></div>
-                <div class="card-metrica atencao"><span class="icone">🟡</span><div class="numero" id="atencaoCount">0</div><div class="rotulo">Atenção</div></div>
-                <div class="card-metrica info"><span class="icone">🟢</span><div class="numero" id="infoCount">0</div><div class="rotulo">Informativo</div></div>
-            </div>
-
-            <!-- GRÁFICO + TOP FONTES -->
-            <div class="dashboard-extras">
-                <div class="card-extra">
-                    <h4>📊 Ocorrências por categoria (últimas 24h)</h4>
-                    <canvas id="graficoOcorrencias"></canvas>
-                </div>
-                <div class="card-extra">
-                    <h4>📰 Top fontes</h4>
-                    <div id="topFontes"></div>
-                </div>
-            </div>
-
-            <!-- FILTROS (gerados dinamicamente da coleção "categorias") -->
+            <!-- FILTROS (gerados dinamicamente do Firestore) -->
             <div class="filtros-rapidos" id="filtrosContainer">
                 <!-- Os botões serão gerados pelo JavaScript -->
             </div>
@@ -857,95 +690,83 @@
             console.error('❌ Container de filtros não encontrado.');
             return;
         }
-        
-        // ===== USA A COLEÇÃO "categorias" =====
-        db.collection('categorias').get()
-            .then(function(snapshot) {
-                var html = '<button data-filtro="todos" class="ativo">📋 Todos</button>';
-                snapshot.forEach(function(doc) {
-                    var data = doc.data();
-                    if (data.ativa !== false) {
-                        var nome = data.nome || doc.id;
-                        var label = data.label || nome;
-                        html += '<button data-filtro="' + nome + '">' + label + '</button>';
-                    }
-                });
-                container.innerHTML = html;
-                console.log('✅ Filtros gerados com sucesso.');
-                
-                // Reaplica os eventos
-                var filtrosBtns = container.querySelectorAll('button');
-                for (var i = 0; i < filtrosBtns.length; i++) {
-                    (function(btn) {
-                        btn.addEventListener('click', function() {
-                            var allBtns = container.querySelectorAll('button');
-                            for (var j = 0; j < allBtns.length; j++) {
-                                allBtns[j].classList.remove('ativo');
-                            }
-                            btn.classList.add('ativo');
-                            atualizarFeed();
-                        });
-                    })(filtrosBtns[i]);
+
+        db.collection('categorias').get().then(function(snapshot) {
+            var html = '<button data-filtro="todos" class="ativo">📋 Todos</button>';
+            snapshot.forEach(function(doc) {
+                var data = doc.data();
+                if (data.ativa !== false) {
+                    var nome = data.nome || doc.id;
+                    // Busca o label em vários campos possíveis
+                    var label = data.label || data[nome] || data[doc.id] || nome;
+                    // Se for maiúsculo, mantém
+                    html += '<button data-filtro="' + nome + '">' + label + '</button>';
                 }
-            })
-            .catch(function(error) {
-                console.error('❌ Erro ao gerar filtros:', error);
-                container.innerHTML = '<span style="color:#dc2626; font-size:0.8rem;">❌ Erro ao carregar filtros. Verifique a coleção "categorias" no Firestore.</span>';
             });
+            container.innerHTML = html;
+            console.log('✅ Filtros gerados com sucesso.');
+
+            var filtrosBtns = container.querySelectorAll('button');
+            for (var i = 0; i < filtrosBtns.length; i++) {
+                (function(btn) {
+                    btn.addEventListener('click', function() {
+                        var allBtns = container.querySelectorAll('button');
+                        for (var j = 0; j < allBtns.length; j++) {
+                            allBtns[j].classList.remove('ativo');
+                        }
+                        btn.classList.add('ativo');
+                        atualizarFeed();
+                    });
+                })(filtrosBtns[i]);
+            }
+        }).catch(function(error) {
+            console.error('❌ Erro ao gerar filtros:', error);
+            container.innerHTML = '<span style="color:#dc2626; font-size:0.8rem;">❌ Erro ao carregar filtros. Verifique a coleção "categorias" no Firestore.</span>';
+        });
     }
 
     // ===== RENDER FEED =====
-    function renderizarCategorias(config) {
-    var container = document.getElementById('categoriasToggle');
-    if (!container) return;
+    function renderFeed(noticias, filtroTexto, categoriaAtiva, palavrasChave, categoriasAtivas) {
+        var feedDiv = document.getElementById('feedNoticias');
+        if (!feedDiv) return;
 
-    db.collection('categorias').get().then(function(snapshot) {
-        var todas = [];
-        snapshot.forEach(function(doc) {
-            var data = doc.data();
-            todas.push({
-                id: data.nome || doc.id,
-                label: data.label || data.nome || doc.id,
-                ativa: data.ativa !== false
+        filtroTexto = filtroTexto || '';
+        categoriaAtiva = categoriaAtiva || 'todos';
+        palavrasChave = palavrasChave || [];
+        categoriasAtivas = categoriasAtivas || [];
+
+        function normalizar(texto) {
+            if (!texto) return '';
+            return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        }
+
+        var categoriaFiltro = normalizar(categoriaAtiva);
+        var filtradas = [];
+        var agora = new Date();
+        var duasHorasAtras = new Date(agora);
+        duasHorasAtras.setHours(duasHorasAtras.getHours() - 2);
+
+        for (var i = 0; i < noticias.length; i++) {
+            var n = noticias[i];
+            var titulo = n.titulo || '';
+            var resumo = n.resumo || '';
+            var fonte = n.fonte || '';
+            var categoriaNoticia = normalizar(n.categoria);
+
+            var matchTexto = !filtroTexto || normalizar(titulo + ' ' + resumo + ' ' + fonte).indexOf(normalizar(filtroTexto)) !== -1;
+            var matchCategoria = categoriaFiltro === 'todos' || categoriaNoticia === categoriaFiltro;
+            if (categoriaFiltro !== 'todos' && categoriasAtivas.indexOf(categoriaAtiva) === -1) {
+                continue;
+            }
+            var matchPalavraChave = palavrasChave.length === 0 || palavrasChave.some(function(p) {
+                return normalizar(titulo + ' ' + resumo).indexOf(normalizar(p)) !== -1;
             });
-        });
 
-        var ativas = config.categoriasAtivas || [];
-        var html = '';
-        for (var i = 0; i < todas.length; i++) {
-            var cat = todas[i];
-            var checked = ativas.indexOf(cat.id) !== -1 && cat.ativa ? 'checked' : '';
-            html += '<label><input type="checkbox" value="' + cat.id + '" ' + checked + '> ' + cat.label + '</label>';
+            if (matchTexto && matchCategoria && matchPalavraChave) {
+                filtradas.push(n);
+            }
         }
-        container.innerHTML = html;
 
-        var checkboxes = container.querySelectorAll('input[type="checkbox"]');
-        for (var j = 0; j < checkboxes.length; j++) {
-            (function(chk) {
-                chk.addEventListener('change', function() {
-                    var novasAtivas = [];
-                    var allChecked = container.querySelectorAll('input[type="checkbox"]:checked');
-                    for (var k = 0; k < allChecked.length; k++) {
-                        novasAtivas.push(allChecked[k].value);
-                    }
-                    DataService.setCategoriasAtivas(novasAtivas).then(function() {
-                        atualizarFiltrosRapidos(novasAtivas);
-                        var busca = document.getElementById('buscaInput').value;
-                        var ativa = document.querySelector('#filtrosContainer .ativo');
-                        var cat = ativa ? ativa.dataset.filtro : 'todos';
-                        var noticiasAtuais = DataService.getNoticias();
-                        DataService.getConfig().then(function(configAtual) {
-                            renderFeed(noticiasAtuais, busca, cat, configAtual.palavrasChave, configAtual.categoriasAtivas);
-                            atualizarDashboard(noticiasAtuais, configAtual.palavrasChave);
-                        });
-                    });
-                });
-            })(checkboxes[j]);
-        }
-    }).catch(function(error) {
-        console.error('Erro ao carregar categorias:', error);
-    });
-}
         var contadorHtml = '<div style="background:white; border-radius:16px; padding:8px 16px; margin-bottom:12px; font-size:0.8rem; color:#6b7a93; box-shadow:0 2px 8px rgba(0,0,0,0.04);">';
         contadorHtml += '📊 ' + filtradas.length + ' notícia' + (filtradas.length !== 1 ? 's' : '') + ' encontrada' + (filtradas.length !== 1 ? 's' : '');
         contadorHtml += '</div>';
@@ -1206,59 +1027,65 @@
         });
     }
 
+    // ===== RENDERIZAR CATEGORIAS (BUSCA DO FIRESTORE) =====
     function renderizarCategorias(config) {
         var container = document.getElementById('categoriasToggle');
         if (!container) return;
-        
-        // ===== USA A COLEÇÃO "categorias" =====
-        db.collection('categorias').get()
-            .then(function(snapshot) {
-                var todas = [];
-                snapshot.forEach(function(doc) {
-                    var data = doc.data();
-                    todas.push({
-                        id: data.nome || doc.id,
-                        label: data.label || data.nome || doc.id,
-                        ativa: data.ativa !== false
-                    });
+
+        db.collection('categorias').get().then(function(snapshot) {
+            var todas = [];
+            snapshot.forEach(function(doc) {
+                var data = doc.data();
+                var nome = data.nome || doc.id;
+                var label = data.label || data[nome] || data[doc.id] || nome;
+                todas.push({
+                    id: nome,
+                    label: label,
+                    ativa: data.ativa !== false
                 });
+            });
 
-                var ativas = config.categoriasAtivas || [];
-                var html = '';
-                for (var i = 0; i < todas.length; i++) {
-                    var cat = todas[i];
-                    var checked = ativas.indexOf(cat.id) !== -1 && cat.ativa ? 'checked' : '';
-                    html += '<label><input type="checkbox" value="' + cat.id + '" ' + checked + '> ' + cat.label + '</label>';
-                }
-                container.innerHTML = html;
+            var ativas = config.categoriasAtivas || [];
+            var html = '';
+            for (var i = 0; i < todas.length; i++) {
+                var cat = todas[i];
+                var checked = ativas.indexOf(cat.id) !== -1 && cat.ativa ? 'checked' : '';
+                html += '<label><input type="checkbox" value="' + cat.id + '" ' + checked + '> ' + cat.label + '</label>';
+            }
+            container.innerHTML = html;
 
-                var checkboxes = container.querySelectorAll('input[type="checkbox"]');
-                for (var j = 0; j < checkboxes.length; j++) {
-                    (function(chk) {
-                        chk.addEventListener('change', function() {
-                            var novasAtivas = [];
-                            var allChecked = container.querySelectorAll('input[type="checkbox"]:checked');
-                            for (var k = 0; k < allChecked.length; k++) {
-                                novasAtivas.push(allChecked[k].value);
-                            }
-                            DataService.setCategoriasAtivas(novasAtivas).then(function() {
-                                atualizarFiltrosRapidos(novasAtivas);
-                                atualizarFeed();
+            var checkboxes = container.querySelectorAll('input[type="checkbox"]');
+            for (var j = 0; j < checkboxes.length; j++) {
+                (function(chk) {
+                    chk.addEventListener('change', function() {
+                        var novasAtivas = [];
+                        var allChecked = container.querySelectorAll('input[type="checkbox"]:checked');
+                        for (var k = 0; k < allChecked.length; k++) {
+                            novasAtivas.push(allChecked[k].value);
+                        }
+                        DataService.setCategoriasAtivas(novasAtivas).then(function() {
+                            atualizarFiltrosRapidos(novasAtivas);
+                            var busca = document.getElementById('buscaInput').value;
+                            var ativa = document.querySelector('#filtrosContainer .ativo');
+                            var cat = ativa ? ativa.dataset.filtro : 'todos';
+                            var noticiasAtuais = DataService.getNoticias();
+                            DataService.getConfig().then(function(configAtual) {
+                                renderFeed(noticiasAtuais, busca, cat, configAtual.palavrasChave, configAtual.categoriasAtivas);
+                                atualizarDashboard(noticiasAtuais, configAtual.palavrasChave);
                             });
                         });
-                    })(checkboxes[j]);
-                }
-            })
-            .catch(function(error) {
-                console.error('❌ Erro ao carregar categorias:', error);
-                container.innerHTML = '<span style="color:#dc2626; font-size:0.8rem;">❌ Erro ao carregar categorias. Verifique a coleção "categorias" no Firestore.</span>';
-            });
+                    });
+                })(checkboxes[j]);
+            }
+        }).catch(function(error) {
+            console.error('Erro ao carregar categorias:', error);
+        });
     }
 
     function atualizarFiltrosRapidos(categoriasAtivas) {
         var container = document.getElementById('filtrosContainer');
         if (!container) return;
-        
+
         var botoes = container.querySelectorAll('button[data-filtro]');
         for (var i = 0; i < botoes.length; i++) {
             var btn = botoes[i];
