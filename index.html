@@ -669,33 +669,54 @@
         });
     }
 
-    // ===== GERAR FILTROS =====
-    function gerarFiltros() {
-        var container = document.getElementById('filtrosContainer');
-        if (!container) return;
+    // ===== GERAR FILTROS (VERSÃO CORRIGIDA) =====
+function gerarFiltros() {
+    var container = document.getElementById('filtrosContainer');
+    if (!container) {
+        console.error('❌ Container de filtros não encontrado.');
+        return;
+    }
 
-        db.collection('categorias').get().then(function(snapshot) {
+    console.log('📡 Buscando categorias no Firestore...');
+    
+    db.collection('categorias').get()
+        .then(function(snapshot) {
+            console.log('✅ Categorias encontradas:', snapshot.size);
+            
             var html = '<button data-filtro="todos" class="ativo">📋 Todos</button>';
+            
+            if (snapshot.size === 0) {
+                console.warn('⚠️ Nenhuma categoria encontrada no Firestore.');
+                container.innerHTML = html + '<span style="color:#6b7a93; font-size:0.8rem; margin-left:8px;">(Nenhuma categoria configurada)</span>';
+                return;
+            }
+            
             snapshot.forEach(function(doc) {
                 var data = doc.data();
+                var nome = data.nome || doc.id;
+                
+                // Mapeamento de labels com emojis
+                var labelMap = {
+                    'clima': '🌧️ Clima',
+                    'policial': '🚔 Policial',
+                    'greve': '🚛 Greve',
+                    'acidente': '⚠️ Acidentes',
+                    'transito': '🚧 Trânsito',
+                    'fabrica': '🏭 Fábricas'
+                };
+                
+                var label = labelMap[nome] || data.label || data[nome] || nome;
+                
+                // Se `ativa` não existir ou for `true`, exibe o botão
                 if (data.ativa !== false) {
-                    var nome = data.nome || doc.id;
-                    // Mapeamento para labels com emojis
-                    var labelMap = {
-                        'clima': '🌧️ Clima',
-                        'policial': '🚔 Policial',
-                        'greve': '🚛 Greve',
-                        'acidente': '⚠️ Acidentes',
-                        'transito': '🚧 Trânsito',
-                        'fabrica': '🏭 Fábricas'
-                    };
-                    var label = labelMap[nome] || data.label || data[nome] || nome;
                     html += '<button data-filtro="' + nome + '">' + label + '</button>';
                 }
             });
+            
             container.innerHTML = html;
-            console.log('✅ Filtros gerados com sucesso.');
-
+            console.log('✅ Filtros gerados com sucesso. Botões:', container.querySelectorAll('button').length);
+            
+            // Reaplica os eventos
             var filtrosBtns = container.querySelectorAll('button');
             for (var i = 0; i < filtrosBtns.length; i++) {
                 (function(btn) {
@@ -709,12 +730,13 @@
                     });
                 })(filtrosBtns[i]);
             }
-        }).catch(function(error) {
+        })
+        .catch(function(error) {
             console.error('❌ Erro ao gerar filtros:', error);
-            container.innerHTML = '<span style="color:#dc2626; font-size:0.8rem;">❌ Erro ao carregar filtros.</span>';
+            // Exibe mensagem amigável no lugar dos filtros
+            container.innerHTML = '<span style="color:#dc2626; font-size:0.8rem;">❌ Erro ao carregar filtros. Verifique a coleção "categorias" no Firestore.</span>';
         });
-    }
-
+}
     // ===== RENDER FEED =====
     function renderFeed(noticias, filtroTexto, categoriaAtiva, palavrasChave, categoriasAtivas) {
         var feedDiv = document.getElementById('feedNoticias');
