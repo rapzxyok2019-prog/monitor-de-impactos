@@ -19,7 +19,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
     <style>
-        /* ===== ESTILOS (mantidos) ===== */
+        /* ===== ESTILOS ===== */
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family: "Inter", system-ui, sans-serif; background:#f2f4f8; padding:16px; min-height:100vh; display:flex; justify-content:center; align-items:flex-start; }
         .container { max-width:1280px; width:100%; margin:0 auto; }
@@ -72,17 +72,10 @@
         .fonte-item:last-child { border-bottom:none; }
         .fonte-item strong { color:#003da5; }
 
-        .filtros-rapidos { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:8px; }
+        .filtros-rapidos { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:12px; }
         .filtros-rapidos button { background:white; border:1px solid #e2e6ee; padding:4px 12px; border-radius:40px; font-size:0.7rem; font-weight:500; cursor:pointer; transition:all 0.15s ease; font-family:inherit; color:#2c3e4e; }
         .filtros-rapidos button:hover { background:#f0f3f9; border-color:#bcc4d4; }
         .filtros-rapidos button.ativo { background:#003da5; color:white; border-color:#003da5; box-shadow:0 4px 12px rgba(0,61,165,0.2); }
-
-        .filtros-data { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:12px; background:white; padding:8px 14px; border-radius:60px; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
-        .filtros-data label { font-size:0.7rem; color:#6b7a93; }
-        .filtros-data input[type="date"] { padding:4px 8px; border:1px solid #d0d7e2; border-radius:30px; font-size:0.7rem; font-family:inherit; outline:none; }
-        .filtros-data input[type="date"]:focus { border-color:#003da5; }
-        .filtros-data button { background:#003da5; color:white; border:none; padding:4px 14px; border-radius:30px; font-size:0.7rem; cursor:pointer; font-family:inherit; }
-        .filtros-data button:hover { background:#002d7a; }
 
         .barra-busca { background:white; padding:6px 14px; border-radius:60px; margin-bottom:16px; display:flex; align-items:center; gap:8px; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
         .barra-busca input { flex:1; border:none; outline:none; font-size:0.85rem; padding:8px 0; font-family:inherit; background:transparent; color:#1e2a3a; }
@@ -203,16 +196,6 @@
                 <!-- Os botões serão gerados pelo JavaScript -->
             </div>
 
-            <!-- FILTRO POR DATA -->
-            <div class="filtros-data">
-                <label>📅 De:</label>
-                <input type="date" id="filtroDataInicio">
-                <label>Até:</label>
-                <input type="date" id="filtroDataFim">
-                <button id="aplicarFiltroData">Aplicar</button>
-                <button id="limparFiltroData" style="background:#6b7a93;">Limpar</button>
-            </div>
-
             <!-- BUSCA -->
             <div class="barra-busca">
                 🔍 <input type="text" id="buscaInput" placeholder="Buscar notícias...">
@@ -283,7 +266,7 @@
     const auth = firebase.auth();
 
     // ===== ADMINISTRADOR =====
-    const ADMIN_EMAIL = "SEU_EMAIL_AQUI"; // ⚠️ SUBSTITUA PELO SEU E-MAIL
+    const ADMIN_EMAIL = "admin@monitor.com"; // ✅ E-MAIL DO ADMIN
 
     // ===== ELEMENTOS DA TELA =====
     const telaLogin = document.getElementById('telaLogin');
@@ -641,7 +624,6 @@
         var canvas = document.getElementById('graficoOcorrencias');
         if (!canvas) return;
 
-        // Conta notícias por categoria (últimas 24h)
         var agora = new Date();
         var umDiaAtras = new Date(agora);
         umDiaAtras.setHours(umDiaAtras.getHours() - 24);
@@ -658,7 +640,6 @@
         var labels = Object.keys(contagem);
         var values = Object.values(contagem);
 
-        // Cores para cada categoria
         var cores = {
             'clima': '#3b82f6',
             'policial': '#dc2626',
@@ -735,8 +716,8 @@
         });
     }
 
-    // ===== RENDER FEED (COM BADGE "NOVA" E FILTRO DE DATA) =====
-    function renderFeed(noticias, filtroTexto, categoriaAtiva, palavrasChave, categoriasAtivas, dataInicio, dataFim) {
+    // ===== RENDER FEED (COM BADGE "NOVA") =====
+    function renderFeed(noticias, filtroTexto, categoriaAtiva, palavrasChave, categoriasAtivas) {
         var feedDiv = document.getElementById('feedNoticias');
         if (!feedDiv) return;
 
@@ -751,11 +732,6 @@
         }
 
         var categoriaFiltro = normalizar(categoriaAtiva);
-        var dataInicioVal = dataInicio ? new Date(dataInicio) : null;
-        var dataFimVal = dataFim ? new Date(dataFim) : null;
-
-        if (dataInicioVal) dataInicioVal.setHours(0, 0, 0, 0);
-        if (dataFimVal) dataFimVal.setHours(23, 59, 59, 999);
 
         var filtradas = [];
         var agora = new Date();
@@ -768,7 +744,6 @@
             var resumo = n.resumo || '';
             var fonte = n.fonte || '';
             var categoriaNoticia = normalizar(n.categoria);
-            var dataPub = n.dataPublicacao ? new Date(n.dataPublicacao.seconds * 1000) : null;
 
             var matchTexto = !filtroTexto || normalizar(titulo + ' ' + resumo + ' ' + fonte).indexOf(normalizar(filtroTexto)) !== -1;
             var matchCategoria = categoriaFiltro === 'todos' || categoriaNoticia === categoriaFiltro;
@@ -779,12 +754,7 @@
                 return normalizar(titulo + ' ' + resumo).indexOf(normalizar(p)) !== -1;
             });
 
-            // Filtro de data
-            var matchData = true;
-            if (dataInicioVal && dataPub) matchData = matchData && dataPub >= dataInicioVal;
-            if (dataFimVal && dataPub) matchData = matchData && dataPub <= dataFimVal;
-
-            if (matchTexto && matchCategoria && matchPalavraChave && matchData) {
+            if (matchTexto && matchCategoria && matchPalavraChave) {
                 filtradas.push(n);
             }
         }
@@ -812,7 +782,6 @@
             var reacoes = n.reacoes || {};
             var totalVistos = lidaPor.length;
 
-            // Badge "Nova"
             var dataPub = n.dataPublicacao ? new Date(n.dataPublicacao.seconds * 1000) : null;
             var isNova = dataPub && dataPub >= duasHorasAtras;
             var badgeNova = isNova ? '<span class="badge-nova">🆕 Nova</span>' : '';
@@ -887,11 +856,9 @@
         var busca = document.getElementById('buscaInput').value;
         var ativa = document.querySelector('#filtrosContainer .ativo');
         var cat = ativa ? ativa.dataset.filtro : 'todos';
-        var dataInicio = document.getElementById('filtroDataInicio').value;
-        var dataFim = document.getElementById('filtroDataFim').value;
         var noticiasAtuais = DataService.getNoticias();
         DataService.getConfig().then(function(config) {
-            renderFeed(noticiasAtuais, busca, cat, config.palavrasChave, config.categoriasAtivas, dataInicio, dataFim);
+            renderFeed(noticiasAtuais, busca, cat, config.palavrasChave, config.categoriasAtivas);
             atualizarDashboard(noticiasAtuais, config.palavrasChave);
             atualizarGrafico(noticiasAtuais);
             initMapa(noticiasAtuais);
@@ -926,7 +893,6 @@
         }
         document.getElementById('topFontes').innerHTML = topHtml || "<span style='color:#999;'>Nenhuma fonte</span>";
 
-        // Palavras sugeridas
         var tags = getPalavrasFrequentes(noticias);
         var sugeridasDiv = document.getElementById('palavrasSugeridas');
         if (sugeridasDiv) {
@@ -1188,22 +1154,10 @@
             atualizarFeed();
             initApagarNoticias();
 
-            // Eventos de busca
             document.getElementById('buscaInput').addEventListener('input', function() {
                 atualizarFeed();
             });
 
-            // Eventos de filtro de data
-            document.getElementById('aplicarFiltroData').addEventListener('click', function() {
-                atualizarFeed();
-            });
-            document.getElementById('limparFiltroData').addEventListener('click', function() {
-                document.getElementById('filtroDataInicio').value = '';
-                document.getElementById('filtroDataFim').value = '';
-                atualizarFeed();
-            });
-
-            // Abas
             var tabBtns = document.querySelectorAll('.tab-btn');
             for (var k = 0; k < tabBtns.length; k++) {
                 (function(btn) {
