@@ -9,10 +9,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-    <!-- Leaflet.markercluster (para clusters no mapa) -->
+    <!-- Leaflet.markercluster -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css" />
-    <!-- Chart.js (para gráficos) -->
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
@@ -72,6 +72,7 @@
         .fonte-item:last-child { border-bottom:none; }
         .fonte-item strong { color:#003da5; }
 
+        /* ===== FILTROS ===== */
         .filtros-rapidos { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:12px; }
         .filtros-rapidos button { background:white; border:1px solid #e2e6ee; padding:4px 12px; border-radius:40px; font-size:0.7rem; font-weight:500; cursor:pointer; transition:all 0.15s ease; font-family:inherit; color:#2c3e4e; }
         .filtros-rapidos button:hover { background:#f0f3f9; border-color:#bcc4d4; }
@@ -266,7 +267,7 @@
     const auth = firebase.auth();
 
     // ===== ADMINISTRADOR =====
-    const ADMIN_EMAIL = "admin@monitor.com"; // ✅ E-MAIL DO ADMIN
+    const ADMIN_EMAIL = "admin@monitor.com";
 
     // ===== ELEMENTOS DA TELA =====
     const telaLogin = document.getElementById('telaLogin');
@@ -537,7 +538,7 @@
         return sorted.slice(0, 15).map(function(p) { return [p, palavras[p]]; });
     }
 
-    // ===== APAGAR NOTÍCIA INDIVIDUAL (APENAS ADMIN) =====
+    // ===== APAGAR NOTÍCIA INDIVIDUAL =====
     function apagarNoticia(id) {
         var user = auth.currentUser;
         if (!user || user.email !== ADMIN_EMAIL) {
@@ -548,14 +549,7 @@
             db.collection('noticias').doc(id).delete()
                 .then(function() {
                     alert('✅ Notícia apagada com sucesso!');
-                    var busca = document.getElementById('buscaInput').value;
-                    var ativa = document.querySelector('#filtrosContainer .ativo');
-                    var cat = ativa ? ativa.dataset.filtro : 'todos';
-                    DataService.getConfig().then(function(config) {
-                        var noticiasAtuais = DataService.getNoticias();
-                        renderFeed(noticiasAtuais, busca, cat, config.palavrasChave, config.categoriasAtivas);
-                        atualizarDashboard(noticiasAtuais, config.palavrasChave);
-                    });
+                    atualizarFeed();
                 })
                 .catch(function(error) {
                     alert('❌ Erro ao apagar notícia: ' + error.message);
@@ -563,7 +557,7 @@
         }
     }
 
-    // ===== APAGAR TODAS AS NOTÍCIAS (APENAS ADMIN) =====
+    // ===== APAGAR TODAS AS NOTÍCIAS =====
     function initApagarNoticias() {
         var user = auth.currentUser;
         if (!user) return;
@@ -617,17 +611,47 @@
         });
     }
 
+    // ===== ENVIAR POR E-MAIL =====
+    function enviarPorEmail(id) {
+        var noticias = DataService.getNoticias();
+        var noticia = noticias.find(function(n) { return n.id === id; });
+        if (!noticia) {
+            alert('Notícia não encontrada.');
+            return;
+        }
+        var destinatario = prompt('📧 Digite o e-mail do destinatário:');
+        if (!destinatario) return;
+        if (destinatario.indexOf('@') === -1 || destinatario.indexOf('.') === -1) {
+            alert('❌ E-mail inválido.');
+            return;
+        }
+        var titulo = noticia.titulo || 'Sem título';
+        var resumo = noticia.resumo || 'Sem resumo';
+        var link = noticia.link || '#';
+        var fonte = noticia.fonte || 'Fonte desconhecida';
+        var dataFmt = noticia.dataPublicacao ? new Date(noticia.dataPublicacao.seconds * 1000).toLocaleString('pt-BR') : 'Data desconhecida';
+        var assunto = encodeURIComponent('[Monitor PepsiCo] ' + titulo);
+        var corpo = encodeURIComponent(
+            '📰 ' + titulo + '\n\n' +
+            '📝 ' + resumo + '\n\n' +
+            '📅 ' + dataFmt + '\n' +
+            '📰 Fonte: ' + fonte + '\n' +
+            '🔗 Link original: ' + link + '\n\n' +
+            '---\n' +
+            'Enviado pelo Monitor de Impactos - PepsiCo'
+        );
+        window.location.href = 'mailto:' + destinatario + '?subject=' + assunto + '&body=' + corpo;
+    }
+
     // ===== GRÁFICO =====
     var graficoChart = null;
 
     function atualizarGrafico(noticias) {
         var canvas = document.getElementById('graficoOcorrencias');
         if (!canvas) return;
-
         var agora = new Date();
         var umDiaAtras = new Date(agora);
         umDiaAtras.setHours(umDiaAtras.getHours() - 24);
-
         var contagem = {};
         noticias.forEach(function(n) {
             var data = n.dataPublicacao ? new Date(n.dataPublicacao.seconds * 1000) : new Date();
@@ -636,87 +660,72 @@
                 contagem[cat] = (contagem[cat] || 0) + 1;
             }
         });
-
         var labels = Object.keys(contagem);
         var values = Object.values(contagem);
-
         var cores = {
-            'clima': '#3b82f6',
-            'policial': '#dc2626',
-            'greve': '#f59e0b',
-            'acidente': '#8b5cf6',
-            'transito': '#f97316',
-            'fabrica': '#22c55e',
-            'geral': '#6b7280'
+            'clima': '#3b82f6', 'policial': '#dc2626', 'greve': '#f59e0b',
+            'acidente': '#8b5cf6', 'transito': '#f97316', 'fabrica': '#22c55e', 'geral': '#6b7280'
         };
-
-        var backgroundColors = labels.map(function(label) {
-            return cores[label] || '#6b7280';
-        });
-
-        if (graficoChart) {
-            graficoChart.destroy();
-            graficoChart = null;
-        }
-
+        var backgroundColors = labels.map(function(label) { return cores[label] || '#6b7280'; });
+        if (graficoChart) { graficoChart.destroy(); graficoChart = null; }
         var ctx = canvas.getContext('2d');
         graficoChart = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: labels,
-                datasets: [{
-                    label: 'Ocorrências (últimas 24h)',
-                    data: values,
-                    backgroundColor: backgroundColors,
-                    borderRadius: 4
-                }]
+                datasets: [{ label: 'Ocorrências (últimas 24h)', data: values, backgroundColor: backgroundColors, borderRadius: 4 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    y: { beginAtZero: true, ticks: { stepSize: 1 } },
-                    x: { grid: { display: false } }
-                }
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { grid: { display: false } } }
             }
         });
     }
 
-    // ===== GERAR FILTROS =====
+    // ===== GERAR FILTROS (CORRIGIDO) =====
     function gerarFiltros() {
         var container = document.getElementById('filtrosContainer');
-        if (!container) return;
-        db.collection('categorias').get().then(function(snapshot) {
-            var html = '<button data-filtro="todos" class="ativo">📋 Todos</button>';
-            snapshot.forEach(function(doc) {
-                var data = doc.data();
-                if (data.ativa !== false) {
-                    html += '<button data-filtro="' + (data.nome || doc.id) + '">' + (data.label || data.nome || doc.id) + '</button>';
+        if (!container) {
+            console.error('❌ Container de filtros não encontrado.');
+            return;
+        }
+        db.collection('categorias').get()
+            .then(function(snapshot) {
+                var html = '<button data-filtro="todos" class="ativo">📋 Todos</button>';
+                snapshot.forEach(function(doc) {
+                    var data = doc.data();
+                    if (data.ativa !== false) {
+                        var nome = data.nome || doc.id;
+                        var label = data.label || nome;
+                        html += '<button data-filtro="' + nome + '">' + label + '</button>';
+                    }
+                });
+                container.innerHTML = html;
+                console.log('✅ Filtros gerados com sucesso.');
+                // Reaplica os eventos
+                var filtrosBtns = container.querySelectorAll('button');
+                for (var i = 0; i < filtrosBtns.length; i++) {
+                    (function(btn) {
+                        btn.addEventListener('click', function() {
+                            var allBtns = container.querySelectorAll('button');
+                            for (var j = 0; j < allBtns.length; j++) {
+                                allBtns[j].classList.remove('ativo');
+                            }
+                            btn.classList.add('ativo');
+                            atualizarFeed();
+                        });
+                    })(filtrosBtns[i]);
                 }
+            })
+            .catch(function(error) {
+                console.error('❌ Erro ao gerar filtros:', error);
+                container.innerHTML = '<span style="color:#dc2626; font-size:0.8rem;">❌ Erro ao carregar filtros. Verifique a coleção "categorias" no Firestore.</span>';
             });
-            container.innerHTML = html;
-            var filtrosBtns = container.querySelectorAll('button');
-            for (var i = 0; i < filtrosBtns.length; i++) {
-                (function(btn) {
-                    btn.addEventListener('click', function() {
-                        var allBtns = container.querySelectorAll('button');
-                        for (var j = 0; j < allBtns.length; j++) {
-                            allBtns[j].classList.remove('ativo');
-                        }
-                        btn.classList.add('ativo');
-                        atualizarFeed();
-                    });
-                })(filtrosBtns[i]);
-            }
-        }).catch(function(error) {
-            console.error('Erro ao gerar filtros:', error);
-        });
     }
 
-    // ===== RENDER FEED (COM BADGE "NOVA") =====
+    // ===== RENDER FEED =====
     function renderFeed(noticias, filtroTexto, categoriaAtiva, palavrasChave, categoriasAtivas) {
         var feedDiv = document.getElementById('feedNoticias');
         if (!feedDiv) return;
@@ -732,7 +741,6 @@
         }
 
         var categoriaFiltro = normalizar(categoriaAtiva);
-
         var filtradas = [];
         var agora = new Date();
         var duasHorasAtras = new Date(agora);
@@ -798,6 +806,7 @@
             html += '<button class="emoji-btn" data-emoji="⚠️">⚠️ <span class="contador" id="cont-' + n.id + '-⚠️">' + (reacoes['⚠️'] || 0) + '</span></button>';
             html += '<button class="emoji-btn" data-emoji="🔥">🔥 <span class="contador" id="cont-' + n.id + '-🔥">' + (reacoes['🔥'] || 0) + '</span></button>';
             html += '<button class="btn-acao" onclick="compartilharNoticia(\'' + n.id + '\')">📤 Compartilhar</button>';
+            html += '<button class="btn-acao" onclick="enviarPorEmail(\'' + n.id + '\')">📧 Enviar</button>';
             html += '<div style="display:flex; align-items:center; gap:6px; margin-left:auto;">';
             html += '<span style="font-size:0.65rem; color:#6b7a93;">👁️ ' + (totalVistos > 0 ? totalVistos : '') + '</span>';
             html += '<button class="btn-acao toggle-lida" data-id="' + n.id + '">' + (lida ? '✅ Lida' : '📖 Marcar lida') + '</button>';
@@ -839,7 +848,7 @@
             })(lidaBtns[l]);
         }
 
-        // Apagar notícia (admin)
+        // Apagar notícia
         var apagarBtns = feedDiv.querySelectorAll('.btn-apagar');
         for (var a = 0; a < apagarBtns.length; a++) {
             (function(btn) {
@@ -851,7 +860,7 @@
         }
     }
 
-    // ===== ATUALIZAR FEED (função central) =====
+    // ===== ATUALIZAR FEED (central) =====
     function atualizarFeed() {
         var busca = document.getElementById('buscaInput').value;
         var ativa = document.querySelector('#filtrosContainer .ativo');
@@ -870,7 +879,6 @@
         var total = noticias.length;
         var criticos = 0, atencao = 0, info = 0;
         var contagemFontes = {};
-
         for (var i = 0; i < noticias.length; i++) {
             var n = noticias[i];
             var sev = classificarSeveridade(n.titulo, n.resumo, palavrasChave);
@@ -879,7 +887,6 @@
             else info++;
             contagemFontes[n.fonte] = (contagemFontes[n.fonte] || 0) + 1;
         }
-
         document.getElementById('totalCount').textContent = total;
         document.getElementById('criticoCount').textContent = criticos;
         document.getElementById('atencaoCount').textContent = atencao;
@@ -1061,6 +1068,7 @@
             }
         }).catch(function(error) {
             console.error('Erro ao carregar categorias:', error);
+            container.innerHTML = '<span style="color:#dc2626; font-size:0.8rem;">❌ Erro ao carregar categorias. Verifique a coleção "categorias" no Firestore.</span>';
         });
     }
 
@@ -1090,31 +1098,21 @@
     function initMapa(noticias) {
         var mapaDiv = document.getElementById('mapa');
         if (!mapaDiv) return;
-
-        if (map) {
-            map.remove();
-            map = null;
-        }
-
+        if (map) { map.remove(); map = null; }
         if (!noticias || noticias.length === 0) {
             mapaDiv.innerHTML = '<div style="display:flex; align-items:center; justify-content:center; height:100%; color:#6b7a93; font-size:0.9rem;">🗺️ Aguardando notícias...</div>';
             return;
         }
-
         var noticiasComLocalizacao = noticias.filter(function(n) { return n.localizacao && n.localizacao.lat; });
-
         if (noticiasComLocalizacao.length === 0) {
             mapaDiv.innerHTML = '<div style="display:flex; align-items:center; justify-content:center; height:100%; color:#6b7a93; font-size:0.9rem;">🗺️ Nenhuma notícia com localização disponível</div>';
             return;
         }
-
         map = L.map('mapa').setView([-15.5, -56.0], 4);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap'
         }).addTo(map);
-
         var markers = L.markerClusterGroup();
-
         for (var j = 0; j < noticiasComLocalizacao.length; j++) {
             var n = noticiasComLocalizacao[j];
             var dataFmt = n.dataPublicacao ? new Date(n.dataPublicacao.seconds * 1000).toLocaleDateString('pt-BR') : 'Data desconhecida';
@@ -1122,20 +1120,15 @@
             popupContent += '<span style="font-size:0.8rem;">📍 ' + (n.localizacao.cidade || 'Localização') + '</span><br>';
             popupContent += '<span style="font-size:0.7rem; color:#666;">' + escapeHtml(n.fonte) + ' • ' + dataFmt + '</span><br>';
             popupContent += '<a href="' + n.link + '" target="_blank" style="font-size:0.7rem; color:#003da5;">🔗 Ver notícia</a>';
-
-            var marker = L.marker([n.localizacao.lat, n.localizacao.lng])
-                .bindPopup(popupContent);
+            var marker = L.marker([n.localizacao.lat, n.localizacao.lng]).bindPopup(popupContent);
             markers.addLayer(marker);
         }
-
         map.addLayer(markers);
-
         if (noticiasComLocalizacao.length > 1) {
             map.fitBounds(markers.getBounds().pad(0.2));
         } else {
             map.setZoom(10);
         }
-
         setTimeout(function() { if (map) map.invalidateSize(); }, 300);
     }
 
