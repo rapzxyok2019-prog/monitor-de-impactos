@@ -9,17 +9,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-    <!-- Leaflet.markercluster -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css" />
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
     <style>
-        /* ===== ESTILOS ===== */
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family: "Inter", system-ui, sans-serif; background:#f2f4f8; padding:16px; min-height:100vh; display:flex; justify-content:center; align-items:flex-start; }
         .container { max-width:1280px; width:100%; margin:0 auto; }
@@ -140,7 +136,6 @@
 <body>
 <div class="container">
 
-    <!-- TELA DE LOGIN -->
     <div id="telaLogin">
         <h2>🚛 Monitor de Impactos</h2>
         <p class="subtitle">Faça login para acessar o sistema</p>
@@ -151,7 +146,6 @@
         <div id="loginErro"></div>
     </div>
 
-    <!-- CONTEÚDO PRINCIPAL -->
     <div class="conteudo-site" id="conteudoSite">
         <header>
             <div>
@@ -170,8 +164,6 @@
         </div>
 
         <div id="tab-noticias" class="tab-content ativo">
-
-            <!-- DASHBOARD -->
             <div class="dashboard" id="dashboardMetricas">
                 <div class="card-metrica total"><span class="icone">📰</span><div class="numero" id="totalCount">0</div><div class="rotulo">Total</div></div>
                 <div class="card-metrica critico"><span class="icone">🔴</span><div class="numero" id="criticoCount">0</div><div class="rotulo">Crítico</div></div>
@@ -179,7 +171,6 @@
                 <div class="card-metrica info"><span class="icone">🟢</span><div class="numero" id="infoCount">0</div><div class="rotulo">Informativo</div></div>
             </div>
 
-            <!-- GRÁFICO + TOP FONTES -->
             <div class="dashboard-extras">
                 <div class="card-extra">
                     <h4>📊 Ocorrências por categoria (últimas 24h)</h4>
@@ -191,17 +182,14 @@
                 </div>
             </div>
 
-            <!-- FILTROS (gerados dinamicamente do Firestore) -->
             <div class="filtros-rapidos" id="filtrosContainer">
                 <!-- Os botões serão gerados pelo JavaScript -->
             </div>
 
-            <!-- BUSCA -->
             <div class="barra-busca">
                 🔍 <input type="text" id="buscaInput" placeholder="Buscar notícias...">
             </div>
 
-            <!-- FEED + MAPA -->
             <div class="grid-2colunas">
                 <div id="feedNoticias"></div>
                 <div>
@@ -245,7 +233,6 @@
     </div>
 </div>
 
-<!-- SCRIPTS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
 <script>
@@ -268,7 +255,6 @@
     // ===== ADMINISTRADOR =====
     const ADMIN_EMAIL = "admin@monitor.com";
 
-    // ===== ELEMENTOS DA TELA =====
     const telaLogin = document.getElementById('telaLogin');
     const conteudoSite = document.getElementById('conteudoSite');
     const emailInput = document.getElementById('emailInput');
@@ -683,13 +669,10 @@
         });
     }
 
-    // ===== GERAR FILTROS (BUSCA DA COLEÇÃO "categorias") =====
+    // ===== GERAR FILTROS =====
     function gerarFiltros() {
         var container = document.getElementById('filtrosContainer');
-        if (!container) {
-            console.error('❌ Container de filtros não encontrado.');
-            return;
-        }
+        if (!container) return;
 
         db.collection('categorias').get().then(function(snapshot) {
             var html = '<button data-filtro="todos" class="ativo">📋 Todos</button>';
@@ -697,9 +680,16 @@
                 var data = doc.data();
                 if (data.ativa !== false) {
                     var nome = data.nome || doc.id;
-                    // Busca o label em vários campos possíveis
-                    var label = data.label || data[nome] || data[doc.id] || nome;
-                    // Se for maiúsculo, mantém
+                    // Mapeamento para labels com emojis
+                    var labelMap = {
+                        'clima': '🌧️ Clima',
+                        'policial': '🚔 Policial',
+                        'greve': '🚛 Greve',
+                        'acidente': '⚠️ Acidentes',
+                        'transito': '🚧 Trânsito',
+                        'fabrica': '🏭 Fábricas'
+                    };
+                    var label = labelMap[nome] || data.label || data[nome] || nome;
                     html += '<button data-filtro="' + nome + '">' + label + '</button>';
                 }
             });
@@ -721,7 +711,7 @@
             }
         }).catch(function(error) {
             console.error('❌ Erro ao gerar filtros:', error);
-            container.innerHTML = '<span style="color:#dc2626; font-size:0.8rem;">❌ Erro ao carregar filtros. Verifique a coleção "categorias" no Firestore.</span>';
+            container.innerHTML = '<span style="color:#dc2626; font-size:0.8rem;">❌ Erro ao carregar filtros.</span>';
         });
     }
 
@@ -818,7 +808,6 @@
 
         feedDiv.innerHTML = html;
 
-        // Eventos de reação
         var emojiBtns = feedDiv.querySelectorAll('.emoji-btn');
         for (var k = 0; k < emojiBtns.length; k++) {
             (function(btn) {
@@ -836,7 +825,6 @@
             })(emojiBtns[k]);
         }
 
-        // Toggle lida
         var lidaBtns = feedDiv.querySelectorAll('.toggle-lida');
         for (var l = 0; l < lidaBtns.length; l++) {
             (function(btn) {
@@ -848,7 +836,6 @@
             })(lidaBtns[l]);
         }
 
-        // Apagar notícia
         var apagarBtns = feedDiv.querySelectorAll('.btn-apagar');
         for (var a = 0; a < apagarBtns.length; a++) {
             (function(btn) {
@@ -860,7 +847,7 @@
         }
     }
 
-    // ===== ATUALIZAR FEED (central) =====
+    // ===== ATUALIZAR FEED =====
     function atualizarFeed() {
         var busca = document.getElementById('buscaInput').value;
         var ativa = document.querySelector('#filtrosContainer .ativo');
@@ -1027,7 +1014,7 @@
         });
     }
 
-    // ===== RENDERIZAR CATEGORIAS (BUSCA DO FIRESTORE) =====
+    // ===== RENDERIZAR CATEGORIAS (SUA VERSÃO FUNCIONAL) =====
     function renderizarCategorias(config) {
         var container = document.getElementById('categoriasToggle');
         if (!container) return;
@@ -1036,11 +1023,9 @@
             var todas = [];
             snapshot.forEach(function(doc) {
                 var data = doc.data();
-                var nome = data.nome || doc.id;
-                var label = data.label || data[nome] || data[doc.id] || nome;
                 todas.push({
-                    id: nome,
-                    label: label,
+                    id: data.nome || doc.id,
+                    label: data.label || data.nome || doc.id,
                     ativa: data.ativa !== false
                 });
             });
@@ -1104,7 +1089,7 @@
         }
     }
 
-    // ===== MAPA COM CLUSTERS =====
+    // ===== MAPA =====
     var map;
 
     function initMapa(noticias) {
