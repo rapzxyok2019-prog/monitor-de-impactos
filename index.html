@@ -192,7 +192,7 @@
                 </div>
             </div>
 
-            <!-- FILTROS (gerados dinamicamente) -->
+            <!-- FILTROS (gerados dinamicamente da coleção "categorias") -->
             <div class="filtros-rapidos" id="filtrosContainer">
                 <!-- Os botões serão gerados pelo JavaScript -->
             </div>
@@ -684,13 +684,15 @@
         });
     }
 
-    // ===== GERAR FILTROS (CORRIGIDO) =====
+    // ===== GERAR FILTROS (BUSCA DA COLEÇÃO "categorias") =====
     function gerarFiltros() {
         var container = document.getElementById('filtrosContainer');
         if (!container) {
             console.error('❌ Container de filtros não encontrado.');
             return;
         }
+        
+        // ===== USA A COLEÇÃO "categorias" =====
         db.collection('categorias').get()
             .then(function(snapshot) {
                 var html = '<button data-filtro="todos" class="ativo">📋 Todos</button>';
@@ -704,6 +706,7 @@
                 });
                 container.innerHTML = html;
                 console.log('✅ Filtros gerados com sucesso.');
+                
                 // Reaplica os eventos
                 var filtrosBtns = container.querySelectorAll('button');
                 for (var i = 0; i < filtrosBtns.length; i++) {
@@ -1030,50 +1033,56 @@
     function renderizarCategorias(config) {
         var container = document.getElementById('categoriasToggle');
         if (!container) return;
-        db.collection('categorias').get().then(function(snapshot) {
-            var todas = [];
-            snapshot.forEach(function(doc) {
-                var data = doc.data();
-                todas.push({
-                    id: data.nome || doc.id,
-                    label: data.label || data.nome || doc.id,
-                    ativa: data.ativa !== false
-                });
-            });
-
-            var ativas = config.categoriasAtivas || [];
-            var html = '';
-            for (var i = 0; i < todas.length; i++) {
-                var cat = todas[i];
-                var checked = ativas.indexOf(cat.id) !== -1 && cat.ativa ? 'checked' : '';
-                html += '<label><input type="checkbox" value="' + cat.id + '" ' + checked + '> ' + cat.label + '</label>';
-            }
-            container.innerHTML = html;
-
-            var checkboxes = container.querySelectorAll('input[type="checkbox"]');
-            for (var j = 0; j < checkboxes.length; j++) {
-                (function(chk) {
-                    chk.addEventListener('change', function() {
-                        var novasAtivas = [];
-                        var allChecked = container.querySelectorAll('input[type="checkbox"]:checked');
-                        for (var k = 0; k < allChecked.length; k++) {
-                            novasAtivas.push(allChecked[k].value);
-                        }
-                        DataService.setCategoriasAtivas(novasAtivas).then(function() {
-                            atualizarFiltrosRapidos(novasAtivas);
-                            atualizarFeed();
-                        });
+        
+        // ===== USA A COLEÇÃO "categorias" =====
+        db.collection('categorias').get()
+            .then(function(snapshot) {
+                var todas = [];
+                snapshot.forEach(function(doc) {
+                    var data = doc.data();
+                    todas.push({
+                        id: data.nome || doc.id,
+                        label: data.label || data.nome || doc.id,
+                        ativa: data.ativa !== false
                     });
-                })(checkboxes[j]);
-            }
-        }).catch(function(error) {
-            console.error('Erro ao carregar categorias:', error);
-            container.innerHTML = '<span style="color:#dc2626; font-size:0.8rem;">❌ Erro ao carregar categorias. Verifique a coleção "categorias" no Firestore.</span>';
-        });
+                });
+
+                var ativas = config.categoriasAtivas || [];
+                var html = '';
+                for (var i = 0; i < todas.length; i++) {
+                    var cat = todas[i];
+                    var checked = ativas.indexOf(cat.id) !== -1 && cat.ativa ? 'checked' : '';
+                    html += '<label><input type="checkbox" value="' + cat.id + '" ' + checked + '> ' + cat.label + '</label>';
+                }
+                container.innerHTML = html;
+
+                var checkboxes = container.querySelectorAll('input[type="checkbox"]');
+                for (var j = 0; j < checkboxes.length; j++) {
+                    (function(chk) {
+                        chk.addEventListener('change', function() {
+                            var novasAtivas = [];
+                            var allChecked = container.querySelectorAll('input[type="checkbox"]:checked');
+                            for (var k = 0; k < allChecked.length; k++) {
+                                novasAtivas.push(allChecked[k].value);
+                            }
+                            DataService.setCategoriasAtivas(novasAtivas).then(function() {
+                                atualizarFiltrosRapidos(novasAtivas);
+                                atualizarFeed();
+                            });
+                        });
+                    })(checkboxes[j]);
+                }
+            })
+            .catch(function(error) {
+                console.error('❌ Erro ao carregar categorias:', error);
+                container.innerHTML = '<span style="color:#dc2626; font-size:0.8rem;">❌ Erro ao carregar categorias. Verifique a coleção "categorias" no Firestore.</span>';
+            });
     }
 
     function atualizarFiltrosRapidos(categoriasAtivas) {
         var container = document.getElementById('filtrosContainer');
+        if (!container) return;
+        
         var botoes = container.querySelectorAll('button[data-filtro]');
         for (var i = 0; i < botoes.length; i++) {
             var btn = botoes[i];
