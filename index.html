@@ -948,21 +948,25 @@
     }
 
     function renderizarCategorias(config) {
-        var container = document.getElementById('categoriasToggle');
-        var todas = [
-            { id: 'clima', label: '🌧️ Clima' },
-            { id: 'transito', label: '🚧 Trânsito' },
-            { id: 'greve', label: '🚛 Greve' },
-            { id: 'fabrica', label: '🏭 Fábricas' },
-            { id: 'acidente', label: '⚠️ Acidentes' },
-            { id: 'policial', label: '🚔 Policial' }
-        ];
-        var ativas = config.categoriasAtivas || [];
+    var container = document.getElementById('categoriasToggle');
+    if (!container) return;
 
+    db.collection('categorias').get().then(function(snapshot) {
+        var todas = [];
+        snapshot.forEach(function(doc) {
+            var data = doc.data();
+            todas.push({
+                id: data.nome || doc.id,
+                label: data.label || data.nome || doc.id,
+                ativa: data.ativa !== false
+            });
+        });
+
+        var ativas = config.categoriasAtivas || [];
         var html = '';
         for (var i = 0; i < todas.length; i++) {
             var cat = todas[i];
-            var checked = ativas.indexOf(cat.id) !== -1 ? 'checked' : '';
+            var checked = ativas.indexOf(cat.id) !== -1 && cat.ativa ? 'checked' : '';
             html += '<label><input type="checkbox" value="' + cat.id + '" ' + checked + '> ' + cat.label + '</label>';
         }
         container.innerHTML = html;
@@ -990,7 +994,10 @@
                 });
             })(checkboxes[j]);
         }
-    }
+    }).catch(function(error) {
+        console.error('Erro ao carregar categorias:', error);
+    });
+}
 
     function atualizarFiltrosRapidos(categoriasAtivas) {
         var container = document.getElementById('filtrosContainer');
