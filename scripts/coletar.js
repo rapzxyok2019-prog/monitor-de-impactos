@@ -1,5 +1,5 @@
 // ============================================================
-// SCRIPT DE COLETA DE NOTÍCIAS - FOCO EM SEGURANÇA E MONITORAMENTO
+// SCRIPT DE COLETA DE NOTÍCIAS - COM CATEGORIAS DO FIRESTORE
 // ============================================================
 
 const { initializeApp } = require('firebase-admin/app');
@@ -9,98 +9,89 @@ const Parser = require('rss-parser');
 // ===== CONFIGURAÇÕES =====
 const DIAS_PADRAO = 2;
 
-// ===== PALAVRAS-CHAVE OBRIGATÓRIAS (PELO MENOS UMA) =====
-const PALAVRAS_CHAVE_OBRIGATORIAS = [
-  // ===== SEGURANÇA E CRIMINALIDADE =====
-  'roubo', 'carga', 'caminhão', 'assalto', 'furto', 'carga roubada', 'desvio',
-  'criminalidade', 'violência', 'tiroteio', 'confronto', 'operação policial',
-  'segurança pública', 'monitoramento', 'vigilância', 'investigação',
-  'bandido', 'traficante', 'assaltante', 'ladrão', 'gangue',
-
-  // ===== GREVES E PARALISAÇÕES =====
-  'greve', 'paralisação', 'caminhoneiro', 'caminhoneiros', 'protesto', 'bloqueio',
-
-  // ===== TRÂNSITO E RODOVIAS =====
-  'interdição', 'rodovia', 'br-', 'trânsito', 'acidente', 'colisão', 'capotamento',
-
-  // ===== CLIMA =====
-  'chuva', 'enchente', 'alagamento', 'inundação', 'deslizamento', 'tempestade',
-  'calor extremo', 'granizo',
-
-  // ===== LOGÍSTICA E COMBUSTÍVEL =====
-  'abastecimento', 'combustível', 'diesel', 'gasolina', 'transporte', 'carga'
-];
-
-// ===== PALAVRAS DE BLOQUEIO (SE TIVER, É DESCARTADA) =====
+// ===== PALAVRAS DE BLOQUEIO =====
 const PALAVRAS_BLOQUEIO = [
-  // Política (que não impacta segurança)
-  'eleição', 'voto', 'presidente', 'governo', 'partido', 'senado', 'câmara',
-  'deputado', 'senador', 'vereador', 'ministro', 'governador',
-
-  // Economia geral (sem relação com segurança)
+  'política', 'político', 'eleição', 'voto', 'presidente', 'governo', 'partido', 'senado',
+  'câmara', 'deputado', 'senador', 'vereador', 'ministro', 'governador',
   'inflação', 'ibovespa', 'dólar', 'mercado financeiro', 'bolsa de valores',
-
-  // Esportes
-  'futebol', 'campeonato', 'jogador', 'time', 'esporte', 'olimpíada',
-
-  // Entretenimento
-  'celebridade', 'famoso', 'artista', 'novela', 'cinema', 'shows',
-
-  // Safras e agronegócio
+  'futebol', 'campeonato', 'jogador', 'time', 'esporte',
+  'celebridade', 'famoso', 'artista', 'novela', 'cinema',
   'safra', 'soja', 'milho', 'trigo', 'café', 'agronegócio', 'plantio', 'colheita',
-
-  // Saúde
   'vacina', 'hospital', 'médico', 'tratamento', 'câncer', 'covid', 'pandemia'
 ];
 
-// ===== FONTES DE NOTÍCIAS (FOCO NACIONAL) =====
+// ===== FONTES DE NOTÍCIAS =====
 const FONTES = [
-  // ===== PORTAIS NACIONAIS =====
   { nome: 'G1 - Geral', url: 'https://g1.globo.com/rss/g1/', categoria: 'geral' },
   { nome: 'G1 - Segurança Pública', url: 'https://g1.globo.com/rss/g1/seguranca/', categoria: 'policial' },
+  { nome: 'G1 - São Paulo', url: 'https://g1.globo.com/rss/g1/sp/sao-paulo/', categoria: 'geral' },
+  { nome: 'G1 - Rio de Janeiro', url: 'https://g1.globo.com/rss/g1/rj/rio-de-janeiro/', categoria: 'geral' },
+  { nome: 'G1 - Minas Gerais', url: 'https://g1.globo.com/rss/g1/mg/minas-gerais/', categoria: 'geral' },
   { nome: 'CNN Brasil', url: 'https://www.cnnbrasil.com.br/feed/', categoria: 'geral' },
   { nome: 'Folha de SP', url: 'https://feeds.folha.uol.com.br/folha/emcimadahora/rss091.xml', categoria: 'geral' },
   { nome: 'JP News', url: 'https://jovempan.com.br/feed', categoria: 'geral' },
-  { nome: 'Agência Brasil - EBC', url: 'https://www.ebc.com.br/feed', categoria: 'policial' },
+  { nome: 'Agência Brasil - EBC', url: 'https://www.ebc.com.br/feed', categoria: 'geral' },
   { nome: 'R7 - Notícias', url: 'https://noticias.r7.com/feed.xml', categoria: 'geral' },
-  { nome: 'R7 - Brasil', url: 'https://noticias.r7.com/brasil/feed.xml', categoria: 'geral' },
-  { nome: 'Metrópoles - DF', url: 'https://www.metropoles.com/feed', categoria: 'geral' },
-  { nome: 'Estadão - Geral', url: 'https://estadao.com.br/rss/geral.xml', categoria: 'geral' },
-  { nome: 'Estadão - Polícia', url: 'https://estadao.com.br/rss/policia.xml', categoria: 'policial' },
-
-  // ===== REGIONAIS ESTRATÉGICOS =====
-  { nome: 'G1 - São Paulo', url: 'https://g1.globo.com/rss/g1/sp/sao-paulo/', categoria: 'transito' },
-  { nome: 'G1 - Rio de Janeiro', url: 'https://g1.globo.com/rss/g1/rj/rio-de-janeiro/', categoria: 'transito' },
-  { nome: 'G1 - Minas Gerais', url: 'https://g1.globo.com/rss/g1/mg/minas-gerais/', categoria: 'transito' },
-  { nome: 'G1 - Paraná', url: 'https://g1.globo.com/rss/g1/pr/parana/', categoria: 'transito' },
-  { nome: 'G1 - Bahia', url: 'https://g1.globo.com/rss/g1/ba/bahia/', categoria: 'transito' },
-  { nome: 'G1 - Pernambuco', url: 'https://g1.globo.com/rss/g1/pe/pernambuco/', categoria: 'transito' },
-  { nome: 'G1 - Rio Grande do Sul', url: 'https://g1.globo.com/rss/g1/rs/rio-grande-do-sul/', categoria: 'transito' },
-  { nome: 'G1 - Ceará', url: 'https://g1.globo.com/rss/g1/ce/ceara/', categoria: 'transito' },
-  { nome: 'R7 - São Paulo', url: 'https://noticias.r7.com/sao-paulo/feed.xml', categoria: 'transito' },
-  { nome: 'R7 - Rio de Janeiro', url: 'https://noticias.r7.com/rio-de-janeiro/feed.xml', categoria: 'transito' },
-  { nome: 'O Globo - Rio', url: 'https://oglobo.globo.com/rss/rio/', categoria: 'transito' },
-  { nome: 'O Globo - São Paulo', url: 'https://oglobo.globo.com/rss/sao-paulo/', categoria: 'transito' },
-
-  // ===== CLIMA =====
-  { nome: 'Meteorologia - Climatempo', url: 'https://www.climatempo.com.br/rss/noticias', categoria: 'clima' }
+  { nome: 'Estadão - Geral', url: 'https://estadao.com.br/rss/geral.xml', categoria: 'geral' }
 ];
 
+// ===== FUNÇÃO: CARREGAR CATEGORIAS DO FIRESTORE =====
+async function carregarCategorias(db) {
+  try {
+    var snapshot = await db.collection('categorias').get();
+    var categorias = [];
+    snapshot.forEach(function(doc) {
+      var data = doc.data();
+      categorias.push({
+        nome: data.nome || doc.id,
+        palavras: data.palavras || [],
+        prioridade: data.prioridade || 999
+      });
+    });
+    // Ordena por prioridade (menor número = maior prioridade)
+    categorias.sort(function(a, b) { return a.prioridade - b.prioridade; });
+    console.log('📋 Categorias carregadas:', categorias.length);
+    return categorias;
+  } catch (error) {
+    console.error('❌ Erro ao carregar categorias:', error);
+    return [];
+  }
+}
+
+// ===== FUNÇÃO: DETECTAR CATEGORIA =====
+function detectarCategoria(titulo, resumo, categorias) {
+  var texto = (titulo + ' ' + resumo).toLowerCase();
+  
+  for (var i = 0; i < categorias.length; i++) {
+    var cat = categorias[i];
+    for (var j = 0; j < cat.palavras.length; j++) {
+      if (texto.indexOf(cat.palavras[j].toLowerCase()) !== -1) {
+        return cat.nome;
+      }
+    }
+  }
+  
+  return 'geral';
+}
+
 // ===== FUNÇÃO: VERIFICAR RELEVÂNCIA =====
-function isRelevante(titulo, resumo) {
+function isRelevante(titulo, resumo, categorias) {
   var texto = (titulo + ' ' + resumo).toLowerCase();
 
-  // Se tiver palavra de bloqueio, descarta
+  // Bloqueio
   for (var b = 0; b < PALAVRAS_BLOQUEIO.length; b++) {
     if (texto.indexOf(PALAVRAS_BLOQUEIO[b]) !== -1) {
       return false;
     }
   }
 
-  // Se tiver pelo menos uma palavra obrigatória, salva
-  for (var o = 0; o < PALAVRAS_CHAVE_OBRIGATORIAS.length; o++) {
-    if (texto.indexOf(PALAVRAS_CHAVE_OBRIGATORIAS[o]) !== -1) {
-      return true;
+  // Verifica se tem pelo menos uma palavra de alguma categoria
+  for (var i = 0; i < categorias.length; i++) {
+    var cat = categorias[i];
+    for (var j = 0; j < cat.palavras.length; j++) {
+      if (texto.indexOf(cat.palavras[j].toLowerCase()) !== -1) {
+        return true;
+      }
     }
   }
 
@@ -116,7 +107,7 @@ function extrairCidade(titulo, resumo) {
     'Manaus', 'Belém', 'Goiânia', 'Campinas', 'Santos',
     'Congonhas', 'Ribeirão Preto', 'São José dos Campos',
     'Uberlândia', 'Contagem', 'Betim', 'Nova Lima',
-    'SP', 'RJ', 'MG', 'RS', 'PR', 'DF', 'BA', 'PE', 'CE'
+    'SP', 'RJ', 'MG', 'RS', 'PR', 'DF', 'BA', 'PE', 'CE', 'SC', 'GO'
   ];
 
   for (var i = 0; i < cidades.length; i++) {
@@ -127,64 +118,11 @@ function extrairCidade(titulo, resumo) {
   return null;
 }
 
-// ===== FUNÇÃO: DETECTAR CATEGORIA =====
-function detectarCategoria(titulo, resumo) {
-  var texto = (titulo + ' ' + resumo).toLowerCase();
-
-  // ===== 1º PRIORIDADE: SEGURANÇA =====
-  if (texto.indexOf('roubo') !== -1 || texto.indexOf('assalto') !== -1 ||
-      texto.indexOf('carga') !== -1 || texto.indexOf('criminalidade') !== -1 ||
-      texto.indexOf('violência') !== -1 || texto.indexOf('tiroteio') !== -1 ||
-      texto.indexOf('confronto') !== -1 || texto.indexOf('operação policial') !== -1 ||
-      texto.indexOf('prf') !== -1 || texto.indexOf('blitz') !== -1) {
-    return 'policial';
-  }
-
-  // ===== 2º PRIORIDADE: GREVES =====
-  if (texto.indexOf('greve') !== -1 || texto.indexOf('paralisação') !== -1 ||
-      texto.indexOf('caminhoneiro') !== -1 || texto.indexOf('bloqueio') !== -1 ||
-      texto.indexOf('protesto') !== -1) {
-    return 'greve';
-  }
-
-  // ===== 3º PRIORIDADE: CLIMA (TODAS as palavras de clima) =====
-  if (texto.indexOf('vendaval') !== -1 || texto.indexOf('tornado') !== -1 ||
-      texto.indexOf('furacão') !== -1 || texto.indexOf('tempestade') !== -1 ||
-      texto.indexOf('chuva') !== -1 || texto.indexOf('chuvas') !== -1 ||
-      texto.indexOf('enchente') !== -1 || texto.indexOf('alagamento') !== -1 ||
-      texto.indexOf('inundação') !== -1 || texto.indexOf('deslizamento') !== -1 ||
-      texto.indexOf('granizo') !== -1 || texto.indexOf('calor') !== -1 ||
-      texto.indexOf('clima') !== -1 || texto.indexOf('temperatura') !== -1 ||
-      texto.indexOf('frente fria') !== -1) {
-    return 'clima';
-  }
-
-  // ===== 4º PRIORIDADE: ACIDENTES =====
-  if (texto.indexOf('acidente') !== -1 || texto.indexOf('colisão') !== -1 ||
-      texto.indexOf('capotamento') !== -1 || texto.indexOf('engavetamento') !== -1) {
-    return 'acidente';
-  }
-
-  // ===== 5º PRIORIDADE: TRÂNSITO (agora em último) =====
-  if (texto.indexOf('interdição') !== -1 || texto.indexOf('rodovia') !== -1 ||
-      texto.indexOf('br-') !== -1 || texto.indexOf('trânsito') !== -1) {
-    return 'transito';
-  }
-
-  // ===== 6º PRIORIDADE: FÁBRICAS =====
-  if (texto.indexOf('fábrica') !== -1 || texto.indexOf('produção') !== -1 ||
-      texto.indexOf('indústria') !== -1) {
-    return 'fabrica';
-  }
-
-  return 'geral';
-}
-
-// ===== FUNÇÃO: CALCULAR EXPIRAÇÃO (2 DIAS) =====
+// ===== FUNÇÃO: CALCULAR EXPIRAÇÃO =====
 function calcularDataExpiracao() {
   var agora = new Date();
   var expira = new Date(agora);
-  expira.setDate(expira.getDate() + 2); // EXATAMENTE 2 DIAS
+  expira.setDate(expira.getDate() + DIAS_PADRAO);
   return expira;
 }
 
@@ -214,8 +152,16 @@ async function coletarNoticias() {
   console.log('📡 Iniciando coleta de notícias...');
 
   initializeApp();
-  var parser = new Parser();
   var db = getFirestore();
+
+  // ===== CARREGA AS CATEGORIAS DO FIRESTORE =====
+  var categorias = await carregarCategorias(db);
+  if (categorias.length === 0) {
+    console.log('⚠️ Nenhuma categoria carregada. Usando fallback.');
+    return 0;
+  }
+
+  var parser = new Parser();
   var total = 0;
 
   for (var f = 0; f < FONTES.length; f++) {
@@ -232,49 +178,38 @@ async function coletarNoticias() {
         var link = item.link || '#';
         var dataPub = item.pubDate ? new Date(item.pubDate) : new Date();
 
-        // ===== FILTRO DE RELEVÂNCIA =====
-        if (!isRelevante(titulo, resumo)) {
-          console.log('⏭️ Ignorando notícia irrelevante: "' + titulo.slice(0, 40) + '..."');
+        // ===== FILTRO =====
+        if (!isRelevante(titulo, resumo, categorias)) {
+          console.log('⏭️ Ignorando: "' + titulo.slice(0, 40) + '..."');
           continue;
         }
 
-        // Verifica duplicata
+        // Duplicata
         var existing = await db.collection('noticias').where('link', '==', link).get();
         if (!existing.empty) {
-          console.log('⏭️ Notícia já existe: "' + titulo.slice(0, 40) + '..."');
+          console.log('⏭️ Duplicada: "' + titulo.slice(0, 40) + '..."');
           continue;
         }
 
-        var categoria = fonte.categoria !== 'geral' ? fonte.categoria : detectarCategoria(titulo, resumo);
+        var categoria = detectarCategoria(titulo, resumo, categorias);
         var expiracao = calcularDataExpiracao();
 
-        // Extrai localização
         var cidade = extrairCidade(titulo, resumo);
         var localizacao = null;
         if (cidade) {
           localizacao = await geocodificar(cidade);
           if (localizacao) {
-            console.log('📍 Localização encontrada: ' + cidade + ' → ' + localizacao.lat + ', ' + localizacao.lng);
-          } else {
-            console.log('⚠️ Não foi possível geocodificar: ' + cidade);
+            console.log('📍 Localização: ' + cidade + ' → ' + localizacao.lat + ', ' + localizacao.lng);
           }
         }
 
-        // Extrai palavras-chave encontradas
+        // Palavras-chave encontradas (para severidade)
         var texto = (titulo + ' ' + resumo).toLowerCase();
         var palavrasEncontradas = [];
-        var criticas = ['roubo', 'carga', 'assalto', 'greve', 'acidente', 'interdição', 'enchente', 'prf'];
+        var criticas = ['interdição', 'greve', 'acidente', 'enchente', 'vazou', 'paralisação', 'blitz', 'operação', 'prf', 'roubo', 'assalto', 'carga'];
         for (var c = 0; c < criticas.length; c++) {
           if (texto.indexOf(criticas[c]) !== -1) {
             palavrasEncontradas.push(criticas[c]);
-          }
-        }
-        if (palavrasEncontradas.length === 0) {
-          var comuns = ['criminalidade', 'violência', 'chuva', 'paralisação', 'bloqueio'];
-          for (var k = 0; k < comuns.length; k++) {
-            if (texto.indexOf(comuns[k]) !== -1) {
-              palavrasEncontradas.push(comuns[k]);
-            }
           }
         }
 
