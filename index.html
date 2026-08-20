@@ -152,11 +152,9 @@
     <!-- CONTEÚDO PRINCIPAL -->
     <div class="conteudo-site" id="conteudoSite">
         <header>
-    <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
-        <!-- LOGO DA PEPSICO (IMAGEM) -->
-        <img src="https://1000logos.net/wp-content/uploads/2020/08/PepsiCo-Logo-1.png" 
-             alt="Pepsico" 
-             style="height:55px; width:auto; object-fit:contain;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        
+        <!-- Lado ESQUERDO: Título -->
         <div>
             <h1 style="font-size: 1.3rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 6px; color: white;">
                 🚛 Monitor <span style="font-weight: 300; color: rgba(255,255,255,0.7);">| PepsiCo</span>
@@ -165,13 +163,32 @@
                 Rodovias • Clima • Greves • Fábricas • Policial
             </div>
         </div>
-    </div>
-    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-        <span class="badge" id="authStatus">⏳ Conectando...</span>
-        <button class="logout-btn" id="logoutBtn">Sair</button>
+
+        <!-- Lado DIREITO: Logo com borda + Status + Sair -->
+        <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+            
+            <!-- LOGO DA PEPSICO COM BORDA BRANCA E SOMBRA -->
+            <img src="https://1000logos.net/wp-content/uploads/2020/08/PepsiCo-Logo-1.png" 
+                 alt="PepsiCo" 
+                 style="height:50px; width:auto; object-fit:contain; 
+                        border: 2px solid white; 
+                        border-radius: 10px; 
+                        padding: 6px 14px; 
+                        background: white; 
+                        box-shadow: 0 0 25px rgba(255,255,255,0.3), 
+                                    inset 0 0 15px rgba(255,255,255,0.1);
+                        transition: all 0.3s ease;">
+            
+            <!-- Status e Sair -->
+            <span class="badge" id="authStatus" style="background: rgba(255,255,255,0.15); padding: 4px 14px; border-radius: 40px; font-size: 0.7rem; border: 1px solid rgba(255,255,255,0.2); display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                ⏳ Conectando...
+            </span>
+            <button class="logout-btn" id="logoutBtn" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 4px 12px; border-radius: 40px; font-size: 0.7rem; cursor: pointer; font-family: inherit;">
+                Sair
+            </button>
+        </div>
     </div>
 </header>
-
         <div class="tabs">
             <button class="tab-btn ativo" data-tab="noticias">📋 Notícias</button>
             <button class="tab-btn" data-tab="preferencias">⚙️ Preferências</button>
