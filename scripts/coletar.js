@@ -100,15 +100,30 @@ function isRelevante(titulo, resumo, palavrasChave) {
   return count >= MIN_PALAVRAS_CHAVE;
 }
 
-// ===== FUNÇÃO: DETECTAR CATEGORIA (COM LOGS) =====
+// ===== FUNÇÃO: DETECTAR CATEGORIA (PRIORIDADE CORRIGIDA) =====
 function detectarCategoria(titulo, resumo, categoriaFonte, categoriasFirestore) {
   const texto = (titulo + ' ' + resumo).toLowerCase();
 
-  if (categoriaFonte && categoriaFonte !== 'geral') {
-    console.log(`  📌 Fonte com categoria: ${categoriaFonte}`);
-    return categoriaFonte;
+  // ===== 1º PRIORIDADE: CLIMA (usa as palavras do Firestore) =====
+  const climaDoc = categoriasFirestore.find(cat => cat.nome === 'clima');
+  if (climaDoc && climaDoc.palavras) {
+    for (const palavra of climaDoc.palavras) {
+      if (texto.includes(palavra.toLowerCase())) {
+        console.log(`  🔍 Detectado "clima" pela palavra: "${palavra}" (do Firestore)`);
+        return 'clima';
+      }
+    }
+  }
+  // Palavras fixas de clima (garantia)
+  const climaFixas = ['ciclone', 'ventania', 'tempestade', 'granizo', 'vendaval', 'tornado', 'furacão', 'chuva', 'enchente', 'alagamento', 'inundação', 'deslizamento'];
+  for (const palavra of climaFixas) {
+    if (texto.includes(palavra)) {
+      console.log(`  🔍 Detectado "clima" pela palavra fixa: "${palavra}"`);
+      return 'clima';
+    }
   }
 
+  // ===== 2º PRIORIDADE: SEGURANÇA =====
   const seguranca = ['roubo', 'assalto', 'carga', 'criminalidade', 'violência', 'tiroteio', 'confronto', 'operação policial', 'prf', 'blitz', 'bandido', 'traficante', 'apreensão', 'flagrante', 'investigação', 'vigilância', 'segurança pública', 'carga roubada', 'incêndio', 'fogo', 'queimada', 'desaparece', 'desaparecido', 'espancado', 'agressão', 'morte', 'homicídio'];
   for (const palavra of seguranca) {
     if (texto.includes(palavra)) {
@@ -117,6 +132,7 @@ function detectarCategoria(titulo, resumo, categoriaFonte, categoriasFirestore) 
     }
   }
 
+  // ===== 3º PRIORIDADE: GREVES =====
   const greve = ['greve', 'paralisação', 'caminhoneiro', 'bloqueio', 'protesto', 'piquete', 'manifestação', 'travamento'];
   for (const palavra of greve) {
     if (texto.includes(palavra)) {
@@ -125,14 +141,7 @@ function detectarCategoria(titulo, resumo, categoriaFonte, categoriasFirestore) 
     }
   }
 
-  const palavrasClima = categoriasFirestore.find(cat => cat.nome === 'clima')?.palavras || [];
-  for (const palavra of palavrasClima) {
-    if (texto.includes(palavra.toLowerCase())) {
-      console.log(`  🔍 Detectado "clima" pela palavra: "${palavra}" (do Firestore)`);
-      return 'clima';
-    }
-  }
-
+  // ===== 4º PRIORIDADE: ACIDENTES =====
   const acidente = ['acidente', 'colisão', 'capotamento', 'engavetamento', 'atropelamento', 'batida', 'tombamento'];
   for (const palavra of acidente) {
     if (texto.includes(palavra)) {
@@ -141,6 +150,7 @@ function detectarCategoria(titulo, resumo, categoriaFonte, categoriasFirestore) 
     }
   }
 
+  // ===== 5º PRIORIDADE: TRÂNSITO =====
   const transito = ['interdição', 'rodovia', 'br-', 'trânsito', 'congestionamento', 'desvio', 'obras'];
   for (const palavra of transito) {
     if (texto.includes(palavra)) {
@@ -149,6 +159,7 @@ function detectarCategoria(titulo, resumo, categoriaFonte, categoriasFirestore) 
     }
   }
 
+  // ===== 6º PRIORIDADE: FÁBRICAS =====
   const fabrica = ['fábrica', 'produção', 'indústria', 'linha de produção', 'parada'];
   for (const palavra of fabrica) {
     if (texto.includes(palavra)) {
@@ -157,10 +168,15 @@ function detectarCategoria(titulo, resumo, categoriaFonte, categoriasFirestore) 
     }
   }
 
+  // ===== SE A FONTE TEM CATEGORIA, USA ELA COMO FALLBACK =====
+  if (categoriaFonte && categoriaFonte !== 'geral') {
+    console.log(`  📌 Usando categoria da fonte: ${categoriaFonte}`);
+    return categoriaFonte;
+  }
+
   console.log(`  ⚠️ Nenhuma categoria detectada → "geral"`);
   return 'geral';
 }
-
 // ===== FUNÇÃO: EXTRAIR CIDADE =====
 function extrairCidade(titulo, resumo) {
   const texto = (titulo + ' ' + resumo);
