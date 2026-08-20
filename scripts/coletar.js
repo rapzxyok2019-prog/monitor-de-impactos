@@ -18,7 +18,7 @@ const resend = new Resend(RESEND_API_KEY);
 
 // ===== E-MAIL =====
 const EMAIL_REMETENTE = 'Resend <onboarding@resend.dev>';
-const EMAIL_DESTINATARIOS = ['rapzxyok2019@gmial.com'];
+const EMAIL_DESTINATARIOS = ['rapzxyok2019@gmail.com'];
 
 // ===== PALAVRAS DE BLOQUEIO =====
 const PALAVRAS_BLOQUEIO = [
