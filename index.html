@@ -151,30 +151,52 @@
 
     <!-- CONTEÚDO PRINCIPAL -->
     <div class="conteudo-site" id="conteudoSite">
-        <header>
-    <div style="display:flex; align-items:center; gap:12px;">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 400" style="height:50px; width:auto; flex-shrink:0;">
+        <header style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; background: linear-gradient(135deg, #003da5 0%, #0057c7 100%); color: white; padding: 12px 20px; border-radius: 20px; box-shadow: 0 8px 24px rgba(0, 61, 165, 0.25);">
+    
+    <!-- Lado ESQUERDO: Logo + Título -->
+    <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+        
+        <!-- LOGO PERSONALIZADA (SVG) -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 85" style="height: 55px; width: auto; flex-shrink: 0;">
             <defs>
-                <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style="stop-color:#004B87;stop-opacity:1" />
-                    <stop offset="100%" style="stop-color:#0072C6;stop-opacity:1" />
+                <linearGradient id="gradPepsi" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" style="stop-color:#003da5;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#0057c7;stop-opacity:1" />
                 </linearGradient>
             </defs>
-            <circle cx="80" cy="200" r="80" fill="url(#grad1)"/>
-            <path d="M 20 160 L 140 160 L 140 180 L 20 180 Z" fill="#E31837" opacity="0.85"/>
-            <path d="M 20 200 L 140 200 L 140 220 L 20 220 Z" fill="#E31837" opacity="0.85"/>
-            <path d="M 20 240 L 140 240 L 140 260 L 20 260 Z" fill="#E31837" opacity="0.85"/>
-            <text x="180" y="225" font-family="'Arial Black', Impact, sans-serif" font-size="80" font-weight="900" fill="#004B87" letter-spacing="5">PEPSICO</text>
-            <text x="185" y="275" font-family="Arial, sans-serif" font-size="20" font-weight="400" fill="#6B7A93" letter-spacing="3">Monitor de Impactos</text>
+            
+            <!-- Ícone do globo (simplificado) -->
+            <circle cx="45" cy="42" r="35" fill="url(#gradPepsi)" stroke="#ffffff" stroke-width="2"/>
+            <!-- Listras vermelhas (representando a marca) -->
+            <path d="M 10 35 L 80 35 L 80 40 L 10 40 Z" fill="#E31837" opacity="0.9"/>
+            <path d="M 10 44 L 80 44 L 80 49 L 10 49 Z" fill="#E31837" opacity="0.9"/>
+            
+            <!-- Texto "PepsiCo" em azul -->
+            <text x="100" y="42" font-family="'Arial Black', Impact, sans-serif" font-size="30" font-weight="900" fill="#003da5" letter-spacing="3">PEPSICO</text>
+            
+            <!-- Slogan "Food. Drinks. Smiles." -->
+            <text x="102" y="62" font-family="Arial, sans-serif" font-size="12" font-weight="600" fill="#6b7a93" letter-spacing="2">Food. Drinks. Smiles.</text>
         </svg>
+
+        <!-- TÍTULO E SUBTÍTULO -->
         <div>
-            <h1 style="display:none;">🚛 Monitor <span>| PepsiCo</span></h1>
-            <div class="sub" style="margin-top:4px;">Rodovias • Clima • Greves • Fábricas • Policial</div>
+            <h1 style="font-size: 1.3rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 6px; color: white;">
+                🚛 Monitor <span style="font-weight: 300; color: rgba(255,255,255,0.7);">| PepsiCo</span>
+            </h1>
+            <div class="sub" style="font-size: 0.7rem; opacity: 0.85; margin-top: 2px; color: rgba(255,255,255,0.8);">
+                Rodovias • Clima • Greves • Fábricas • Policial
+            </div>
         </div>
     </div>
-    <div style="display:flex; align-items:center; gap:10px;">
-        <span class="badge" id="authStatus">⏳ Conectando...</span>
-        <button class="logout-btn" id="logoutBtn">Sair</button>
+
+    <!-- Lado DIREITO: Status e Botão Sair -->
+    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <span class="badge" id="authStatus" style="background: rgba(255,255,255,0.15); padding: 4px 14px; border-radius: 40px; font-size: 0.7rem; border: 1px solid rgba(255,255,255,0.2); display: flex; align-items: center; gap: 6px; cursor: pointer;">
+            ⏳ Conectando...
+        </span>
+        <button class="logout-btn" id="logoutBtn" style="background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 4px 12px; border-radius: 40px; font-size: 0.7rem; cursor: pointer; font-family: inherit;">
+            Sair
+        </button>
     </div>
 </header>
 
