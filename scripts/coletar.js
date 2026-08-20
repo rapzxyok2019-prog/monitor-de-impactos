@@ -145,7 +145,7 @@ function detectarCategoria(titulo, resumo, categoriaFonte, categoriasFirestore) 
   return 'geral';
 }
 
-// ===== ENVIAR RESUMO =====
+// ===== FUNÇÃO: ENVIAR ALERTA POR E-MAIL (VERSÃO SIMPLIFICADA) =====
 async function enviarResumo(noticiasCriticas) {
   if (noticiasCriticas.length === 0) {
     console.log('📧 Nenhuma notícia crítica para enviar.');
@@ -153,39 +153,48 @@ async function enviarResumo(noticiasCriticas) {
   }
 
   const total = noticiasCriticas.length;
-  const dataHora = new Date().toLocaleString('pt-BR');
+  const dataHora = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 
+  // Conta por categoria
   const contagemCategorias = {};
   for (const n of noticiasCriticas) {
     contagemCategorias[n.categoria] = (contagemCategorias[n.categoria] || 0) + 1;
   }
 
-  let listaNoticias = '';
-  for (const n of noticiasCriticas) {
-    listaNoticias += `
-      <div style="margin-bottom: 20px; padding: 12px; border-left: 4px solid #003da5; background: #f8f9fc; border-radius: 8px;">
-        <h4 style="margin: 0 0 6px 0;">${n.titulo}</h4>
-        <p style="margin: 4px 0; color: #4a5b76; font-size: 0.9rem;"><strong>Categoria:</strong> ${n.categoria}</p>
-        <p style="margin: 4px 0; color: #4a5b76; font-size: 0.9rem;"><strong>Fonte:</strong> ${n.fonte}</p>
-        <p style="margin: 6px 0;">${n.resumo}</p>
-        <a href="${n.link}" target="_blank" style="color: #003da5;">🔗 Ver notícia original</a>
-      </div>
-    `;
+  // Lista de categorias para o e-mail
+  let listaCategorias = '';
+  for (const [cat, qtd] of Object.entries(contagemCategorias)) {
+    const emojis = {
+      'policial': '🚔',
+      'clima': '🌧️',
+      'greve': '🚛',
+      'acidente': '⚠️',
+      'transito': '🚧',
+      'fabrica': '🏭'
+    };
+    const emoji = emojis[cat] || '📌';
+    listaCategorias += `<li><strong>${emoji} ${cat}</strong>: ${qtd}</li>`;
   }
 
-  const assunto = '📊 Monitor PepsiCo - ' + total + ' notícia(s) crítica(s) encontrada(s)';
+  // Link do site (substitua pelo seu)
+  const linkSite = 'https://rapzxyok2019-prog.github.io/monitor-de-impactos/';
+
+  const assunto = `🚨 ALERTA: ${total} nova(s) notícia(s) crítica(s) - Monitor PepsiCo`;
   const mensagemHtml = `
     <h2 style="color: #003da5;">🚛 Monitor de Impactos - PepsiCo</h2>
     <p><strong>Data/Hora:</strong> ${dataHora}</p>
-    <p><strong>Total de notícias críticas:</strong> ${total}</p>
+    <p style="font-size: 1.2rem;"><strong>📊 Total de notícias críticas:</strong> ${total}</p>
     <div style="background: #eef2f6; padding: 12px; border-radius: 8px; margin: 12px 0;">
-      <h4 style="margin: 0;">📊 Resumo por categoria</h4>
+      <h4 style="margin: 0;">📋 Resumo por categoria</h4>
       <ul style="margin: 8px 0 0 0; padding-left: 20px;">
-        ${Object.entries(contagemCategorias).map(([cat, qtd]) => `<li><strong>${cat}</strong>: ${qtd}</li>`).join('')}
+        ${listaCategorias}
       </ul>
     </div>
-    <h3>📰 Notícias encontradas</h3>
-    ${listaNoticias}
+    <p style="margin: 16px 0;">
+      <a href="${linkSite}" target="_blank" style="background: #003da5; color: white; padding: 8px 20px; border-radius: 8px; text-decoration: none; font-weight: bold;">
+        🔍 Ver notícias no site
+      </a>
+    </p>
     <hr style="margin: 24px 0; border: none; border-top: 1px solid #e2e6ee;">
     <p style="color: #6b7a93; font-size: 0.8rem;">Enviado automaticamente pelo Monitor de Impactos.</p>
   `;
@@ -202,14 +211,13 @@ async function enviarResumo(noticiasCriticas) {
       if (error) {
         console.error('  ❌ Erro ao enviar para ' + destinatario + ':', error.message);
       } else {
-        console.log('  📧 Resumo enviado para ' + destinatario + ' (' + total + ' notícias)');
+        console.log('  📧 Alerta enviado para ' + destinatario + ' (' + total + ' notícias)');
       }
     }
   } catch (error) {
     console.error('  ❌ Erro no envio:', error.message);
   }
 }
-
 // ===== EXTRAIR CIDADE =====
 function extrairCidade(titulo, resumo) {
   const texto = titulo + ' ' + resumo;
