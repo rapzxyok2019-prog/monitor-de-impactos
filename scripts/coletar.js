@@ -1,5 +1,5 @@
 // ============================================================
-// SCRIPT DE COLETA DE NOTÍCIAS - COM ENVIO DE E-MAIL (RESEND)
+// SCRIPT DE COLETA DE NOTÍCIAS - COM RESUMO POR E-MAIL
 // ============================================================
 
 const { initializeApp } = require('firebase-admin/app');
@@ -12,16 +12,14 @@ const { Resend } = require('resend');
 const DIAS_PADRAO = 2;
 const MIN_PALAVRAS_CHAVE = 2;
 
-// ===== RESEND (do GitHub Secrets) =====
+// ===== RESEND =====
 const RESEND_API_KEY = process.env.RESEND_API_KEY || 're_123456789';
 const resend = new Resend(RESEND_API_KEY);
 
-// ===== E-MAIL REMETENTE (use 'onboarding@resend.dev' para testes) =====
+// ===== E-MAIL =====
 const EMAIL_REMETENTE = 'onboarding@resend.dev';
-
-// ===== E-MAILS DESTINATÁRIOS (ALTERE AQUI) =====
 const EMAIL_DESTINATARIOS = [
-  'seu-email@empresa.com',  // ← SUBSTITUA PELO SEU E-MAIL
+  'seu-email@empresa.com',  // ← SUBSTITUA
 ];
 
 // ===== PALAVRAS DE BLOQUEIO =====
@@ -147,25 +145,51 @@ function detectarCategoria(titulo, resumo, categoriaFonte, categoriasFirestore) 
   return 'geral';
 }
 
-// ===== FUNÇÃO: ENVIAR E-MAIL (RESEND) =====
-async function enviarEmail(noticia) {
-  const categoriasAlertas = ['policial', 'acidente', 'greve', 'clima'];
-  if (!categoriasAlertas.includes(noticia.categoria)) {
-    console.log(`  📧 Notícia "${noticia.categoria}" sem alerta.`);
+// ===== FUNÇÃO: ENVIAR RESUMO POR E-MAIL =====
+async function enviarResumo(noticiasCriticas) {
+  if (noticiasCriticas.length === 0) {
+    console.log('📧 Nenhuma notícia crítica para enviar.');
     return;
   }
 
-  const assunto = `🚨 ALERTA: ${noticia.titulo}`;
+  const total = noticiasCriticas.length;
+  const dataHora = new Date().toLocaleString('pt-BR');
+
+  // Conta por categoria
+  const contagemCategorias = {};
+  for (const n of noticiasCriticas) {
+    contagemCategorias[n.categoria] = (contagemCategorias[n.categoria] || 0) + 1;
+  }
+
+  // Monta o resumo
+  let listaNoticias = '';
+  for (const n of noticiasCriticas) {
+    listaNoticias += `
+      <div style="margin-bottom: 20px; padding: 12px; border-left: 4px solid #003da5; background: #f8f9fc; border-radius: 8px;">
+        <h4 style="margin: 0 0 6px 0;">${n.titulo}</h4>
+        <p style="margin: 4px 0; color: #4a5b76; font-size: 0.9rem;"><strong>Categoria:</strong> ${n.categoria}</p>
+        <p style="margin: 4px 0; color: #4a5b76; font-size: 0.9rem;"><strong>Fonte:</strong> ${n.fonte}</p>
+        <p style="margin: 6px 0;">${n.resumo}</p>
+        <a href="${n.link}" target="_blank" style="color: #003da5;">🔗 Ver notícia original</a>
+      </div>
+    `;
+  }
+
+  const assunto = `📊 Monitor PepsiCo - ${total} notícia(s) crítica(s) encontrada(s)`;
   const mensagemHtml = `
-    <h2>🚛 Monitor de Impactos - PepsiCo</h2>
-    <h3>${noticia.titulo}</h3>
-    <p><strong>Categoria:</strong> ${noticia.categoria}</p>
-    <p><strong>Fonte:</strong> ${noticia.fonte}</p>
-    <p><strong>Data:</strong> ${new Date(noticia.dataPublicacao).toLocaleString('pt-BR')}</p>
-    <p>${noticia.resumo}</p>
-    <p><a href="${noticia.link}" target="_blank">🔗 Ver notícia original</a></p>
-    <hr>
-    <p style="color:#6b7a93; font-size:0.8rem;">Enviado automaticamente pelo Monitor de Impactos.</p>
+    <h2 style="color: #003da5;">🚛 Monitor de Impactos - PepsiCo</h2>
+    <p><strong>Data/Hora:</strong> ${dataHora}</p>
+    <p><strong>Total de notícias críticas:</strong> ${total}</p>
+    <div style="background: #eef2f6; padding: 12px; border-radius: 8px; margin: 12px 0;">
+      <h4 style="margin: 0;">📊 Resumo por categoria</h4>
+      <ul style="margin: 8px 0 0 0; padding-left: 20px;">
+        ${Object.entries(contagemCategorias).map(([cat, qtd]) => `<li><strong>${cat}</strong>: ${qtd}</li>`).join('')}
+      </ul>
+    </div>
+    <h3>📰 Notícias encontradas</h3>
+    ${listaNoticias}
+    <hr style="margin: 24px 0; border: none; border-top: 1px solid #e2e6ee;">
+    <p style="color: #6b7a93; font-size: 0.8rem;">Enviado automaticamente pelo Monitor de Impactos.</p>
   `;
 
   try {
@@ -180,7 +204,7 @@ async function enviarEmail(noticia) {
       if (error) {
         console.error(`  ❌ Erro ao enviar para ${destinatario}:`, error.message);
       } else {
-        console.log(`  📧 E-mail enviado para ${destinatario}`);
+        console.log(`  📧 Resumo enviado para ${destinatario} (${total} notícias)`);
       }
     }
   } catch (error) {
@@ -239,6 +263,8 @@ async function coletarNoticias() {
   const categoriasFirestore = await carregarCategorias(db);
 
   let total = 0;
+  const noticiasCriticas = [];
+
   for (const fonte of FONTES) {
     try {
       console.log(`\n📡 ${fonte.nome}`);
@@ -292,7 +318,11 @@ async function coletarNoticias() {
         noticias.push(noticia);
         console.log(`  ✅ Salva: ${categoria}`);
 
-        await enviarEmail(noticia);
+        // ===== ACUMULA NOTÍCIAS CRÍTICAS =====
+        const categoriasAlertas = ['policial', 'acidente', 'greve', 'clima'];
+        if (categoriasAlertas.includes(categoria)) {
+          noticiasCriticas.push(noticia);
+        }
       }
 
       if (noticias.length > 0) {
@@ -311,6 +341,10 @@ async function coletarNoticias() {
   }
 
   console.log(`\n✅ Coleta finalizada! ${total} novas notícias.`);
+
+  // ===== ENVIA O RESUMO =====
+  await enviarResumo(noticiasCriticas);
+
   return total;
 }
 
