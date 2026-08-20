@@ -19,7 +19,8 @@ const resend = new Resend(RESEND_API_KEY);
 // ===== E-MAIL =====
 const EMAIL_REMETENTE = 'onboarding@resend.dev';
 const EMAIL_DESTINATARIOS = [
-  'seu-email@empresa.com',  // ← SUBSTITUA
+  '
+Lima, Rafael - Contractor {PEP}',  // ← SUBSTITUA
 ];
 
 // ===== PALAVRAS DE BLOQUEIO =====
