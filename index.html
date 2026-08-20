@@ -152,15 +152,21 @@
     <!-- CONTEÚDO PRINCIPAL -->
     <div class="conteudo-site" id="conteudoSite">
         <header>
-            <div>
-                <h1>🚛 Monitor <span>| PepsiCo</span></h1>
-                <div class="sub">Rodovias • Clima • Greves • Fábricas • Policial</div>
-            </div>
-            <div style="display:flex; align-items:center; gap:10px;">
-                <span class="badge" id="authStatus">⏳ Conectando...</span>
-                <button class="logout-btn" id="logoutBtn">Sair</button>
-            </div>
-        </header>
+    <div style="display:flex; align-items:center; gap:12px;">
+        <!-- LOGO DA PEPSICO -->
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/PepsiCo_logo.svg/2560px-PepsiCo_logo.svg.png" 
+             alt="PepsiCo" 
+             style="height:40px; width:auto; object-fit:contain; background:white; padding:4px; border-radius:8px;">
+        <div>
+            <h1>🚛 Monitor <span>| PepsiCo</span></h1>
+            <div class="sub">Rodovias • Clima • Greves • Fábricas • Policial</div>
+        </div>
+    </div>
+    <div style="display:flex; align-items:center; gap:10px;">
+        <span class="badge" id="authStatus">⏳ Conectando...</span>
+        <button class="logout-btn" id="logoutBtn">Sair</button>
+    </div>
+</header>
 
         <div class="tabs">
             <button class="tab-btn ativo" data-tab="noticias">📋 Notícias</button>
