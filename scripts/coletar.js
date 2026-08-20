@@ -19,8 +19,7 @@ const resend = new Resend(RESEND_API_KEY);
 // ===== E-MAIL =====
 const EMAIL_REMETENTE = 'onboarding@resend.dev';
 const EMAIL_DESTINATARIOS = [
-  '
-Lima, Rafael - Contractor {PEP}',  // ← SUBSTITUA
+  'Rafael.Lima.Contractor@pepsico.com'
 ];
 
 // ===== PALAVRAS DE BLOQUEIO =====
@@ -80,10 +79,12 @@ async function carregarPalavrasChave(db) {
     }
     if (doc.exists) {
       const palavras = doc.data().palavrasChave || [];
-      console.log(`📋 Palavras-chave: ${palavras.join(', ')}`);
+      console.log('📋 Palavras-chave:', palavras.join(', '));
       return palavras;
     }
-  } catch (e) { console.error(e); }
+  } catch (e) {
+    console.error(e);
+  }
   return ['roubo', 'carga', 'assalto', 'greve', 'acidente', 'chuva', 'interdição', 'PRF', 'blitz', 'caminhoneiro'];
 }
 
@@ -92,7 +93,7 @@ async function carregarCategorias(db) {
   try {
     const snapshot = await db.collection('categorias').get();
     const categorias = [];
-    snapshot.forEach(doc => {
+    snapshot.forEach((doc) => {
       const data = doc.data();
       const nome = data.nome || doc.id;
       const palavrasFirestore = data.palavras || [];
@@ -105,10 +106,10 @@ async function carregarCategorias(db) {
       });
     });
     categorias.sort((a, b) => a.prioridade - b.prioridade);
-    console.log(`📋 ${categorias.length} categorias carregadas`);
+    console.log('📋 Categorias carregadas:', categorias.length);
     return categorias;
   } catch (error) {
-    console.error('❌ Erro:', error);
+    console.error('❌ Erro ao carregar categorias:', error);
     return [];
   }
 }
@@ -133,20 +134,20 @@ function detectarCategoria(titulo, resumo, categoriaFonte, categoriasFirestore) 
     if (!cat.palavras || cat.palavras.length === 0) continue;
     for (const palavra of cat.palavras) {
       if (texto.includes(palavra.toLowerCase())) {
-        console.log(`  🔍 "${cat.nome}" → "${palavra}"`);
+        console.log('  🔍 "' + cat.nome + '" → "' + palavra + '"');
         return cat.nome;
       }
     }
   }
   if (categoriaFonte && categoriaFonte !== 'geral') {
-    console.log(`  📌 Fallback: ${categoriaFonte}`);
+    console.log('  📌 Fallback:', categoriaFonte);
     return categoriaFonte;
   }
-  console.log(`  ⚠️ Nenhuma → "geral"`);
+  console.log('  ⚠️ Nenhuma → "geral"');
   return 'geral';
 }
 
-// ===== FUNÇÃO: ENVIAR RESUMO POR E-MAIL =====
+// ===== ENVIAR RESUMO =====
 async function enviarResumo(noticiasCriticas) {
   if (noticiasCriticas.length === 0) {
     console.log('📧 Nenhuma notícia crítica para enviar.');
@@ -156,13 +157,11 @@ async function enviarResumo(noticiasCriticas) {
   const total = noticiasCriticas.length;
   const dataHora = new Date().toLocaleString('pt-BR');
 
-  // Conta por categoria
   const contagemCategorias = {};
   for (const n of noticiasCriticas) {
     contagemCategorias[n.categoria] = (contagemCategorias[n.categoria] || 0) + 1;
   }
 
-  // Monta o resumo
   let listaNoticias = '';
   for (const n of noticiasCriticas) {
     listaNoticias += `
@@ -176,7 +175,7 @@ async function enviarResumo(noticiasCriticas) {
     `;
   }
 
-  const assunto = `📊 Monitor PepsiCo - ${total} notícia(s) crítica(s) encontrada(s)`;
+  const assunto = '📊 Monitor PepsiCo - ' + total + ' notícia(s) crítica(s) encontrada(s)';
   const mensagemHtml = `
     <h2 style="color: #003da5;">🚛 Monitor de Impactos - PepsiCo</h2>
     <p><strong>Data/Hora:</strong> ${dataHora}</p>
@@ -199,13 +198,13 @@ async function enviarResumo(noticiasCriticas) {
         from: EMAIL_REMETENTE,
         to: [destinatario],
         subject: assunto,
-        html: mensagemHtml,
+        html: mensagemHtml
       });
 
       if (error) {
-        console.error(`  ❌ Erro ao enviar para ${destinatario}:`, error.message);
+        console.error('  ❌ Erro ao enviar para ' + destinatario + ':', error.message);
       } else {
-        console.log(`  📧 Resumo enviado para ${destinatario} (${total} notícias)`);
+        console.log('  📧 Resumo enviado para ' + destinatario + ' (' + total + ' notícias)');
       }
     }
   } catch (error) {
@@ -215,7 +214,7 @@ async function enviarResumo(noticiasCriticas) {
 
 // ===== EXTRAIR CIDADE =====
 function extrairCidade(titulo, resumo) {
-  const texto = (titulo + ' ' + resumo);
+  const texto = titulo + ' ' + resumo;
   const cidades = ['São Paulo', 'Rio de Janeiro', 'Belo Horizonte', 'Porto Alegre', 'Curitiba', 'Brasília', 'Salvador', 'Fortaleza', 'Recife', 'Manaus', 'Belém', 'Goiânia', 'Campinas', 'Santos', 'Congonhas', 'Ribeirão Preto', 'São José dos Campos', 'Uberlândia', 'Contagem', 'Betim', 'Nova Lima', 'SP', 'RJ', 'MG', 'RS', 'PR', 'DF', 'BA', 'PE', 'CE'];
   for (const cidade of cidades) {
     if (texto.includes(cidade)) return cidade;
@@ -238,7 +237,7 @@ async function geocodificar(cidade) {
       };
     }
   } catch (error) {
-    console.log(`⚠️ Erro: "${cidade}"`);
+    console.log('⚠️ Erro ao geocodificar "' + cidade + '":', error.message);
   }
   return null;
 }
@@ -259,7 +258,7 @@ async function coletarNoticias() {
   const parser = new Parser();
 
   const palavrasChave = await carregarPalavrasChave(db);
-  console.log(`📋 Mínimo: ${MIN_PALAVRAS_CHAVE} palavras`);
+  console.log('📋 Mínimo de ' + MIN_PALAVRAS_CHAVE + ' palavra(s)-chave obrigatória(s)');
 
   const categoriasFirestore = await carregarCategorias(db);
 
@@ -268,7 +267,7 @@ async function coletarNoticias() {
 
   for (const fonte of FONTES) {
     try {
-      console.log(`\n📡 ${fonte.nome}`);
+      console.log('\n📡 ' + fonte.nome);
       const feed = await parser.parseURL(fonte.url);
       const noticias = [];
 
@@ -278,16 +277,16 @@ async function coletarNoticias() {
         const link = item.link || '#';
         const dataPub = item.pubDate ? new Date(item.pubDate) : new Date();
 
-        console.log(`  📰 "${titulo.slice(0, 40)}..."`);
+        console.log('  📰 "' + titulo.slice(0, 40) + '..."');
 
         if (!isRelevante(titulo, resumo, palavrasChave)) {
-          console.log(`  ⏭️ Ignorado`);
+          console.log('  ⏭️ Ignorado');
           continue;
         }
 
         const existing = await db.collection('noticias').where('link', '==', link).get();
         if (!existing.empty) {
-          console.log(`  ⏭️ Duplicada`);
+          console.log('  ⏭️ Duplicada');
           continue;
         }
 
@@ -298,7 +297,7 @@ async function coletarNoticias() {
         let localizacao = null;
         if (cidade) {
           localizacao = await geocodificar(cidade);
-          if (localizacao) console.log(`  📍 ${cidade}`);
+          if (localizacao) console.log('  📍 ' + cidade);
         }
 
         const texto = (titulo + ' ' + resumo).toLowerCase();
@@ -309,17 +308,23 @@ async function coletarNoticias() {
         }
 
         const noticia = {
-          titulo, resumo, link, fonte: fonte.nome, categoria,
-          dataPublicacao: dataPub, dataColeta: new Date(), dataExpiracao: expiracao,
-          lidaPor: [], reacoes: { '👍': 0, '⚠️': 0, '🔥': 0 },
+          titulo: titulo,
+          resumo: resumo,
+          link: link,
+          fonte: fonte.nome,
+          categoria: categoria,
+          dataPublicacao: dataPub,
+          dataColeta: new Date(),
+          dataExpiracao: expiracao,
+          lidaPor: [],
+          reacoes: { '👍': 0, '⚠️': 0, '🔥': 0 },
           palavrasChaveEncontradas: palavrasEncontradas.length > 0 ? palavrasEncontradas : ['geral'],
-          localizacao
+          localizacao: localizacao
         };
 
         noticias.push(noticia);
-        console.log(`  ✅ Salva: ${categoria}`);
+        console.log('  ✅ Salva: ' + categoria);
 
-        // ===== ACUMULA NOTÍCIAS CRÍTICAS =====
         const categoriasAlertas = ['policial', 'acidente', 'greve', 'clima'];
         if (categoriasAlertas.includes(categoria)) {
           noticiasCriticas.push(noticia);
@@ -333,25 +338,26 @@ async function coletarNoticias() {
           batch.set(ref, noticia);
         }
         await batch.commit();
-        console.log(`  ✅ ${noticias.length} notícias salvas`);
+        console.log('  ✅ ' + noticias.length + ' notícias salvas');
         total += noticias.length;
       }
     } catch (error) {
-      console.error(`  ❌ Erro: ${error.message}`);
+      console.error('  ❌ Erro em ' + fonte.nome + ':', error.message);
     }
   }
 
-  console.log(`\n✅ Coleta finalizada! ${total} novas notícias.`);
+  console.log('\n✅ Coleta finalizada! ' + total + ' novas notícias.');
 
-  // ===== ENVIA O RESUMO =====
   await enviarResumo(noticiasCriticas);
 
   return total;
 }
 
 coletarNoticias()
-  .then(() => process.exit(0))
-  .catch((error) => {
+  .then(function() {
+    process.exit(0);
+  })
+  .catch(function(error) {
     console.error('❌ Erro na coleta:', error);
     process.exit(1);
   });
