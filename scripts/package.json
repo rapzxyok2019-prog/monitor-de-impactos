@@ -1,11 +1,12 @@
 {
   "name": "scripts",
   "version": "1.0.0",
-  "description": "Scripts para coleta de notícias com geocodificação",
+  "description": "Scripts para coleta de notícias com envio de e-mail (Resend)",
   "main": "coletar.js",
   "dependencies": {
     "firebase-admin": "^11.8.0",
     "rss-parser": "^3.13.0",
-    "axios": "^1.4.0"
+    "axios": "^1.4.0",
+    "resend": "^3.0.0"
   }
 }
