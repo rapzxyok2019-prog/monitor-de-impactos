@@ -161,7 +161,10 @@ function detectarCategoria(titulo, resumo) {
       texto.includes('apreensão') || texto.includes('flagrante') ||
       texto.includes('investigação') || texto.includes('vigilância') ||
       texto.includes('segurança pública') || texto.includes('carga roubada') ||
-      texto.includes('incêndio') || texto.includes('fogo') || texto.includes('queimada')) {
+      texto.includes('incêndio') || texto.includes('fogo') || texto.includes('queimada') ||
+      texto.includes('desaparece') || texto.includes('desaparecido') ||
+      texto.includes('espancado') || texto.includes('agressão') ||
+      texto.includes('morte') || texto.includes('homicídio')) {
     return 'policial';
   }
 
@@ -175,14 +178,15 @@ function detectarCategoria(titulo, resumo) {
 
   // ===== 3º PRIORIDADE: CLIMA =====
   if (texto.includes('chuva') || texto.includes('chuvas') || texto.includes('enchente') ||
-      texto.includes('alagamento') || texto.includes('inundação') ||
-      texto.includes('deslizamento') || texto.includes('tempestade') ||
-      texto.includes('vendaval') || texto.includes('tornado') ||
-      texto.includes('furacão') || texto.includes('granizo') ||
-      texto.includes('calor') || texto.includes('clima') ||
-      texto.includes('temperatura') || texto.includes('frente fria') ||
-      texto.includes('ciclone') || texto.includes('temporal') ||
-      texto.includes('ressaca') || texto.includes('ventania')) {
+      texto.includes('cheia') || texto.includes('alagamento') ||
+      texto.includes('inundação') || texto.includes('deslizamento') ||
+      texto.includes('tempestade') || texto.includes('vendaval') ||
+      texto.includes('tornado') || texto.includes('furacão') ||
+      texto.includes('granizo') || texto.includes('calor') ||
+      texto.includes('clima') || texto.includes('temperatura') ||
+      texto.includes('frente fria') || texto.includes('ciclone') ||
+      texto.includes('temporal') || texto.includes('ressaca') ||
+      texto.includes('ventania')) {
     return 'clima';
   }
 
@@ -198,8 +202,7 @@ function detectarCategoria(titulo, resumo) {
   if (texto.includes('interdição') || texto.includes('rodovia') ||
       texto.includes('br-') || texto.includes('trânsito') ||
       texto.includes('congestionamento') || texto.includes('desvio') ||
-      texto.includes('obras') || texto.includes('caminhão') ||
-      texto.includes('carreta')) {
+      texto.includes('obras')) {
     return 'transito';
   }
 
@@ -210,6 +213,7 @@ function detectarCategoria(titulo, resumo) {
     return 'fabrica';
   }
 
+  // ===== SE NENHUMA CATEGORIA FOI DETECTADA =====
   return 'geral';
 }
 
