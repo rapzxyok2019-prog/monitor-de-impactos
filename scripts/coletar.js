@@ -1,5 +1,5 @@
 // ============================================================
-// SCRIPT DE COLETA DE NOTÍCIAS - CORRIGIDO
+// SCRIPT DE COLETA DE NOTÍCIAS - COM LOGS E 2 PALAVRAS-CHAVE
 // ============================================================
 
 const { initializeApp } = require('firebase-admin/app');
@@ -9,7 +9,7 @@ const axios = require('axios');
 
 // ===== CONFIGURAÇÕES =====
 const DIAS_PADRAO = 2;
-const MIN_PALAVRAS_CHAVE = 1;
+const MIN_PALAVRAS_CHAVE = 2; // ← VOLTOU PARA 2
 
 // ===== PALAVRAS DE BLOQUEIO =====
 const PALAVRAS_BLOQUEIO = [
@@ -49,7 +49,7 @@ const FONTES = [
   { nome: 'O Globo - São Paulo', url: 'https://oglobo.globo.com/rss/sao-paulo/', categoria: 'transito' }
 ];
 
-// ===== FUNÇÃO: CARREGAR PALAVRAS-CHAVE DO FIRESTORE =====
+// ===== FUNÇÃO: CARREGAR PALAVRAS-CHAVE =====
 async function carregarPalavrasChave(db) {
   try {
     const doc = await db.collection('configurações').doc('geral').get();
@@ -67,7 +67,7 @@ async function carregarPalavrasChave(db) {
   }
 }
 
-// ===== FUNÇÃO: CARREGAR CATEGORIAS DO FIRESTORE =====
+// ===== FUNÇÃO: CARREGAR CATEGORIAS =====
 async function carregarCategorias(db) {
   try {
     const snapshot = await db.collection('categorias').get();
@@ -100,41 +100,64 @@ function isRelevante(titulo, resumo, palavrasChave) {
   return count >= MIN_PALAVRAS_CHAVE;
 }
 
-// ===== FUNÇÃO: DETECTAR CATEGORIA =====
+// ===== FUNÇÃO: DETECTAR CATEGORIA (COM LOGS) =====
 function detectarCategoria(titulo, resumo, categoriaFonte, categoriasFirestore) {
   const texto = (titulo + ' ' + resumo).toLowerCase();
-  if (categoriaFonte && categoriaFonte !== 'geral') return categoriaFonte;
+
+  if (categoriaFonte && categoriaFonte !== 'geral') {
+    console.log(`  📌 Fonte com categoria: ${categoriaFonte}`);
+    return categoriaFonte;
+  }
 
   const seguranca = ['roubo', 'assalto', 'carga', 'criminalidade', 'violência', 'tiroteio', 'confronto', 'operação policial', 'prf', 'blitz', 'bandido', 'traficante', 'apreensão', 'flagrante', 'investigação', 'vigilância', 'segurança pública', 'carga roubada', 'incêndio', 'fogo', 'queimada', 'desaparece', 'desaparecido', 'espancado', 'agressão', 'morte', 'homicídio'];
   for (const palavra of seguranca) {
-    if (texto.includes(palavra)) return 'policial';
+    if (texto.includes(palavra)) {
+      console.log(`  🔍 Detectado "policial" pela palavra: "${palavra}"`);
+      return 'policial';
+    }
   }
 
   const greve = ['greve', 'paralisação', 'caminhoneiro', 'bloqueio', 'protesto', 'piquete', 'manifestação', 'travamento'];
   for (const palavra of greve) {
-    if (texto.includes(palavra)) return 'greve';
+    if (texto.includes(palavra)) {
+      console.log(`  🔍 Detectado "greve" pela palavra: "${palavra}"`);
+      return 'greve';
+    }
   }
 
   const palavrasClima = categoriasFirestore.find(cat => cat.nome === 'clima')?.palavras || [];
   for (const palavra of palavrasClima) {
-    if (texto.includes(palavra.toLowerCase())) return 'clima';
+    if (texto.includes(palavra.toLowerCase())) {
+      console.log(`  🔍 Detectado "clima" pela palavra: "${palavra}" (do Firestore)`);
+      return 'clima';
+    }
   }
 
   const acidente = ['acidente', 'colisão', 'capotamento', 'engavetamento', 'atropelamento', 'batida', 'tombamento'];
   for (const palavra of acidente) {
-    if (texto.includes(palavra)) return 'acidente';
+    if (texto.includes(palavra)) {
+      console.log(`  🔍 Detectado "acidente" pela palavra: "${palavra}"`);
+      return 'acidente';
+    }
   }
 
   const transito = ['interdição', 'rodovia', 'br-', 'trânsito', 'congestionamento', 'desvio', 'obras'];
   for (const palavra of transito) {
-    if (texto.includes(palavra)) return 'transito';
+    if (texto.includes(palavra)) {
+      console.log(`  🔍 Detectado "transito" pela palavra: "${palavra}"`);
+      return 'transito';
+    }
   }
 
   const fabrica = ['fábrica', 'produção', 'indústria', 'linha de produção', 'parada'];
   for (const palavra of fabrica) {
-    if (texto.includes(palavra)) return 'fabrica';
+    if (texto.includes(palavra)) {
+      console.log(`  🔍 Detectado "fabrica" pela palavra: "${palavra}"`);
+      return 'fabrica';
+    }
   }
 
+  console.log(`  ⚠️ Nenhuma categoria detectada → "geral"`);
   return 'geral';
 }
 
@@ -179,18 +202,21 @@ function calcularDataExpiracao() {
 // ===== FUNÇÃO PRINCIPAL =====
 async function coletarNoticias() {
   console.log('📡 Iniciando coleta de notícias...');
+  
   initializeApp();
   const db = getFirestore();
   const parser = new Parser();
 
   const palavrasChave = await carregarPalavrasChave(db);
+  console.log(`📋 Mínimo de ${MIN_PALAVRAS_CHAVE} palavra(s)-chave obrigatória(s)`);
+  
   const categoriasFirestore = await carregarCategorias(db);
 
   let total = 0;
 
   for (const fonte of FONTES) {
     try {
-      console.log(`📡 Coletando: ${fonte.nome}`);
+      console.log(`\n📡 Coletando: ${fonte.nome}`);
       const feed = await parser.parseURL(fonte.url);
       const noticias = [];
 
@@ -200,14 +226,16 @@ async function coletarNoticias() {
         const link = item.link || '#';
         const dataPub = item.pubDate ? new Date(item.pubDate) : new Date();
 
+        console.log(`  📰 Analisando: "${titulo.slice(0, 40)}..."`);
+
         if (!isRelevante(titulo, resumo, palavrasChave)) {
-          console.log(`⏭️ Ignorando: "${titulo.slice(0, 40)}..."`);
+          console.log(`  ⏭️ Ignorando (não tem palavras-chave suficientes)`);
           continue;
         }
 
         const existing = await db.collection('noticias').where('link', '==', link).get();
         if (!existing.empty) {
-          console.log(`⏭️ Duplicada: "${titulo.slice(0, 40)}..."`);
+          console.log(`  ⏭️ Duplicada`);
           continue;
         }
 
@@ -219,7 +247,7 @@ async function coletarNoticias() {
         if (cidade) {
           localizacao = await geocodificar(cidade);
           if (localizacao) {
-            console.log(`📍 Localização: ${cidade} → ${localizacao.lat}, ${localizacao.lng}`);
+            console.log(`  📍 Localização: ${cidade} → ${localizacao.lat}, ${localizacao.lng}`);
           }
         }
 
@@ -237,6 +265,8 @@ async function coletarNoticias() {
           palavrasChaveEncontradas: palavrasEncontradas.length > 0 ? palavrasEncontradas : ['geral'],
           localizacao
         });
+        
+        console.log(`  ✅ Salva com categoria: ${categoria}`);
       }
 
       if (noticias.length > 0) {
@@ -246,15 +276,15 @@ async function coletarNoticias() {
           batch.set(ref, noticia);
         }
         await batch.commit();
-        console.log(`✅ ${noticias.length} notícias salvas de ${fonte.nome}`);
+        console.log(`  ✅ ${noticias.length} notícias salvas de ${fonte.nome}`);
         total += noticias.length;
       }
     } catch (error) {
-      console.error(`❌ Erro em ${fonte.nome}:`, error.message);
+      console.error(`  ❌ Erro em ${fonte.nome}:`, error.message);
     }
   }
 
-  console.log(`✅ Coleta finalizada! ${total} novas notícias.`);
+  console.log(`\n✅ Coleta finalizada! ${total} novas notícias.`);
   return total;
 }
 
