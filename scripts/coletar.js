@@ -147,41 +147,66 @@ function isRelevante(titulo, resumo, palavrasChave) {
   return count >= MIN_PALAVRAS_CHAVE;
 }
 
-// ===== FUNÇÃO: DETECTAR CATEGORIA =====
+// ===== FUNÇÃO: DETECTAR CATEGORIA (CORRIGIDA) =====
 function detectarCategoria(titulo, resumo) {
   const texto = (titulo + ' ' + resumo).toLowerCase();
 
-  // Segurança em primeiro lugar
+  // ===== 1º PRIORIDADE: SEGURANÇA E CRIMINALIDADE =====
   if (texto.includes('roubo') || texto.includes('assalto') ||
       texto.includes('carga') || texto.includes('criminalidade') ||
       texto.includes('violência') || texto.includes('tiroteio') ||
-      texto.includes('prf') || texto.includes('blitz')) {
+      texto.includes('confronto') || texto.includes('operação policial') ||
+      texto.includes('prf') || texto.includes('blitz') ||
+      texto.includes('bandido') || texto.includes('traficante') ||
+      texto.includes('apreensão') || texto.includes('flagrante') ||
+      texto.includes('investigação') || texto.includes('vigilância') ||
+      texto.includes('segurança pública') || texto.includes('carga roubada') ||
+      texto.includes('incêndio') || texto.includes('fogo') || texto.includes('queimada')) {
     return 'policial';
   }
 
+  // ===== 2º PRIORIDADE: GREVES E PARALISAÇÕES =====
   if (texto.includes('greve') || texto.includes('paralisação') ||
-      texto.includes('caminhoneiro') || texto.includes('bloqueio')) {
+      texto.includes('caminhoneiro') || texto.includes('bloqueio') ||
+      texto.includes('protesto') || texto.includes('piquete') ||
+      texto.includes('manifestação') || texto.includes('travamento')) {
     return 'greve';
   }
 
-  if (texto.includes('chuva') || texto.includes('enchente') ||
-      texto.includes('tempestade') || texto.includes('vendaval') ||
-      texto.includes('tornado') || texto.includes('alagamento')) {
+  // ===== 3º PRIORIDADE: CLIMA =====
+  if (texto.includes('chuva') || texto.includes('chuvas') || texto.includes('enchente') ||
+      texto.includes('alagamento') || texto.includes('inundação') ||
+      texto.includes('deslizamento') || texto.includes('tempestade') ||
+      texto.includes('vendaval') || texto.includes('tornado') ||
+      texto.includes('furacão') || texto.includes('granizo') ||
+      texto.includes('calor') || texto.includes('clima') ||
+      texto.includes('temperatura') || texto.includes('frente fria') ||
+      texto.includes('ciclone') || texto.includes('temporal') ||
+      texto.includes('ressaca') || texto.includes('ventania')) {
     return 'clima';
   }
 
+  // ===== 4º PRIORIDADE: ACIDENTES =====
   if (texto.includes('acidente') || texto.includes('colisão') ||
-      texto.includes('capotamento') || texto.includes('engavetamento')) {
+      texto.includes('capotamento') || texto.includes('engavetamento') ||
+      texto.includes('atropelamento') || texto.includes('batida') ||
+      texto.includes('tombamento')) {
     return 'acidente';
   }
 
+  // ===== 5º PRIORIDADE: TRÂNSITO =====
   if (texto.includes('interdição') || texto.includes('rodovia') ||
-      texto.includes('br-') || texto.includes('trânsito')) {
+      texto.includes('br-') || texto.includes('trânsito') ||
+      texto.includes('congestionamento') || texto.includes('desvio') ||
+      texto.includes('obras') || texto.includes('caminhão') ||
+      texto.includes('carreta')) {
     return 'transito';
   }
 
+  // ===== 6º PRIORIDADE: FÁBRICAS =====
   if (texto.includes('fábrica') || texto.includes('produção') ||
-      texto.includes('indústria')) {
+      texto.includes('indústria') || texto.includes('linha de produção') ||
+      texto.includes('parada')) {
     return 'fabrica';
   }
 
