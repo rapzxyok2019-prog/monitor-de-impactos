@@ -1,5 +1,6 @@
+```javascript
 // ============================================================
-// MONITOR DE IMPACTOS - COLETOR OPERACIONAL v2.0
+// MONITOR DE IMPACTOS - COLETOR OPERACIONAL v2.1
 // ============================================================
 
 const { initializeApp } = require('firebase-admin/app');
@@ -14,10 +15,10 @@ const { Resend } = require('resend');
 
 const DIAS_PADRAO = 2;
 
-// Score mínimo para salvar uma notícia
+// Score mínimo para salvar no site
 const SCORE_MINIMO = 40;
 
-// Score mínimo para entrar no alerta por e-mail
+// Score mínimo para alerta por e-mail
 const SCORE_ALERTA = 70;
 
 // Quantidade máxima de notícias por RSS
@@ -48,14 +49,20 @@ const EMAIL_DESTINATARIOS = [
 // ============================================================
 // PALAVRAS DE BLOQUEIO
 // ============================================================
+// Notícias que normalmente não possuem valor operacional.
+// ============================================================
 
 const PALAVRAS_BLOQUEIO = [
+
   'eleição',
+  'eleições',
   'votação',
   'partido político',
+  'partido politico',
   'deputado',
   'senador',
   'vereador',
+
   'celebridade',
   'famoso',
   'artista',
@@ -63,7 +70,9 @@ const PALAVRAS_BLOQUEIO = [
   'cinema',
   'filme',
   'série',
+  'serie',
   'música',
+  'musica',
   'cantor',
   'ator',
   'influenciador',
@@ -74,18 +83,71 @@ const PALAVRAS_BLOQUEIO = [
   'jogador',
   'time',
   'olimpíada',
+  'olimpiada',
+
   'horóscopo',
+  'horoscopo',
   'moda',
   'fofoca',
   'receita',
   'entretenimento',
+
   'safra',
   'soja',
   'milho',
   'trigo',
   'café',
+  'cafe',
   'plantio',
   'colheita'
+
+];
+
+// ============================================================
+// CONTEÚDO DE BAIXA UTILIDADE OPERACIONAL
+// ============================================================
+// Esses termos não necessariamente tornam uma notícia inútil,
+// mas reduzem bastante a relevância quando não existe impacto.
+// ============================================================
+
+const TERMOS_BAIXA_UTILIDADE = [
+
+  'passageiros comemoram',
+  'passageiros celebram',
+  'passageiros se emocionam',
+  'passageiros ficam aliviados',
+  'passageiros relatam',
+  'passageiros contam',
+
+  'vídeo mostra',
+  'video mostra',
+  'vídeo revela',
+  'video revela',
+  'imagens mostram',
+  'imagens revelam',
+
+  'veja o vídeo',
+  'veja o video',
+  'veja imagens',
+
+  'viralizou',
+  'viraliza',
+  'repercute nas redes',
+  'nas redes sociais',
+  'internautas',
+
+  'momento emocionante',
+  'momento de tensão',
+  'momento de alivio',
+  'momento de alívio',
+
+  'curiosidade',
+  'história',
+  'historia',
+
+  'relato de passageiro',
+  'relato de passageiros'
+
 ];
 
 // ============================================================
@@ -95,29 +157,39 @@ const PALAVRAS_BLOQUEIO = [
 const EVENTOS_OPERACIONAIS = {
 
   acidente: {
+
     palavras: [
       'acidente',
       'colisão',
+      'colisao',
       'capotamento',
       'engavetamento',
       'atropelamento',
       'batida',
       'tombamento',
+      'tombou',
       'carreta tombou',
-      'caminhão tombou'
+      'caminhão tombou',
+      'caminhao tombou'
     ],
+
     peso: 25
+
   },
 
   transito: {
+
     palavras: [
       'interdição',
+      'interdicao',
       'interditada',
       'interditado',
       'rodovia',
       'trânsito',
+      'transito',
       'congestionamento',
       'lentidão',
+      'lentidao',
       'desvio',
       'pista bloqueada',
       'pista interditada',
@@ -125,15 +197,19 @@ const EVENTOS_OPERACIONAIS = {
       'faixa interditada',
       'bloqueio'
     ],
+
     peso: 20
+
   },
 
   clima: {
+
     palavras: [
       'enchente',
       'alagamento',
       'alagamentos',
       'inundação',
+      'inundacao',
       'deslizamento',
       'tempestade',
       'chuva intensa',
@@ -145,10 +221,13 @@ const EVENTOS_OPERACIONAIS = {
       'tornado',
       'temporal'
     ],
+
     peso: 25
+
   },
 
   seguranca: {
+
     palavras: [
       'roubo de carga',
       'carga roubada',
@@ -158,14 +237,19 @@ const EVENTOS_OPERACIONAIS = {
       'tiroteio',
       'confronto',
       'operação policial',
+      'operacao policial',
       'bloqueio policial',
       'perseguição',
+      'perseguicao',
       'crime organizado'
     ],
+
     peso: 20
+
   },
 
   greve: {
+
     palavras: [
       'greve',
       'paralisação',
@@ -177,14 +261,18 @@ const EVENTOS_OPERACIONAIS = {
       'piquete',
       'bloqueio de rodovia'
     ],
+
     peso: 25
+
   },
 
   infraestrutura: {
+
     palavras: [
       'falta de energia',
       'queda de energia',
       'apagão',
+      'apagao',
       'incêndio',
       'incendio',
       'explosão',
@@ -193,57 +281,173 @@ const EVENTOS_OPERACIONAIS = {
       'queda de ponte',
       'ponte interditada'
     ],
+
     peso: 20
+
   },
 
   logistica: {
+
     palavras: [
       'transporte',
       'transportadora',
       'caminhão',
-      'caminhoes',
+      'caminhao',
       'caminhões',
+      'caminhoes',
       'carreta',
       'carga',
       'combustível',
+      'combustivel',
       'abastecimento',
-      'aeroporto',
-      'porto',
       'centro de distribuição',
       'centro de distribuicao'
     ],
+
     peso: 10
+
   }
 
 };
 
 // ============================================================
-// TERMOS DE IMPACTO
+// TERMOS DE IMPACTO OPERACIONAL
 // ============================================================
 
 const TERMOS_IMPACTO = [
+
   'interdição',
+  'interdicao',
   'interditado',
   'interditada',
+
   'bloqueio',
   'bloqueada',
   'bloqueado',
+
   'evacuação',
   'evacuacao',
+
   'desvio',
+
   'congestionamento',
+
   'lentidão',
+  'lentidao',
+
   'pista fechada',
   'pista interditada',
+
   'trânsito parado',
+  'transito parado',
+
   'trânsito intenso',
+  'transito intenso',
+
   'sem acesso',
   'acesso bloqueado',
+
   'rota alternativa',
-  'risco',
-  'impacto',
+
   'paralisação',
-  'paralisacao'
+  'paralisacao',
+
+  'operação suspensa',
+  'operacao suspensa',
+
+  'operações suspensas',
+  'operacoes suspensas',
+
+  'atividade suspensa',
+  'atividades suspensas',
+
+  'serviço interrompido',
+  'servico interrompido',
+
+  'serviços interrompidos',
+  'servicos interrompidos',
+
+  'acesso restrito',
+  'acesso interditado',
+
+  'circulação interrompida',
+  'circulacao interrompida',
+
+  'circulação proibida',
+  'circulacao proibida'
+
+];
+
+// ============================================================
+// TERMOS DE IMPACTO AEROPORTUÁRIO
+// ============================================================
+
+const TERMOS_AEROPORTO_IMPACTO = [
+
+  'aeroporto fechado',
+  'aeroporto interditado',
+  'aeroporto interditada',
+
+  'pista do aeroporto fechada',
+  'pista do aeroporto interditada',
+
+  'voos cancelados',
+  'voos suspensos',
+  'voos interrompidos',
+
+  'operações aeroportuárias suspensas',
+  'operacoes aeroportuarias suspensas',
+
+  'operações suspensas no aeroporto',
+  'operacoes suspensas no aeroporto',
+
+  'aeroporto suspende operações',
+  'aeroporto suspende operacoes',
+
+  'aeroporto interrompe operações',
+  'aeroporto interrompe operacoes',
+
+  'aeroporto sem operação',
+  'aeroporto sem operacao'
+
+];
+
+// ============================================================
+// TERMOS DE IMPACTO LOGÍSTICO
+// ============================================================
+
+const TERMOS_LOGISTICA_IMPACTO = [
+
+  'entrega interrompida',
+  'entregas interrompidas',
+
+  'distribuição interrompida',
+  'distribuicao interrompida',
+
+  'transporte interrompido',
+  'transportes interrompidos',
+
+  'rota bloqueada',
+  'rotas bloqueadas',
+
+  'acesso à fábrica',
+  'acesso a fabrica',
+
+  'acesso à unidade',
+  'acesso a unidade',
+
+  'fábrica parada',
+  'fabrica parada',
+
+  'fábrica fechada',
+  'fabrica fechada',
+
+  'produção parada',
+  'producao parada',
+
+  'produção interrompida',
+  'producao interrompida'
+
 ];
 
 // ============================================================
@@ -253,7 +457,9 @@ const TERMOS_IMPACTO = [
 const LOCALIDADES_MONITORADAS = [
 
   // São Paulo
+
   'são paulo',
+  'sao paulo',
   'campinas',
   'itu',
   'sorocaba',
@@ -279,6 +485,7 @@ const LOCALIDADES_MONITORADAS = [
   'santo andre',
 
   // Minas Gerais
+
   'belo horizonte',
   'contagem',
   'betim',
@@ -287,17 +494,21 @@ const LOCALIDADES_MONITORADAS = [
   'nova lima',
 
   // Paraná
+
   'curitiba',
   'são josé dos pinhais',
   'sao jose dos pinhais',
 
   // Rio de Janeiro
+
   'rio de janeiro',
 
   // Outras
+
   'porto alegre',
   'brasília',
   'brasilia'
+
 ];
 
 // ============================================================
@@ -328,6 +539,7 @@ const RODOVIAS_MONITORADAS = [
   'ayrton senna',
   'jacú pêssego',
   'jacu pessego'
+
 ];
 
 // ============================================================
@@ -424,17 +636,44 @@ function contem(texto, palavras) {
 }
 
 // ============================================================
+// CONTAR OCORRÊNCIAS
+// ============================================================
+
+function contarTermos(texto, palavras) {
+
+  let total = 0;
+
+  for (const palavra of palavras) {
+
+    if (texto.includes(normalizar(palavra))) {
+      total++;
+    }
+
+  }
+
+  return total;
+
+}
+
+// ============================================================
 // DETECTAR LOCAL
 // ============================================================
 
 function detectarLocalidade(titulo, resumo) {
 
-  const texto = normalizar(`${titulo} ${resumo}`);
+  const texto =
+    normalizar(`${titulo} ${resumo}`);
 
   for (const local of LOCALIDADES_MONITORADAS) {
 
-    if (texto.includes(normalizar(local))) {
+    if (
+      texto.includes(
+        normalizar(local)
+      )
+    ) {
+
       return local;
+
     }
 
   }
@@ -449,12 +688,19 @@ function detectarLocalidade(titulo, resumo) {
 
 function detectarRodovia(titulo, resumo) {
 
-  const texto = normalizar(`${titulo} ${resumo}`);
+  const texto =
+    normalizar(`${titulo} ${resumo}`);
 
   for (const rodovia of RODOVIAS_MONITORADAS) {
 
-    if (texto.includes(normalizar(rodovia))) {
+    if (
+      texto.includes(
+        normalizar(rodovia)
+      )
+    ) {
+
       return rodovia;
+
     }
 
   }
@@ -471,14 +717,23 @@ function detectarEventos(texto) {
 
   const eventos = [];
 
-  for (const [categoria, config] of Object.entries(EVENTOS_OPERACIONAIS)) {
+  for (
+    const [categoria, config]
+    of Object.entries(EVENTOS_OPERACIONAIS)
+  ) {
 
-    const encontrou = config.palavras.some(palavra =>
-      texto.includes(normalizar(palavra))
-    );
+    const encontrou =
+      config.palavras.some(
+        palavra =>
+          texto.includes(
+            normalizar(palavra)
+          )
+      );
 
     if (encontrou) {
+
       eventos.push(categoria);
+
     }
 
   }
@@ -488,28 +743,124 @@ function detectarEventos(texto) {
 }
 
 // ============================================================
+// DETECTAR IMPACTO OPERACIONAL
+// ============================================================
+
+function detectarImpactoOperacional(texto) {
+
+  const impactos = [];
+
+  if (
+    contem(
+      texto,
+      TERMOS_IMPACTO
+    )
+  ) {
+
+    impactos.push(
+      'impacto operacional'
+    );
+
+  }
+
+  if (
+    contem(
+      texto,
+      TERMOS_AEROPORTO_IMPACTO
+    )
+  ) {
+
+    impactos.push(
+      'impacto aeroportuário'
+    );
+
+  }
+
+  if (
+    contem(
+      texto,
+      TERMOS_LOGISTICA_IMPACTO
+    )
+  ) {
+
+    impactos.push(
+      'impacto logístico'
+    );
+
+  }
+
+  return impactos;
+
+}
+
+// ============================================================
+// DETECTAR CONTEÚDO DE BAIXA UTILIDADE
+// ============================================================
+
+function detectarBaixaUtilidade(texto) {
+
+  const encontrados = [];
+
+  for (
+    const termo
+    of TERMOS_BAIXA_UTILIDADE
+  ) {
+
+    if (
+      texto.includes(
+        normalizar(termo)
+      )
+    ) {
+
+      encontrados.push(termo);
+
+    }
+
+  }
+
+  return encontrados;
+
+}
+
+// ============================================================
 // CALCULAR SCORE
 // ============================================================
 
-function calcularRelevancia(titulo, resumo, fonte) {
+function calcularRelevancia(
+  titulo,
+  resumo,
+  fonte
+) {
 
-  const texto = normalizar(`${titulo} ${resumo}`);
+  const texto =
+    normalizar(
+      `${titulo} ${resumo}`
+    );
 
   let score = 0;
 
   const motivos = [];
 
-  // ----------------------------------------------------------
+  // ==========================================================
   // BLOQUEIOS
-  // ----------------------------------------------------------
+  // ==========================================================
 
-  for (const bloqueio of PALAVRAS_BLOQUEIO) {
+  for (
+    const bloqueio
+    of PALAVRAS_BLOQUEIO
+  ) {
 
-    if (texto.includes(normalizar(bloqueio))) {
+    if (
+      texto.includes(
+        normalizar(bloqueio)
+      )
+    ) {
 
-      score -= 50;
+      score -= 60;
 
-      motivos.push(`bloqueio: ${bloqueio}`);
+      motivos.push(
+        `bloqueio: ${bloqueio}`
+      );
 
       break;
 
@@ -517,96 +868,292 @@ function calcularRelevancia(titulo, resumo, fonte) {
 
   }
 
-  // ----------------------------------------------------------
+  // ==========================================================
   // EVENTOS
-  // ----------------------------------------------------------
+  // ==========================================================
 
-  const eventos = detectarEventos(texto);
+  const eventos =
+    detectarEventos(texto);
 
-  for (const evento of eventos) {
+  for (
+    const evento
+    of eventos
+  ) {
 
-    const peso = EVENTOS_OPERACIONAIS[evento].peso;
+    const peso =
+      EVENTOS_OPERACIONAIS[
+        evento
+      ].peso;
 
     score += peso;
 
-    motivos.push(evento);
+    motivos.push(
+      evento
+    );
 
   }
 
-  // ----------------------------------------------------------
+  // ==========================================================
   // LOCALIDADE
-  // ----------------------------------------------------------
+  // ==========================================================
 
-  const localidade = detectarLocalidade(titulo, resumo);
+  const localidade =
+    detectarLocalidade(
+      titulo,
+      resumo
+    );
 
   if (localidade) {
 
     score += 15;
 
-    motivos.push(`localidade: ${localidade}`);
+    motivos.push(
+      `localidade: ${localidade}`
+    );
 
   }
 
-  // ----------------------------------------------------------
+  // ==========================================================
   // RODOVIA
-  // ----------------------------------------------------------
+  // ==========================================================
 
-  const rodovia = detectarRodovia(titulo, resumo);
+  const rodovia =
+    detectarRodovia(
+      titulo,
+      resumo
+    );
 
   if (rodovia) {
 
     score += 20;
 
-    motivos.push(`rodovia: ${rodovia}`);
+    motivos.push(
+      `rodovia: ${rodovia}`
+    );
 
   }
 
-  // ----------------------------------------------------------
+  // ==========================================================
   // IMPACTO OPERACIONAL
-  // ----------------------------------------------------------
+  // ==========================================================
 
-  if (contem(texto, TERMOS_IMPACTO)) {
+  const impactos =
+    detectarImpactoOperacional(
+      texto
+    );
 
-    score += 20;
-
-    motivos.push('impacto operacional');
-
-  }
-
-  // ----------------------------------------------------------
-  // FONTE ESPECIALIZADA
-  // ----------------------------------------------------------
+  const temImpactoOperacional =
+    impactos.length > 0;
 
   if (
-    fonte.toLowerCase().includes('segurança') ||
-    fonte.toLowerCase().includes('polícia')
+    temImpactoOperacional
+  ) {
+
+    score += 25;
+
+    for (
+      const impacto
+      of impactos
+    ) {
+
+      motivos.push(
+        impacto
+      );
+
+    }
+
+  }
+
+  // ==========================================================
+  // BAIXA UTILIDADE
+  // ==========================================================
+
+  const baixaUtilidade =
+    detectarBaixaUtilidade(
+      texto
+    );
+
+  if (
+    baixaUtilidade.length > 0
+  ) {
+
+    score -=
+      15 *
+      baixaUtilidade.length;
+
+    motivos.push(
+      `conteúdo secundário: ${baixaUtilidade.join(', ')}`
+    );
+
+  }
+
+  // ==========================================================
+  // REGRA ESPECIAL PARA AERONAVES
+  // ==========================================================
+  // Um acidente aéreo sem impacto operacional não deve
+  // automaticamente virar alerta.
+  // ==========================================================
+
+  const mencionaAeronave =
+    contem(
+      texto,
+      [
+        'avião',
+        'aviao',
+        'aeronave',
+        'aeroporto',
+        'voo',
+        'voos'
+      ]
+    );
+
+  const temImpactoAereo =
+    contem(
+      texto,
+      TERMOS_AEROPORTO_IMPACTO
+    );
+
+  if (
+    mencionaAeronave &&
+    !temImpactoAereo &&
+    !rodovia &&
+    !contem(
+      texto,
+      [
+        'carga',
+        'transporte de carga',
+        'terminal de cargas',
+        'logística',
+        'logistica'
+      ]
+    )
+  ) {
+
+    score -= 20;
+
+    motivos.push(
+      'ocorrência aérea sem impacto operacional identificado'
+    );
+
+  }
+
+  // ==========================================================
+  // REGRA ESPECIAL PARA VÍDEOS / PASSAGEIROS
+  // ==========================================================
+
+  if (
+    baixaUtilidade.length > 0 &&
+    !temImpactoOperacional &&
+    !rodovia
+  ) {
+
+    score -= 20;
+
+    motivos.push(
+      'conteúdo sem impacto operacional confirmado'
+    );
+
+  }
+
+  // ==========================================================
+  // FONTE ESPECIALIZADA
+  // ==========================================================
+
+  const fonteNormalizada =
+    normalizar(fonte);
+
+  if (
+    fonteNormalizada.includes(
+      'seguranca'
+    ) ||
+    fonteNormalizada.includes(
+      'policia'
+    )
   ) {
 
     score += 10;
 
-    motivos.push('fonte especializada');
+    motivos.push(
+      'fonte especializada'
+    );
 
   }
 
-  // ----------------------------------------------------------
-  // LIMITE
-  // ----------------------------------------------------------
+  // ==========================================================
+  // BONIFICAÇÃO PARA IMPACTO FORTE
+  // ==========================================================
 
-  score = Math.max(0, Math.min(100, score));
+  const impactoForte =
+    contem(
+      texto,
+      [
+        'interdição total',
+        'interdicao total',
+        'bloqueio total',
+        'pista totalmente bloqueada',
+        'operações suspensas',
+        'operacoes suspensas',
+        'fábrica parada',
+        'fabrica parada',
+        'produção parada',
+        'producao parada',
+        'evacuação',
+        'evacuacao'
+      ]
+    );
 
-  let nivel = 'DESCARTAR';
+  if (
+    impactoForte
+  ) {
 
-  if (score >= 85) {
+    score += 15;
 
-    nivel = 'CRÍTICO';
+    motivos.push(
+      'impacto operacional forte'
+    );
 
-  } else if (score >= 70) {
+  }
 
-    nivel = 'ALTO';
+  // ==========================================================
+  // LIMITAR SCORE
+  // ==========================================================
 
-  } else if (score >= 40) {
+  score =
+    Math.max(
+      0,
+      Math.min(
+        100,
+        score
+      )
+    );
 
-    nivel = 'MONITORAR';
+  // ==========================================================
+  // NÍVEL
+  // ==========================================================
+
+  let nivel =
+    'DESCARTAR';
+
+  if (
+    score >= 85
+  ) {
+
+    nivel =
+      'CRÍTICO';
+
+  } else if (
+    score >= 70
+  ) {
+
+    nivel =
+      'ALTO';
+
+  } else if (
+    score >= 40
+  ) {
+
+    nivel =
+      'MONITORAR';
 
   }
 
@@ -617,6 +1164,13 @@ function calcularRelevancia(titulo, resumo, fonte) {
     eventos,
     localidade,
     rodovia,
+
+    impactos,
+
+    temImpactoOperacional,
+
+    baixaUtilidade,
+
     motivos
 
   };
@@ -624,26 +1178,154 @@ function calcularRelevancia(titulo, resumo, fonte) {
 }
 
 // ============================================================
+// VALIDAR ALERTA
+// ============================================================
+
+function podeEnviarAlerta(analise) {
+
+  // Precisa atingir o score mínimo
+  if (
+    analise.score <
+    SCORE_ALERTA
+  ) {
+
+    return false;
+
+  }
+
+  // Se houver impacto operacional confirmado,
+  // pode enviar normalmente.
+  if (
+    analise.temImpactoOperacional
+  ) {
+
+    return true;
+
+  }
+
+  // Rodovias com ocorrência operacional
+  if (
+    analise.rodovia &&
+    analise.eventos.length > 0
+  ) {
+
+    return true;
+
+  }
+
+  // Acidentes + localidade + evento forte
+  if (
+    analise.eventos.includes(
+      'acidente'
+    ) &&
+    analise.localidade &&
+    (
+      analise.eventos.includes(
+        'transito'
+      ) ||
+      analise.eventos.includes(
+        'infraestrutura'
+      ) ||
+      analise.eventos.includes(
+        'greve'
+      )
+    )
+  ) {
+
+    return true;
+
+  }
+
+  // Caso contrário, não enviar.
+  return false;
+
+}
+
+// ============================================================
 // CATEGORIA
 // ============================================================
 
-function determinarCategoria(analise) {
+function determinarCategoria(
+  analise
+) {
 
-  if (analise.rodovia) return 'transito';
+  if (
+    analise.rodovia
+  ) {
 
-  if (analise.eventos.includes('acidente')) return 'acidente';
+    return 'transito';
 
-  if (analise.eventos.includes('clima')) return 'clima';
+  }
 
-  if (analise.eventos.includes('greve')) return 'greve';
+  if (
+    analise.eventos.includes(
+      'acidente'
+    )
+  ) {
 
-  if (analise.eventos.includes('seguranca')) return 'policial';
+    return 'acidente';
 
-  if (analise.eventos.includes('infraestrutura')) return 'infraestrutura';
+  }
 
-  if (analise.eventos.includes('logistica')) return 'logistica';
+  if (
+    analise.eventos.includes(
+      'clima'
+    )
+  ) {
 
-  if (analise.eventos.includes('transito')) return 'transito';
+    return 'clima';
+
+  }
+
+  if (
+    analise.eventos.includes(
+      'greve'
+    )
+  ) {
+
+    return 'greve';
+
+  }
+
+  if (
+    analise.eventos.includes(
+      'seguranca'
+    )
+  ) {
+
+    return 'policial';
+
+  }
+
+  if (
+    analise.eventos.includes(
+      'infraestrutura'
+    )
+  ) {
+
+    return 'infraestrutura';
+
+  }
+
+  if (
+    analise.eventos.includes(
+      'logistica'
+    )
+  ) {
+
+    return 'logistica';
+
+  }
+
+  if (
+    analise.eventos.includes(
+      'transito'
+    )
+  ) {
+
+    return 'transito';
+
+  }
 
   return 'geral';
 
@@ -653,40 +1335,58 @@ function determinarCategoria(analise) {
 // GEOCODIFICAÇÃO
 // ============================================================
 
-async function geocodificar(cidade) {
+async function geocodificar(
+  cidade
+) {
 
   try {
 
-    const response = await axios.get(
-      'https://nominatim.openstreetmap.org/search',
-      {
+    const response =
+      await axios.get(
+        'https://nominatim.openstreetmap.org/search',
+        {
 
-        params: {
+          params: {
 
-          q: `${cidade}, Brasil`,
-          format: 'json',
-          limit: 1
+            q:
+              `${cidade}, Brasil`,
 
-        },
+            format:
+              'json',
 
-        headers: {
+            limit:
+              1
 
-          'User-Agent': 'Monitor-Impactos-Operacionais'
+          },
+
+          headers: {
+
+            'User-Agent':
+              'Monitor-Impactos-Operacionais'
+
+          }
 
         }
+      );
 
-      }
-    );
-
-    if (response.data.length > 0) {
+    if (
+      response.data.length > 0
+    ) {
 
       return {
 
-        lat: parseFloat(response.data[0].lat),
+        lat:
+          parseFloat(
+            response.data[0].lat
+          ),
 
-        lng: parseFloat(response.data[0].lon),
+        lng:
+          parseFloat(
+            response.data[0].lon
+          ),
 
-        cidade: response.data[0].display_name
+        cidade:
+          response.data[0].display_name
 
       };
 
@@ -711,12 +1411,17 @@ async function geocodificar(cidade) {
 
 function calcularDataExpiracao() {
 
-  const agora = new Date();
+  const agora =
+    new Date();
 
-  const expira = new Date(agora);
+  const expira =
+    new Date(
+      agora
+    );
 
   expira.setDate(
-    expira.getDate() + DIAS_PADRAO
+    expira.getDate() +
+    DIAS_PADRAO
   );
 
   return expira;
@@ -819,47 +1524,61 @@ async function enviarResumo(noticiasCriticas) {
 async function coletarNoticias() {
 
   console.log(
-    '📡 Iniciando Monitor de Impactos v2.0...'
+    '📡 Iniciando Monitor de Impactos v2.1...'
   );
 
   initializeApp();
 
-  const db = getFirestore();
+  const db =
+    getFirestore();
 
-  const parser = new Parser();
+  const parser =
+    new Parser();
 
-  let total = 0;
+  let total =
+    0;
 
-  const noticiasCriticas = [];
+  const noticiasCriticas =
+    [];
 
   // ==========================================================
   // FONTES
   // ==========================================================
 
-  for (const fonte of FONTES) {
+  for (
+    const fonte
+    of FONTES
+  ) {
 
     try {
 
-      console.log(`\n📡 ${fonte.nome}`);
+      console.log(
+        `\n📡 ${fonte.nome}`
+      );
 
       const feed =
-        await parser.parseURL(fonte.url);
+        await parser.parseURL(
+          fonte.url
+        );
 
-      const noticias = [];
+      const noticias =
+        [];
 
       // ========================================================
       // NOTÍCIAS
       // ========================================================
 
       for (
-        const item of feed.items.slice(
+        const item
+        of feed.items.slice(
           0,
           MAX_NOTICIAS_POR_FONTE
         )
       ) {
 
         const titulo =
-          item.title || 'Sem título';
+          item.title ||
+          'Sem título';
 
         const resumo =
           item.contentSnippet ||
@@ -867,11 +1586,14 @@ async function coletarNoticias() {
           '';
 
         const link =
-          item.link || '#';
+          item.link ||
+          '#';
 
         const dataPub =
           item.pubDate
-            ? new Date(item.pubDate)
+            ? new Date(
+                item.pubDate
+              )
             : new Date();
 
         console.log(
@@ -895,6 +1617,14 @@ async function coletarNoticias() {
 
         console.log(
           `   🎯 Nível: ${analise.nivel}`
+        );
+
+        console.log(
+          `   🧠 Impacto operacional: ${
+            analise.temImpactoOperacional
+              ? 'SIM'
+              : 'NÃO'
+          }`
         );
 
         console.log(
@@ -924,7 +1654,9 @@ async function coletarNoticias() {
 
         const existing =
           await db
-            .collection('noticias')
+            .collection(
+              'noticias'
+            )
             .where(
               'link',
               '==',
@@ -932,7 +1664,9 @@ async function coletarNoticias() {
             )
             .get();
 
-        if (!existing.empty) {
+        if (
+          !existing.empty
+        ) {
 
           console.log(
             '   ⏭️ Duplicada'
@@ -946,7 +1680,8 @@ async function coletarNoticias() {
         // LOCALIZAÇÃO
         // ======================================================
 
-        let localizacao = null;
+        let localizacao =
+          null;
 
         if (
           analise.localidade
@@ -987,13 +1722,16 @@ async function coletarNoticias() {
 
           link,
 
-          fonte: fonte.nome,
+          fonte:
+            fonte.nome,
 
           categoria,
 
-          dataPublicacao: dataPub,
+          dataPublicacao:
+            dataPub,
 
-          dataColeta: new Date(),
+          dataColeta:
+            new Date(),
 
           dataExpiracao:
             calcularDataExpiracao(),
@@ -1019,7 +1757,17 @@ async function coletarNoticias() {
           palavrasChaveEncontradas:
             palavrasEncontradas,
 
-          lidaPor: [],
+          temImpactoOperacional:
+            analise.temImpactoOperacional,
+
+          impactosDetectados:
+            analise.impactos,
+
+          baixaUtilidadeDetectada:
+            analise.baixaUtilidade,
+
+          lidaPor:
+            [],
 
           reacoes: {
 
@@ -1042,12 +1790,23 @@ async function coletarNoticias() {
         // ======================================================
 
         if (
-          analise.score >=
-          SCORE_ALERTA
+          podeEnviarAlerta(
+            analise
+          )
         ) {
 
           noticiasCriticas.push(
             noticia
+          );
+
+          console.log(
+            '   🚨 ALERTA DE E-MAIL'
+          );
+
+        } else {
+
+          console.log(
+            '   ℹ️ Sem alerta de e-mail'
           );
 
         }
@@ -1070,12 +1829,15 @@ async function coletarNoticias() {
           db.batch();
 
         for (
-          const noticia of noticias
+          const noticia
+          of noticias
         ) {
 
           const ref =
             db
-              .collection('noticias')
+              .collection(
+                'noticias'
+              )
               .doc();
 
           batch.set(
@@ -1153,3 +1915,4 @@ coletarNoticias()
     process.exit(1);
 
   });
+```
