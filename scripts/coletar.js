@@ -724,169 +724,92 @@ function calcularDataExpiracao() {
 }
 
 // ============================================================
-// E-MAIL
+// ENVIAR RESUMO POR E-MAIL (VERSÃO ENXUTA)
 // ============================================================
 
 async function enviarResumo(noticiasCriticas) {
 
+  // Se não houver notícias críticas, não envia nada
   if (noticiasCriticas.length === 0) {
-
-    console.log(
-      '📧 Nenhuma notícia de alto impacto.'
-    );
-
+    console.log('📧 Nenhuma notícia de alto impacto.');
     return;
-
   }
 
-  const dataHora =
-    new Date().toLocaleString(
-      'pt-BR',
-      {
-        timeZone: 'America/Sao_Paulo'
-      }
-    );
+  // Data/hora no fuso horário de Brasília
+  const dataHora = new Date().toLocaleString('pt-BR', {
+    timeZone: 'America/Sao_Paulo'
+  });
 
   const total = noticiasCriticas.length;
 
-  let lista = '';
-
-  for (const noticia of noticiasCriticas) {
-
-    let cor = '#ff9800';
-
-    if (noticia.nivelRelevancia === 'CRÍTICO') {
-      cor = '#d32f2f';
-    }
-
-    lista += `
-
-      <div style="
-        border-left:5px solid ${cor};
-        padding:12px;
-        margin-bottom:12px;
-        background:#f5f7fa;
-      ">
-
-        <strong>
-          ${noticia.nivelRelevancia}
-          — Score ${noticia.scoreRelevancia}/100
-        </strong>
-
-        <h3>
-          ${noticia.titulo}
-        </h3>
-
-        <p>
-          ${noticia.resumo}
-        </p>
-
-        <p>
-          📍 ${noticia.localidadeDetectada || 'Local não identificado'}
-        </p>
-
-        <p>
-          🚧 ${noticia.rodoviaDetectada || 'Sem rodovia identificada'}
-        </p>
-
-        <a href="${noticia.link}" target="_blank">
-          Ler notícia
-        </a>
-
-      </div>
-
-    `;
-
+  // Conta por categoria
+  const contagemCategorias = {};
+  for (const n of noticiasCriticas) {
+    const cat = n.categoria || 'geral';
+    contagemCategorias[cat] = (contagemCategorias[cat] || 0) + 1;
   }
 
-  const linkSite =
-    'https://rapzxyok2019-prog.github.io/monitor-de-impactos/';
+  // Lista de categorias com emojis
+  const emojis = {
+    'acidente': '⚠️',
+    'transito': '🚧',
+    'clima': '🌧️',
+    'policial': '🚔',
+    'greve': '🚛',
+    'infraestrutura': '🏗️',
+    'logistica': '📦',
+    'fabrica': '🏭',
+    'geral': '📌'
+  };
+
+  let listaCategorias = '';
+  for (const [cat, qtd] of Object.entries(contagemCategorias)) {
+    const emoji = emojis[cat] || '📌';
+    listaCategorias += `<li><strong>${emoji} ${cat}</strong>: ${qtd}</li>`;
+  }
+
+  // Link do site
+  const linkSite = 'https://rapzxyok2019-prog.github.io/monitor-de-impactos/';
+
+  const assunto = `🚨 ${total} alerta(s) operacional(is) - Monitor PepsiCo`;
 
   const mensagemHtml = `
-
-    <h2 style="color:#003da5;">
-      🚨 Monitor de Impactos Operacionais
-    </h2>
-
-    <p>
-      <strong>Data/Hora:</strong> ${dataHora}
-    </p>
-
-    <p>
-      <strong>
-        ${total} notícia(s) de alto impacto detectada(s)
-      </strong>
-    </p>
-
-    ${lista}
-
-    <p>
-
-      <a
-        href="${linkSite}"
-        target="_blank"
-        style="
-          background:#003da5;
-          color:white;
-          padding:10px 20px;
-          border-radius:8px;
-          text-decoration:none;
-          font-weight:bold;
-        "
-      >
-
-        🔍 Abrir Monitor
-
+    <h2 style="color:#003da5;">🚛 Monitor de Impactos - PepsiCo</h2>
+    <p><strong>Data/Hora:</strong> ${dataHora}</p>
+    <p style="font-size:1.3rem;"><strong>📊 Total de alertas:</strong> ${total}</p>
+    <div style="background:#eef2f6; padding:12px; border-radius:8px; margin:12px 0;">
+      <h4 style="margin:0;">📋 Resumo por categoria</h4>
+      <ul style="margin:8px 0 0 0; padding-left:20px;">
+        ${listaCategorias}
+      </ul>
+    </div>
+    <p style="margin:16px 0;">
+      <a href="${linkSite}" target="_blank" style="background:#003da5; color:white; padding:10px 20px; border-radius:8px; text-decoration:none; font-weight:bold;">
+        🔍 Ver no Monitor
       </a>
-
     </p>
-
+    <hr style="margin:24px 0; border:none; border-top:1px solid #e2e6ee;">
+    <p style="color:#6b7a93; font-size:0.8rem;">Enviado automaticamente pelo Monitor de Impactos.</p>
   `;
 
   try {
-
     for (const destinatario of EMAIL_DESTINATARIOS) {
-
-      const { error } =
-        await resend.emails.send({
-
-          from: EMAIL_REMETENTE,
-
-          to: [destinatario],
-
-          subject:
-            `🚨 ${total} alerta(s) operacional(is)`,
-
-          html: mensagemHtml
-
-        });
+      const { error } = await resend.emails.send({
+        from: EMAIL_REMETENTE,
+        to: [destinatario],
+        subject: assunto,
+        html: mensagemHtml
+      });
 
       if (error) {
-
-        console.error(
-          '❌ Erro no e-mail:',
-          error.message
-        );
-
+        console.error(`❌ Erro ao enviar para ${destinatario}:`, error.message);
       } else {
-
-        console.log(
-          `📧 Alerta enviado para ${destinatario}`
-        );
-
+        console.log(`📧 Alerta enviado para ${destinatario} (${total} notícias)`);
       }
-
     }
-
   } catch (error) {
-
-    console.error(
-      '❌ Erro no envio:',
-      error.message
-    );
-
+    console.error('❌ Erro no envio:', error.message);
   }
-
 }
 
 // ============================================================
