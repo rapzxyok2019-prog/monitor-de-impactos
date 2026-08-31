@@ -661,9 +661,11 @@ function contarTermos(texto, palavras) {
 
 function detectarLocalidade(titulo, resumo) {
 
-  const texto =
-    normalizar(`${titulo} ${resumo}`);
-
+const texto =
+  normalizar(
+    `${titulo} ${resumo}`
+  );
+  
   for (const local of LOCALIDADES_MONITORADAS) {
 
     if (
