@@ -1,5 +1,5 @@
 // ============================================================
-// SCRIPT DE COLETA DE NOTÍCIAS - COM RESUMO POR E-MAIL
+// MONITOR DE IMPACTOS - COLETOR OPERACIONAL v2.0
 // ============================================================
 
 const { initializeApp } = require('firebase-admin/app');
@@ -8,362 +8,1225 @@ const Parser = require('rss-parser');
 const axios = require('axios');
 const { Resend } = require('resend');
 
-// ===== CONFIGURAÇÕES =====
-const DIAS_PADRAO = 2;
-const MIN_PALAVRAS_CHAVE = 2;
+// ============================================================
+// CONFIGURAÇÕES
+// ============================================================
 
-// ===== RESEND =====
-const RESEND_API_KEY = process.env.RESEND_API_KEY || 're_123456789';
+const DIAS_PADRAO = 2;
+
+// Score mínimo para salvar uma notícia
+const SCORE_MINIMO = 40;
+
+// Score mínimo para entrar no alerta por e-mail
+const SCORE_ALERTA = 70;
+
+// Quantidade máxima de notícias por RSS
+const MAX_NOTICIAS_POR_FONTE = 8;
+
+// ============================================================
+// RESEND
+// ============================================================
+
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+
+if (!RESEND_API_KEY) {
+  console.error('❌ RESEND_API_KEY não configurada.');
+}
+
 const resend = new Resend(RESEND_API_KEY);
 
-// ===== E-MAIL =====
-const EMAIL_REMETENTE = 'Resend <onboarding@resend.dev>';
-const EMAIL_DESTINATARIOS = ['rapzxyok2019@gmail.com'];
+// ============================================================
+// E-MAIL
+// ============================================================
 
-// ===== PALAVRAS DE BLOQUEIO =====
-const PALAVRAS_BLOQUEIO = [
-  'política', 'político', 'eleição', 'voto', 'presidente', 'governo',
-  'partido', 'senado', 'câmara', 'deputado', 'senador', 'vereador',
-  'ministro', 'governador', 'inflação', 'ibovespa', 'dólar',
-  'mercado financeiro', 'bolsa de valores', 'futebol', 'campeonato',
-  'jogador', 'time', 'esporte', 'olimpíada', 'celebridade', 'famoso',
-  'artista', 'novela', 'cinema', 'shows', 'safra', 'soja', 'milho',
-  'trigo', 'café', 'agronegócio', 'plantio', 'colheita'
+const EMAIL_REMETENTE = 'Resend <onboarding@resend.dev>';
+
+const EMAIL_DESTINATARIOS = [
+  'rapzxyok2019@gmail.com'
 ];
 
-// ===== PALAVRAS FIXAS =====
-const PALAVRAS_FIXAS = {
-  clima: ['ciclone', 'ventania', 'tempestade', 'granizo', 'vendaval', 'tornado', 'furacão', 'chuva', 'enchente', 'alagamento', 'inundação', 'deslizamento'],
-  policial: ['roubo', 'assalto', 'carga', 'criminalidade', 'violência', 'tiroteio', 'confronto', 'operação policial', 'prf', 'blitz', 'bandido', 'traficante', 'apreensão', 'flagrante', 'investigação', 'vigilância', 'segurança pública', 'carga roubada', 'incêndio', 'fogo', 'queimada', 'desaparece', 'desaparecido', 'espancado', 'agressão', 'morte', 'homicídio'],
-  greve: ['greve', 'paralisação', 'caminhoneiro', 'bloqueio', 'protesto', 'piquete', 'manifestação', 'travamento'],
-  acidente: ['acidente', 'colisão', 'capotamento', 'engavetamento', 'atropelamento', 'batida', 'tombamento'],
-  transito: ['interdição', 'rodovia', 'br-', 'trânsito', 'congestionamento', 'desvio', 'obras'],
-  fabrica: ['fábrica', 'produção', 'indústria', 'linha de produção', 'parada']
+// ============================================================
+// PALAVRAS DE BLOQUEIO
+// ============================================================
+
+const PALAVRAS_BLOQUEIO = [
+  'eleição',
+  'votação',
+  'partido político',
+  'deputado',
+  'senador',
+  'vereador',
+  'celebridade',
+  'famoso',
+  'artista',
+  'novela',
+  'cinema',
+  'filme',
+  'série',
+  'música',
+  'cantor',
+  'ator',
+  'influenciador',
+  'bbb',
+  'reality show',
+  'futebol',
+  'campeonato',
+  'jogador',
+  'time',
+  'olimpíada',
+  'horóscopo',
+  'moda',
+  'fofoca',
+  'receita',
+  'entretenimento',
+  'safra',
+  'soja',
+  'milho',
+  'trigo',
+  'café',
+  'plantio',
+  'colheita'
+];
+
+// ============================================================
+// EVENTOS OPERACIONAIS
+// ============================================================
+
+const EVENTOS_OPERACIONAIS = {
+
+  acidente: {
+    palavras: [
+      'acidente',
+      'colisão',
+      'capotamento',
+      'engavetamento',
+      'atropelamento',
+      'batida',
+      'tombamento',
+      'carreta tombou',
+      'caminhão tombou'
+    ],
+    peso: 25
+  },
+
+  transito: {
+    palavras: [
+      'interdição',
+      'interditada',
+      'interditado',
+      'rodovia',
+      'trânsito',
+      'congestionamento',
+      'lentidão',
+      'desvio',
+      'pista bloqueada',
+      'pista interditada',
+      'faixa bloqueada',
+      'faixa interditada',
+      'bloqueio'
+    ],
+    peso: 20
+  },
+
+  clima: {
+    palavras: [
+      'enchente',
+      'alagamento',
+      'alagamentos',
+      'inundação',
+      'deslizamento',
+      'tempestade',
+      'chuva intensa',
+      'chuvas fortes',
+      'chuva forte',
+      'granizo',
+      'vendaval',
+      'ciclone',
+      'tornado',
+      'temporal'
+    ],
+    peso: 25
+  },
+
+  seguranca: {
+    palavras: [
+      'roubo de carga',
+      'carga roubada',
+      'assalto',
+      'roubo',
+      'furto de carga',
+      'tiroteio',
+      'confronto',
+      'operação policial',
+      'bloqueio policial',
+      'perseguição',
+      'crime organizado'
+    ],
+    peso: 20
+  },
+
+  greve: {
+    palavras: [
+      'greve',
+      'paralisação',
+      'paralisacao',
+      'caminhoneiros',
+      'manifestação',
+      'manifestacao',
+      'protesto',
+      'piquete',
+      'bloqueio de rodovia'
+    ],
+    peso: 25
+  },
+
+  infraestrutura: {
+    palavras: [
+      'falta de energia',
+      'queda de energia',
+      'apagão',
+      'incêndio',
+      'incendio',
+      'explosão',
+      'explosao',
+      'vazamento',
+      'queda de ponte',
+      'ponte interditada'
+    ],
+    peso: 20
+  },
+
+  logistica: {
+    palavras: [
+      'transporte',
+      'transportadora',
+      'caminhão',
+      'caminhoes',
+      'caminhões',
+      'carreta',
+      'carga',
+      'combustível',
+      'abastecimento',
+      'aeroporto',
+      'porto',
+      'centro de distribuição',
+      'centro de distribuicao'
+    ],
+    peso: 10
+  }
+
 };
 
-// ===== FONTES DE NOTÍCIAS =====
-const FONTES = [
-  { nome: 'G1 - Geral', url: 'https://g1.globo.com/rss/g1/', categoria: 'geral' },
-  { nome: 'G1 - Segurança Pública', url: 'https://g1.globo.com/rss/g1/seguranca/', categoria: 'geral' },
-  { nome: 'CNN Brasil', url: 'https://www.cnnbrasil.com.br/feed/', categoria: 'geral' },
-  { nome: 'Folha de SP', url: 'https://feeds.folha.uol.com.br/folha/emcimadahora/rss091.xml', categoria: 'geral' },
-  { nome: 'JP News', url: 'https://jovempan.com.br/feed', categoria: 'geral' },
-  { nome: 'Agência Brasil - EBC', url: 'https://www.ebc.com.br/feed', categoria: 'geral' },
-  { nome: 'R7 - Notícias', url: 'https://noticias.r7.com/feed.xml', categoria: 'geral' },
-  { nome: 'R7 - Brasil', url: 'https://noticias.r7.com/brasil/feed.xml', categoria: 'geral' },
-  { nome: 'Metrópoles - DF', url: 'https://www.metropoles.com/feed', categoria: 'geral' },
-  { nome: 'Estadão - Geral', url: 'https://estadao.com.br/rss/geral.xml', categoria: 'geral' },
-  { nome: 'Estadão - Polícia', url: 'https://estadao.com.br/rss/policia.xml', categoria: 'geral' },
-  { nome: 'G1 - São Paulo', url: 'https://g1.globo.com/rss/g1/sp/sao-paulo/', categoria: 'geral' },
-  { nome: 'G1 - Rio de Janeiro', url: 'https://g1.globo.com/rss/g1/rj/rio-de-janeiro/', categoria: 'geral' },
-  { nome: 'G1 - Minas Gerais', url: 'https://g1.globo.com/rss/g1/mg/minas-gerais/', categoria: 'geral' },
-  { nome: 'G1 - Paraná', url: 'https://g1.globo.com/rss/g1/pr/parana/', categoria: 'geral' },
-  { nome: 'G1 - Bahia', url: 'https://g1.globo.com/rss/g1/ba/bahia/', categoria: 'geral' },
-  { nome: 'G1 - Pernambuco', url: 'https://g1.globo.com/rss/g1/pe/pernambuco/', categoria: 'geral' },
-  { nome: 'G1 - Rio Grande do Sul', url: 'https://g1.globo.com/rss/g1/rs/rio-grande-do-sul/', categoria: 'geral' },
-  { nome: 'G1 - Ceará', url: 'https://g1.globo.com/rss/g1/ce/ceara/', categoria: 'geral' },
-  { nome: 'R7 - São Paulo', url: 'https://noticias.r7.com/sao-paulo/feed.xml', categoria: 'geral' },
-  { nome: 'R7 - Rio de Janeiro', url: 'https://noticias.r7.com/rio-de-janeiro/feed.xml', categoria: 'geral' },
-  { nome: 'O Globo - Rio', url: 'https://oglobo.globo.com/rss/rio/', categoria: 'geral' },
-  { nome: 'O Globo - São Paulo', url: 'https://oglobo.globo.com/rss/sao-paulo/', categoria: 'geral' }
+// ============================================================
+// TERMOS DE IMPACTO
+// ============================================================
+
+const TERMOS_IMPACTO = [
+  'interdição',
+  'interditado',
+  'interditada',
+  'bloqueio',
+  'bloqueada',
+  'bloqueado',
+  'evacuação',
+  'evacuacao',
+  'desvio',
+  'congestionamento',
+  'lentidão',
+  'pista fechada',
+  'pista interditada',
+  'trânsito parado',
+  'trânsito intenso',
+  'sem acesso',
+  'acesso bloqueado',
+  'rota alternativa',
+  'risco',
+  'impacto',
+  'paralisação',
+  'paralisacao'
 ];
 
-// ===== CARREGAR PALAVRAS-CHAVE =====
-async function carregarPalavrasChave(db) {
-  try {
-    let doc = await db.collection('configurações').doc('geral').get();
-    if (!doc.exists) {
-      doc = await db.collection('configuracoes').doc('geral').get();
-    }
-    if (doc.exists) {
-      const palavras = doc.data().palavrasChave || [];
-      console.log('📋 Palavras-chave:', palavras.join(', '));
-      return palavras;
-    }
-  } catch (e) {
-    console.error(e);
+// ============================================================
+// LOCALIDADES MONITORADAS
+// ============================================================
+
+const LOCALIDADES_MONITORADAS = [
+
+  // São Paulo
+  'são paulo',
+  'campinas',
+  'itu',
+  'sorocaba',
+  'jundiaí',
+  'jundiai',
+  'santos',
+  'indaiatuba',
+  'salto',
+  'itupeva',
+  'americana',
+  'limeira',
+  'piracicaba',
+  'sumaré',
+  'sumare',
+  'hortolândia',
+  'hortolandia',
+  'guarulhos',
+  'osasco',
+  'barueri',
+  'são bernardo do campo',
+  'sao bernardo do campo',
+  'santo andré',
+  'santo andre',
+
+  // Minas Gerais
+  'belo horizonte',
+  'contagem',
+  'betim',
+  'uberlândia',
+  'uberlandia',
+  'nova lima',
+
+  // Paraná
+  'curitiba',
+  'são josé dos pinhais',
+  'sao jose dos pinhais',
+
+  // Rio de Janeiro
+  'rio de janeiro',
+
+  // Outras
+  'porto alegre',
+  'brasília',
+  'brasilia'
+];
+
+// ============================================================
+// RODOVIAS IMPORTANTES
+// ============================================================
+
+const RODOVIAS_MONITORADAS = [
+
+  'castello branco',
+  'castelo branco',
+  'anhanguera',
+  'bandeirantes',
+  'raposo tavares',
+  'régis bittencourt',
+  'regis bittencourt',
+  'fernão dias',
+  'fernao dias',
+  'presidente dutra',
+  'dutra',
+  'imigrantes',
+  'anchieta',
+  'rodoanel',
+  'dom pedro',
+  'washington luís',
+  'washington luis',
+  'marechal rondon',
+  'carvalho pinto',
+  'ayrton senna',
+  'jacú pêssego',
+  'jacu pessego'
+];
+
+// ============================================================
+// FONTES
+// ============================================================
+
+const FONTES = [
+
+  {
+    nome: 'G1 - Segurança Pública',
+    url: 'https://g1.globo.com/rss/g1/seguranca/',
+    categoria: 'seguranca'
+  },
+
+  {
+    nome: 'G1 - São Paulo',
+    url: 'https://g1.globo.com/rss/g1/sp/sao-paulo/',
+    categoria: 'geral'
+  },
+
+  {
+    nome: 'G1 - Minas Gerais',
+    url: 'https://g1.globo.com/rss/g1/mg/minas-gerais/',
+    categoria: 'geral'
+  },
+
+  {
+    nome: 'G1 - Paraná',
+    url: 'https://g1.globo.com/rss/g1/pr/parana/',
+    categoria: 'geral'
+  },
+
+  {
+    nome: 'G1 - Rio de Janeiro',
+    url: 'https://g1.globo.com/rss/g1/rj/rio-de-janeiro/',
+    categoria: 'geral'
+  },
+
+  {
+    nome: 'CNN Brasil',
+    url: 'https://www.cnnbrasil.com.br/feed/',
+    categoria: 'geral'
+  },
+
+  {
+    nome: 'R7 - São Paulo',
+    url: 'https://noticias.r7.com/sao-paulo/feed.xml',
+    categoria: 'geral'
+  },
+
+  {
+    nome: 'R7 - Rio de Janeiro',
+    url: 'https://noticias.r7.com/rio-de-janeiro/feed.xml',
+    categoria: 'geral'
+  },
+
+  {
+    nome: 'Estadão - Polícia',
+    url: 'https://estadao.com.br/rss/policia.xml',
+    categoria: 'seguranca'
+  },
+
+  {
+    nome: 'O Globo - São Paulo',
+    url: 'https://oglobo.globo.com/rss/sao-paulo/',
+    categoria: 'geral'
   }
-  return ['roubo', 'carga', 'assalto', 'greve', 'acidente', 'chuva', 'interdição', 'PRF', 'blitz', 'caminhoneiro'];
+
+];
+
+// ============================================================
+// NORMALIZAÇÃO
+// ============================================================
+
+function normalizar(texto) {
+
+  return (texto || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
 }
 
-// ===== CARREGAR CATEGORIAS =====
-async function carregarCategorias(db) {
-  try {
-    const snapshot = await db.collection('categorias').get();
-    const categorias = [];
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-      const nome = data.nome || doc.id;
-      const palavrasFirestore = data.palavras || [];
-      const palavrasFixas = PALAVRAS_FIXAS[nome] || [];
-      const todasPalavras = [...new Set([...palavrasFirestore, ...palavrasFixas])];
-      categorias.push({
-        nome: nome,
-        palavras: todasPalavras,
-        prioridade: data.prioridade || 99
-      });
-    });
-    categorias.sort((a, b) => a.prioridade - b.prioridade);
-    console.log('📋 Categorias carregadas:', categorias.length);
-    return categorias;
-  } catch (error) {
-    console.error('❌ Erro ao carregar categorias:', error);
-    return [];
-  }
+// ============================================================
+// VERIFICAR PALAVRA
+// ============================================================
+
+function contem(texto, palavras) {
+
+  return palavras.some(palavra =>
+    texto.includes(normalizar(palavra))
+  );
+
 }
 
-// ===== RELEVÂNCIA =====
-function isRelevante(titulo, resumo, palavrasChave) {
-  const texto = (titulo + ' ' + resumo).toLowerCase();
+// ============================================================
+// DETECTAR LOCAL
+// ============================================================
+
+function detectarLocalidade(titulo, resumo) {
+
+  const texto = normalizar(`${titulo} ${resumo}`);
+
+  for (const local of LOCALIDADES_MONITORADAS) {
+
+    if (texto.includes(normalizar(local))) {
+      return local;
+    }
+
+  }
+
+  return null;
+
+}
+
+// ============================================================
+// DETECTAR RODOVIA
+// ============================================================
+
+function detectarRodovia(titulo, resumo) {
+
+  const texto = normalizar(`${titulo} ${resumo}`);
+
+  for (const rodovia of RODOVIAS_MONITORADAS) {
+
+    if (texto.includes(normalizar(rodovia))) {
+      return rodovia;
+    }
+
+  }
+
+  return null;
+
+}
+
+// ============================================================
+// DETECTAR EVENTOS
+// ============================================================
+
+function detectarEventos(texto) {
+
+  const eventos = [];
+
+  for (const [categoria, config] of Object.entries(EVENTOS_OPERACIONAIS)) {
+
+    const encontrou = config.palavras.some(palavra =>
+      texto.includes(normalizar(palavra))
+    );
+
+    if (encontrou) {
+      eventos.push(categoria);
+    }
+
+  }
+
+  return eventos;
+
+}
+
+// ============================================================
+// CALCULAR SCORE
+// ============================================================
+
+function calcularRelevancia(titulo, resumo, fonte) {
+
+  const texto = normalizar(`${titulo} ${resumo}`);
+
+  let score = 0;
+
+  const motivos = [];
+
+  // ----------------------------------------------------------
+  // BLOQUEIOS
+  // ----------------------------------------------------------
+
   for (const bloqueio of PALAVRAS_BLOQUEIO) {
-    if (texto.includes(bloqueio)) return false;
-  }
-  let count = 0;
-  for (const palavra of palavrasChave) {
-    if (texto.includes(palavra.toLowerCase())) count++;
-  }
-  return count >= MIN_PALAVRAS_CHAVE;
-}
 
-// ===== DETECTAR CATEGORIA =====
-function detectarCategoria(titulo, resumo, categoriaFonte, categoriasFirestore) {
-  const texto = (titulo + ' ' + resumo).toLowerCase();
-  for (const cat of categoriasFirestore) {
-    if (!cat.palavras || cat.palavras.length === 0) continue;
-    for (const palavra of cat.palavras) {
-      if (texto.includes(palavra.toLowerCase())) {
-        console.log('  🔍 "' + cat.nome + '" → "' + palavra + '"');
-        return cat.nome;
-      }
+    if (texto.includes(normalizar(bloqueio))) {
+
+      score -= 50;
+
+      motivos.push(`bloqueio: ${bloqueio}`);
+
+      break;
+
     }
+
   }
-  if (categoriaFonte && categoriaFonte !== 'geral') {
-    console.log('  📌 Fallback:', categoriaFonte);
-    return categoriaFonte;
+
+  // ----------------------------------------------------------
+  // EVENTOS
+  // ----------------------------------------------------------
+
+  const eventos = detectarEventos(texto);
+
+  for (const evento of eventos) {
+
+    const peso = EVENTOS_OPERACIONAIS[evento].peso;
+
+    score += peso;
+
+    motivos.push(evento);
+
   }
-  console.log('  ⚠️ Nenhuma → "geral"');
-  return 'geral';
+
+  // ----------------------------------------------------------
+  // LOCALIDADE
+  // ----------------------------------------------------------
+
+  const localidade = detectarLocalidade(titulo, resumo);
+
+  if (localidade) {
+
+    score += 15;
+
+    motivos.push(`localidade: ${localidade}`);
+
+  }
+
+  // ----------------------------------------------------------
+  // RODOVIA
+  // ----------------------------------------------------------
+
+  const rodovia = detectarRodovia(titulo, resumo);
+
+  if (rodovia) {
+
+    score += 20;
+
+    motivos.push(`rodovia: ${rodovia}`);
+
+  }
+
+  // ----------------------------------------------------------
+  // IMPACTO OPERACIONAL
+  // ----------------------------------------------------------
+
+  if (contem(texto, TERMOS_IMPACTO)) {
+
+    score += 20;
+
+    motivos.push('impacto operacional');
+
+  }
+
+  // ----------------------------------------------------------
+  // FONTE ESPECIALIZADA
+  // ----------------------------------------------------------
+
+  if (
+    fonte.toLowerCase().includes('segurança') ||
+    fonte.toLowerCase().includes('polícia')
+  ) {
+
+    score += 10;
+
+    motivos.push('fonte especializada');
+
+  }
+
+  // ----------------------------------------------------------
+  // LIMITE
+  // ----------------------------------------------------------
+
+  score = Math.max(0, Math.min(100, score));
+
+  let nivel = 'DESCARTAR';
+
+  if (score >= 85) {
+
+    nivel = 'CRÍTICO';
+
+  } else if (score >= 70) {
+
+    nivel = 'ALTO';
+
+  } else if (score >= 40) {
+
+    nivel = 'MONITORAR';
+
+  }
+
+  return {
+
+    score,
+    nivel,
+    eventos,
+    localidade,
+    rodovia,
+    motivos
+
+  };
+
 }
 
-// ===== FUNÇÃO: ENVIAR ALERTA POR E-MAIL (VERSÃO SIMPLIFICADA) =====
-async function enviarResumo(noticiasCriticas) {
-  if (noticiasCriticas.length === 0) {
-    console.log('📧 Nenhuma notícia crítica para enviar.');
-    return;
+// ============================================================
+// CATEGORIA
+// ============================================================
+
+function determinarCategoria(analise) {
+
+  if (analise.rodovia) return 'transito';
+
+  if (analise.eventos.includes('acidente')) return 'acidente';
+
+  if (analise.eventos.includes('clima')) return 'clima';
+
+  if (analise.eventos.includes('greve')) return 'greve';
+
+  if (analise.eventos.includes('seguranca')) return 'policial';
+
+  if (analise.eventos.includes('infraestrutura')) return 'infraestrutura';
+
+  if (analise.eventos.includes('logistica')) return 'logistica';
+
+  if (analise.eventos.includes('transito')) return 'transito';
+
+  return 'geral';
+
+}
+
+// ============================================================
+// GEOCODIFICAÇÃO
+// ============================================================
+
+async function geocodificar(cidade) {
+
+  try {
+
+    const response = await axios.get(
+      'https://nominatim.openstreetmap.org/search',
+      {
+
+        params: {
+
+          q: `${cidade}, Brasil`,
+          format: 'json',
+          limit: 1
+
+        },
+
+        headers: {
+
+          'User-Agent': 'Monitor-Impactos-Operacionais'
+
+        }
+
+      }
+    );
+
+    if (response.data.length > 0) {
+
+      return {
+
+        lat: parseFloat(response.data[0].lat),
+
+        lng: parseFloat(response.data[0].lon),
+
+        cidade: response.data[0].display_name
+
+      };
+
+    }
+
+  } catch (error) {
+
+    console.log(
+      `⚠️ Erro ao geocodificar "${cidade}":`,
+      error.message
+    );
+
   }
+
+  return null;
+
+}
+
+// ============================================================
+// EXPIRAÇÃO
+// ============================================================
+
+function calcularDataExpiracao() {
+
+  const agora = new Date();
+
+  const expira = new Date(agora);
+
+  expira.setDate(
+    expira.getDate() + DIAS_PADRAO
+  );
+
+  return expira;
+
+}
+
+// ============================================================
+// E-MAIL
+// ============================================================
+
+async function enviarResumo(noticiasCriticas) {
+
+  if (noticiasCriticas.length === 0) {
+
+    console.log(
+      '📧 Nenhuma notícia de alto impacto.'
+    );
+
+    return;
+
+  }
+
+  const dataHora =
+    new Date().toLocaleString(
+      'pt-BR',
+      {
+        timeZone: 'America/Sao_Paulo'
+      }
+    );
 
   const total = noticiasCriticas.length;
-  const dataHora = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 
-  // Conta por categoria
-  const contagemCategorias = {};
-  for (const n of noticiasCriticas) {
-    contagemCategorias[n.categoria] = (contagemCategorias[n.categoria] || 0) + 1;
+  let lista = '';
+
+  for (const noticia of noticiasCriticas) {
+
+    let cor = '#ff9800';
+
+    if (noticia.nivelRelevancia === 'CRÍTICO') {
+      cor = '#d32f2f';
+    }
+
+    lista += `
+
+      <div style="
+        border-left:5px solid ${cor};
+        padding:12px;
+        margin-bottom:12px;
+        background:#f5f7fa;
+      ">
+
+        <strong>
+          ${noticia.nivelRelevancia}
+          — Score ${noticia.scoreRelevancia}/100
+        </strong>
+
+        <h3>
+          ${noticia.titulo}
+        </h3>
+
+        <p>
+          ${noticia.resumo}
+        </p>
+
+        <p>
+          📍 ${noticia.localidadeDetectada || 'Local não identificado'}
+        </p>
+
+        <p>
+          🚧 ${noticia.rodoviaDetectada || 'Sem rodovia identificada'}
+        </p>
+
+        <a href="${noticia.link}" target="_blank">
+          Ler notícia
+        </a>
+
+      </div>
+
+    `;
+
   }
 
-  // Lista de categorias para o e-mail
-  let listaCategorias = '';
-  for (const [cat, qtd] of Object.entries(contagemCategorias)) {
-    const emojis = {
-      'policial': '🚔',
-      'clima': '🌧️',
-      'greve': '🚛',
-      'acidente': '⚠️',
-      'transito': '🚧',
-      'fabrica': '🏭'
-    };
-    const emoji = emojis[cat] || '📌';
-    listaCategorias += `<li><strong>${emoji} ${cat}</strong>: ${qtd}</li>`;
-  }
+  const linkSite =
+    'https://rapzxyok2019-prog.github.io/monitor-de-impactos/';
 
-  // Link do site (substitua pelo seu)
-  const linkSite = 'https://rapzxyok2019-prog.github.io/monitor-de-impactos/';
-
-  const assunto = `🚨 ALERTA: ${total} nova(s) notícia(s) crítica(s) - Monitor PepsiCo`;
   const mensagemHtml = `
-    <h2 style="color: #003da5;">🚛 Monitor de Impactos - PepsiCo</h2>
-    <p><strong>Data/Hora:</strong> ${dataHora}</p>
-    <p style="font-size: 1.2rem;"><strong>📊 Total de notícias críticas:</strong> ${total}</p>
-    <div style="background: #eef2f6; padding: 12px; border-radius: 8px; margin: 12px 0;">
-      <h4 style="margin: 0;">📋 Resumo por categoria</h4>
-      <ul style="margin: 8px 0 0 0; padding-left: 20px;">
-        ${listaCategorias}
-      </ul>
-    </div>
-    <p style="margin: 16px 0;">
-      <a href="${linkSite}" target="_blank" style="background: #003da5; color: white; padding: 8px 20px; border-radius: 8px; text-decoration: none; font-weight: bold;">
-        🔍 Ver notícias no site
-      </a>
+
+    <h2 style="color:#003da5;">
+      🚨 Monitor de Impactos Operacionais
+    </h2>
+
+    <p>
+      <strong>Data/Hora:</strong> ${dataHora}
     </p>
-    <hr style="margin: 24px 0; border: none; border-top: 1px solid #e2e6ee;">
-    <p style="color: #6b7a93; font-size: 0.8rem;">Enviado automaticamente pelo Monitor de Impactos.</p>
+
+    <p>
+      <strong>
+        ${total} notícia(s) de alto impacto detectada(s)
+      </strong>
+    </p>
+
+    ${lista}
+
+    <p>
+
+      <a
+        href="${linkSite}"
+        target="_blank"
+        style="
+          background:#003da5;
+          color:white;
+          padding:10px 20px;
+          border-radius:8px;
+          text-decoration:none;
+          font-weight:bold;
+        "
+      >
+
+        🔍 Abrir Monitor
+
+      </a>
+
+    </p>
+
   `;
 
   try {
+
     for (const destinatario of EMAIL_DESTINATARIOS) {
-      const { data, error } = await resend.emails.send({
-        from: EMAIL_REMETENTE,
-        to: [destinatario],
-        subject: assunto,
-        html: mensagemHtml
-      });
+
+      const { error } =
+        await resend.emails.send({
+
+          from: EMAIL_REMETENTE,
+
+          to: [destinatario],
+
+          subject:
+            `🚨 ${total} alerta(s) operacional(is)`,
+
+          html: mensagemHtml
+
+        });
 
       if (error) {
-        console.error('  ❌ Erro ao enviar para ' + destinatario + ':', error.message);
+
+        console.error(
+          '❌ Erro no e-mail:',
+          error.message
+        );
+
       } else {
-        console.log('  📧 Alerta enviado para ' + destinatario + ' (' + total + ' notícias)');
+
+        console.log(
+          `📧 Alerta enviado para ${destinatario}`
+        );
+
       }
+
     }
+
   } catch (error) {
-    console.error('  ❌ Erro no envio:', error.message);
+
+    console.error(
+      '❌ Erro no envio:',
+      error.message
+    );
+
   }
-}
-// ===== EXTRAIR CIDADE =====
-function extrairCidade(titulo, resumo) {
-  const texto = titulo + ' ' + resumo;
-  const cidades = ['São Paulo', 'Rio de Janeiro', 'Belo Horizonte', 'Porto Alegre', 'Curitiba', 'Brasília', 'Salvador', 'Fortaleza', 'Recife', 'Manaus', 'Belém', 'Goiânia', 'Campinas', 'Santos', 'Congonhas', 'Ribeirão Preto', 'São José dos Campos', 'Uberlândia', 'Contagem', 'Betim', 'Nova Lima', 'SP', 'RJ', 'MG', 'RS', 'PR', 'DF', 'BA', 'PE', 'CE'];
-  for (const cidade of cidades) {
-    if (texto.includes(cidade)) return cidade;
-  }
-  return null;
+
 }
 
-// ===== GEOCODIFICAR =====
-async function geocodificar(cidade) {
-  try {
-    const response = await axios.get('https://nominatim.openstreetmap.org/search', {
-      params: { q: cidade + ', Brasil', format: 'json', limit: 1 },
-      headers: { 'User-Agent': 'Monitor-Frotas-PepsiCo' }
-    });
-    if (response.data.length > 0) {
-      return {
-        lat: parseFloat(response.data[0].lat),
-        lng: parseFloat(response.data[0].lon),
-        cidade: response.data[0].display_name
-      };
-    }
-  } catch (error) {
-    console.log('⚠️ Erro ao geocodificar "' + cidade + '":', error.message);
-  }
-  return null;
-}
+// ============================================================
+// COLETA
+// ============================================================
 
-// ===== EXPIRAÇÃO =====
-function calcularDataExpiracao() {
-  const agora = new Date();
-  const expira = new Date(agora);
-  expira.setDate(expira.getDate() + DIAS_PADRAO);
-  return expira;
-}
-
-// ===== COLETAR =====
 async function coletarNoticias() {
-  console.log('📡 Iniciando coleta...');
+
+  console.log(
+    '📡 Iniciando Monitor de Impactos v2.0...'
+  );
+
   initializeApp();
+
   const db = getFirestore();
+
   const parser = new Parser();
 
-  const palavrasChave = await carregarPalavrasChave(db);
-  console.log('📋 Mínimo de ' + MIN_PALAVRAS_CHAVE + ' palavra(s)-chave obrigatória(s)');
-
-  const categoriasFirestore = await carregarCategorias(db);
-
   let total = 0;
+
   const noticiasCriticas = [];
 
+  // ==========================================================
+  // FONTES
+  // ==========================================================
+
   for (const fonte of FONTES) {
+
     try {
-      console.log('\n📡 ' + fonte.nome);
-      const feed = await parser.parseURL(fonte.url);
+
+      console.log(`\n📡 ${fonte.nome}`);
+
+      const feed =
+        await parser.parseURL(fonte.url);
+
       const noticias = [];
 
-      for (const item of feed.items.slice(0, 8)) {
-        const titulo = item.title || 'Sem título';
-        const resumo = item.contentSnippet || item.description || 'Sem resumo';
-        const link = item.link || '#';
-        const dataPub = item.pubDate ? new Date(item.pubDate) : new Date();
+      // ========================================================
+      // NOTÍCIAS
+      // ========================================================
 
-        console.log('  📰 "' + titulo.slice(0, 40) + '..."');
+      for (
+        const item of feed.items.slice(
+          0,
+          MAX_NOTICIAS_POR_FONTE
+        )
+      ) {
 
-        if (!isRelevante(titulo, resumo, palavrasChave)) {
-          console.log('  ⏭️ Ignorado');
+        const titulo =
+          item.title || 'Sem título';
+
+        const resumo =
+          item.contentSnippet ||
+          item.description ||
+          '';
+
+        const link =
+          item.link || '#';
+
+        const dataPub =
+          item.pubDate
+            ? new Date(item.pubDate)
+            : new Date();
+
+        console.log(
+          `📰 ${titulo.slice(0, 70)}`
+        );
+
+        // ======================================================
+        // SCORE
+        // ======================================================
+
+        const analise =
+          calcularRelevancia(
+            titulo,
+            resumo,
+            fonte.nome
+          );
+
+        console.log(
+          `   📊 Score: ${analise.score}/100`
+        );
+
+        console.log(
+          `   🎯 Nível: ${analise.nivel}`
+        );
+
+        console.log(
+          `   🔎 ${analise.motivos.join(', ')}`
+        );
+
+        // ======================================================
+        // DESCARTAR
+        // ======================================================
+
+        if (
+          analise.score <
+          SCORE_MINIMO
+        ) {
+
+          console.log(
+            '   ❌ DESCARTADA'
+          );
+
           continue;
+
         }
 
-        const existing = await db.collection('noticias').where('link', '==', link).get();
+        // ======================================================
+        // DUPLICIDADE
+        // ======================================================
+
+        const existing =
+          await db
+            .collection('noticias')
+            .where(
+              'link',
+              '==',
+              link
+            )
+            .get();
+
         if (!existing.empty) {
-          console.log('  ⏭️ Duplicada');
+
+          console.log(
+            '   ⏭️ Duplicada'
+          );
+
           continue;
+
         }
 
-        const categoria = detectarCategoria(titulo, resumo, fonte.categoria, categoriasFirestore);
-        const expiracao = calcularDataExpiracao();
+        // ======================================================
+        // LOCALIZAÇÃO
+        // ======================================================
 
-        const cidade = extrairCidade(titulo, resumo);
         let localizacao = null;
-        if (cidade) {
-          localizacao = await geocodificar(cidade);
-          if (localizacao) console.log('  📍 ' + cidade);
+
+        if (
+          analise.localidade
+        ) {
+
+          localizacao =
+            await geocodificar(
+              analise.localidade
+            );
+
         }
 
-        const texto = (titulo + ' ' + resumo).toLowerCase();
-        const palavrasEncontradas = [];
-        const criticas = ['roubo', 'carga', 'assalto', 'greve', 'acidente', 'interdição', 'enchente', 'PRF', 'blitz'];
-        for (const palavra of criticas) {
-          if (texto.includes(palavra)) palavrasEncontradas.push(palavra);
-        }
+        // ======================================================
+        // CATEGORIA
+        // ======================================================
+
+        const categoria =
+          determinarCategoria(
+            analise
+          );
+
+        // ======================================================
+        // PALAVRAS ENCONTRADAS
+        // ======================================================
+
+        const palavrasEncontradas =
+          analise.eventos;
+
+        // ======================================================
+        // OBJETO FINAL
+        // ======================================================
 
         const noticia = {
-          titulo: titulo,
-          resumo: resumo,
-          link: link,
+
+          titulo,
+
+          resumo,
+
+          link,
+
           fonte: fonte.nome,
-          categoria: categoria,
+
+          categoria,
+
           dataPublicacao: dataPub,
+
           dataColeta: new Date(),
-          dataExpiracao: expiracao,
+
+          dataExpiracao:
+            calcularDataExpiracao(),
+
+          scoreRelevancia:
+            analise.score,
+
+          nivelRelevancia:
+            analise.nivel,
+
+          eventosDetectados:
+            analise.eventos,
+
+          motivosRelevancia:
+            analise.motivos,
+
+          localidadeDetectada:
+            analise.localidade,
+
+          rodoviaDetectada:
+            analise.rodovia,
+
+          palavrasChaveEncontradas:
+            palavrasEncontradas,
+
           lidaPor: [],
-          reacoes: { '👍': 0, '⚠️': 0, '🔥': 0 },
-          palavrasChaveEncontradas: palavrasEncontradas.length > 0 ? palavrasEncontradas : ['geral'],
-          localizacao: localizacao
+
+          reacoes: {
+
+            '👍': 0,
+            '⚠️': 0,
+            '🔥': 0
+
+          },
+
+          localizacao
+
         };
 
-        noticias.push(noticia);
-        console.log('  ✅ Salva: ' + categoria);
+        noticias.push(
+          noticia
+        );
 
-        const categoriasAlertas = ['policial', 'acidente', 'greve', 'clima'];
-        if (categoriasAlertas.includes(categoria)) {
-          noticiasCriticas.push(noticia);
+        // ======================================================
+        // ALERTA
+        // ======================================================
+
+        if (
+          analise.score >=
+          SCORE_ALERTA
+        ) {
+
+          noticiasCriticas.push(
+            noticia
+          );
+
         }
+
+        console.log(
+          `   ✅ SALVA — ${categoria}`
+        );
+
       }
 
-      if (noticias.length > 0) {
-        const batch = db.batch();
-        for (const noticia of noticias) {
-          const ref = db.collection('noticias').doc();
-          batch.set(ref, noticia);
+      // ========================================================
+      // FIREBASE
+      // ========================================================
+
+      if (
+        noticias.length > 0
+      ) {
+
+        const batch =
+          db.batch();
+
+        for (
+          const noticia of noticias
+        ) {
+
+          const ref =
+            db
+              .collection('noticias')
+              .doc();
+
+          batch.set(
+            ref,
+            noticia
+          );
+
         }
+
         await batch.commit();
-        console.log('  ✅ ' + noticias.length + ' notícias salvas');
-        total += noticias.length;
+
+        console.log(
+          `   💾 ${noticias.length} notícia(s) salva(s)`
+        );
+
+        total +=
+          noticias.length;
+
       }
+
     } catch (error) {
-      console.error('  ❌ Erro em ' + fonte.nome + ':', error.message);
+
+      console.error(
+        `❌ Erro em ${fonte.nome}:`,
+        error.message
+      );
+
     }
+
   }
 
-  console.log('\n✅ Coleta finalizada! ' + total + ' novas notícias.');
+  // ==========================================================
+  // FINAL
+  // ==========================================================
 
-  await enviarResumo(noticiasCriticas);
+  console.log(
+    `\n✅ Coleta finalizada!`
+  );
+
+  console.log(
+    `📰 ${total} novas notícias`
+  );
+
+  console.log(
+    `🚨 ${noticiasCriticas.length} alerta(s)`
+  );
+
+  await enviarResumo(
+    noticiasCriticas
+  );
 
   return total;
+
 }
 
+// ============================================================
+// EXECUTAR
+// ============================================================
+
 coletarNoticias()
-  .then(function() {
+
+  .then(() => {
+
     process.exit(0);
+
   })
-  .catch(function(error) {
-    console.error('❌ Erro na coleta:', error);
+
+  .catch(error => {
+
+    console.error(
+      '❌ Erro geral:',
+      error
+    );
+
     process.exit(1);
+
   });
