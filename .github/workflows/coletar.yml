@@ -2,58 +2,72 @@ name: Coletar notícias automaticamente
 
 on:
   schedule:
-    - cron: '0 */2 * * *'
-  workflow_dispatch:
+    - cron: '0 */2 * * *'   # A cada 2 horas
+  workflow_dispatch:         # Permite execução manual
 
 env:
   RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+  FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
 jobs:
   coleta:
     runs-on: ubuntu-latest
 
     steps:
-
-      - name: Clonar o repositório
+      - name: 🔄 Clonar o repositório
         uses: actions/checkout@v4
 
-      - name: Configurar Node.js
+      - name: 🟢 Configurar Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
-          cache: npm
-          cache-dependency-path: scripts/package-lock.json
+          node-version: '20'  # Node.js 20 é mais estável que 24
+          cache: 'npm'
+          cache-dependency-path: 'scripts/package-lock.json'
 
-      - name: Verificar versão do Node.js
+      - name: 📦 Verificar versão do Node.js
         run: |
           node --version
           npm --version
 
-      - name: Instalar dependências
+      - name: 📦 Instalar dependências
         working-directory: scripts
-        run: npm ci
-
-      - name: Criar arquivo de credenciais do Firebase
-        env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
-          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > serviceAccount.json
+          npm install
 
-      - name: Verificar credenciais do Firebase
+      - name: 🔑 Criar arquivo de credenciais do Firebase
+        run: |
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > serviceAccount.json
+          echo "✅ Arquivo de credenciais criado."
+
+      - name: 🔍 Verificar credenciais do Firebase
         run: |
           if [ ! -s serviceAccount.json ]; then
             echo "❌ Arquivo serviceAccount.json não foi criado."
             exit 1
           fi
 
-          echo "✅ Arquivo de credenciais criado."
+          # Verifica se o JSON é válido
+          if ! jq empty serviceAccount.json 2>/dev/null; then
+            echo "❌ Arquivo serviceAccount.json não é um JSON válido."
+            exit 1
+          fi
 
-      - name: Executar coleta de notícias
+          echo "✅ Arquivo de credenciais validado."
+
+      - name: 🚀 Executar coleta de notícias
+        working-directory: scripts
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/serviceAccount.json
-        working-directory: scripts
-        run: node coletar.js
+        run: |
+          node coletar.js
 
-      - name: Limpar arquivo de credenciais
+      - name: 🗑️ Limpar arquivo de credenciais
         if: always()
-        run: rm -f serviceAccount.json
+        run: |
+          rm -f serviceAccount.json
+          echo "✅ Credenciais removidas."
+
+      - name: 📊 Resumo da execução
+        if: always()
+        run: |
+          echo "✅ Coleta finalizada em $(date)"
