@@ -2,8 +2,8 @@ name: Coletar notícias automaticamente
 
 on:
   schedule:
-    - cron: '0 */2 * * *'   # A cada 2 horas
-  workflow_dispatch:          # Para testar manualmente
+    - cron: '0 */2 * * *'
+  workflow_dispatch:
 
 env:
   RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
@@ -11,30 +11,49 @@ env:
 jobs:
   coleta:
     runs-on: ubuntu-latest
-    
+
     steps:
+
       - name: Clonar o repositório
         uses: actions/checkout@v4
-      
+
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-      
-      - name: Instalar dependências
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: scripts/package-lock.json
+
+      - name: Verificar versão do Node.js
         run: |
-          cd scripts
-          npm install
-      
+          node --version
+          npm --version
+
+      - name: Instalar dependências
+        working-directory: scripts
+        run: npm ci
+
       - name: Criar arquivo de credenciais do Firebase
-        run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > serviceAccount.json
-      
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > serviceAccount.json
+
+      - name: Verificar credenciais do Firebase
+        run: |
+          if [ ! -s serviceAccount.json ]; then
+            echo "❌ Arquivo serviceAccount.json não foi criado."
+            exit 1
+          fi
+
+          echo "✅ Arquivo de credenciais criado."
+
       - name: Executar coleta de notícias
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/serviceAccount.json
-        run: |
-          cd scripts
-          node coletar.js
-      
+        working-directory: scripts
+        run: node coletar.js
+
       - name: Limpar arquivo de credenciais
+        if: always()
         run: rm -f serviceAccount.json
