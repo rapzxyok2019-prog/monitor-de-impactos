@@ -1,9 +1,8 @@
-```javascript
 // ============================================================
-// MONITOR DE IMPACTOS - COLETOR OPERACIONAL v2.1
+// MONITOR DE IMPACTOS - COLETOR OPERACIONAL v2.2
 // ============================================================
 
-const { initializeApp } = require('firebase-admin/app');
+const { initializeApp, getApps } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 const Parser = require('rss-parser');
 const axios = require('axios');
@@ -34,7 +33,9 @@ if (!RESEND_API_KEY) {
   console.error('❌ RESEND_API_KEY não configurada.');
 }
 
-const resend = new Resend(RESEND_API_KEY);
+const resend = RESEND_API_KEY
+  ? new Resend(RESEND_API_KEY)
+  : null;
 
 // ============================================================
 // E-MAIL
@@ -48,8 +49,6 @@ const EMAIL_DESTINATARIOS = [
 
 // ============================================================
 // PALAVRAS DE BLOQUEIO
-// ============================================================
-// Notícias que normalmente não possuem valor operacional.
 // ============================================================
 
 const PALAVRAS_BLOQUEIO = [
@@ -105,9 +104,6 @@ const PALAVRAS_BLOQUEIO = [
 
 // ============================================================
 // CONTEÚDO DE BAIXA UTILIDADE OPERACIONAL
-// ============================================================
-// Esses termos não necessariamente tornam uma notícia inútil,
-// mas reduzem bastante a relevância quando não existe impacto.
 // ============================================================
 
 const TERMOS_BAIXA_UTILIDADE = [
@@ -629,8 +625,11 @@ function normalizar(texto) {
 
 function contem(texto, palavras) {
 
-  return palavras.some(palavra =>
-    texto.includes(normalizar(palavra))
+  return palavras.some(
+    palavra =>
+      texto.includes(
+        normalizar(palavra)
+      )
   );
 
 }
@@ -645,8 +644,14 @@ function contarTermos(texto, palavras) {
 
   for (const palavra of palavras) {
 
-    if (texto.includes(normalizar(palavra))) {
+    if (
+      texto.includes(
+        normalizar(palavra)
+      )
+    ) {
+
       total++;
+
     }
 
   }
@@ -661,11 +666,11 @@ function contarTermos(texto, palavras) {
 
 function detectarLocalidade(titulo, resumo) {
 
-const texto =
-  normalizar(
-    `${titulo} ${resumo}`
-  );
-  
+  const texto =
+    normalizar(
+      `${titulo} ${resumo}`
+    );
+
   for (const local of LOCALIDADES_MONITORADAS) {
 
     if (
@@ -691,7 +696,9 @@ const texto =
 function detectarRodovia(titulo, resumo) {
 
   const texto =
-    normalizar(`${titulo} ${resumo}`);
+    normalizar(
+      `${titulo} ${resumo}`
+    );
 
   for (const rodovia of RODOVIAS_MONITORADAS) {
 
@@ -834,7 +841,10 @@ function calcularRelevancia(
   fonte
 ) {
 
- const texto = normalizar(`${titulo} ${resumo}`);
+  const texto =
+    normalizar(
+      `${titulo} ${resumo}`
+    );
 
   let score = 0;
 
@@ -989,9 +999,6 @@ function calcularRelevancia(
   // ==========================================================
   // REGRA ESPECIAL PARA AERONAVES
   // ==========================================================
-  // Um acidente aéreo sem impacto operacional não deve
-  // automaticamente virar alerta.
-  // ==========================================================
 
   const mencionaAeronave =
     contem(
@@ -1062,12 +1069,8 @@ function calcularRelevancia(
     normalizar(fonte);
 
   if (
-    fonteNormalizada.includes(
-      'seguranca'
-    ) ||
-    fonteNormalizada.includes(
-      'policia'
-    )
+    fonteNormalizada.includes('seguranca') ||
+    fonteNormalizada.includes('policia')
   ) {
 
     score += 10;
@@ -1163,13 +1166,9 @@ function calcularRelevancia(
     eventos,
     localidade,
     rodovia,
-
     impactos,
-
     temImpactoOperacional,
-
     baixaUtilidade,
-
     motivos
 
   };
@@ -1182,7 +1181,6 @@ function calcularRelevancia(
 
 function podeEnviarAlerta(analise) {
 
-  // Precisa atingir o score mínimo
   if (
     analise.score <
     SCORE_ALERTA
@@ -1192,8 +1190,6 @@ function podeEnviarAlerta(analise) {
 
   }
 
-  // Se houver impacto operacional confirmado,
-  // pode enviar normalmente.
   if (
     analise.temImpactoOperacional
   ) {
@@ -1202,7 +1198,6 @@ function podeEnviarAlerta(analise) {
 
   }
 
-  // Rodovias com ocorrência operacional
   if (
     analise.rodovia &&
     analise.eventos.length > 0
@@ -1212,22 +1207,13 @@ function podeEnviarAlerta(analise) {
 
   }
 
-  // Acidentes + localidade + evento forte
   if (
-    analise.eventos.includes(
-      'acidente'
-    ) &&
+    analise.eventos.includes('acidente') &&
     analise.localidade &&
     (
-      analise.eventos.includes(
-        'transito'
-      ) ||
-      analise.eventos.includes(
-        'infraestrutura'
-      ) ||
-      analise.eventos.includes(
-        'greve'
-      )
+      analise.eventos.includes('transito') ||
+      analise.eventos.includes('infraestrutura') ||
+      analise.eventos.includes('greve')
     )
   ) {
 
@@ -1235,7 +1221,6 @@ function podeEnviarAlerta(analise) {
 
   }
 
-  // Caso contrário, não enviar.
   return false;
 
 }
@@ -1244,9 +1229,7 @@ function podeEnviarAlerta(analise) {
 // CATEGORIA
 // ============================================================
 
-function determinarCategoria(
-  analise
-) {
+function determinarCategoria(analise) {
 
   if (
     analise.rodovia
@@ -1257,9 +1240,7 @@ function determinarCategoria(
   }
 
   if (
-    analise.eventos.includes(
-      'acidente'
-    )
+    analise.eventos.includes('acidente')
   ) {
 
     return 'acidente';
@@ -1267,9 +1248,7 @@ function determinarCategoria(
   }
 
   if (
-    analise.eventos.includes(
-      'clima'
-    )
+    analise.eventos.includes('clima')
   ) {
 
     return 'clima';
@@ -1277,9 +1256,7 @@ function determinarCategoria(
   }
 
   if (
-    analise.eventos.includes(
-      'greve'
-    )
+    analise.eventos.includes('greve')
   ) {
 
     return 'greve';
@@ -1287,9 +1264,7 @@ function determinarCategoria(
   }
 
   if (
-    analise.eventos.includes(
-      'seguranca'
-    )
+    analise.eventos.includes('seguranca')
   ) {
 
     return 'policial';
@@ -1297,9 +1272,7 @@ function determinarCategoria(
   }
 
   if (
-    analise.eventos.includes(
-      'infraestrutura'
-    )
+    analise.eventos.includes('infraestrutura')
   ) {
 
     return 'infraestrutura';
@@ -1307,9 +1280,7 @@ function determinarCategoria(
   }
 
   if (
-    analise.eventos.includes(
-      'logistica'
-    )
+    analise.eventos.includes('logistica')
   ) {
 
     return 'logistica';
@@ -1317,9 +1288,7 @@ function determinarCategoria(
   }
 
   if (
-    analise.eventos.includes(
-      'transito'
-    )
+    analise.eventos.includes('transito')
   ) {
 
     return 'transito';
@@ -1334,9 +1303,7 @@ function determinarCategoria(
 // GEOCODIFICAÇÃO
 // ============================================================
 
-async function geocodificar(
-  cidade
-) {
+async function geocodificar(cidade) {
 
   try {
 
@@ -1361,14 +1328,17 @@ async function geocodificar(
           headers: {
 
             'User-Agent':
-              'Monitor-Impactos-Operacionais'
+              'Monitor-Impactos-Operacionais/2.2'
 
-          }
+          },
+
+          timeout: 10000
 
         }
       );
 
     if (
+      response.data &&
       response.data.length > 0
     ) {
 
@@ -1428,92 +1398,224 @@ function calcularDataExpiracao() {
 }
 
 // ============================================================
-// ENVIAR RESUMO POR E-MAIL (VERSÃO ENXUTA)
+// ENVIAR RESUMO POR E-MAIL
 // ============================================================
 
 async function enviarResumo(noticiasCriticas) {
 
-  // Se não houver notícias críticas, não envia nada
-  if (noticiasCriticas.length === 0) {
-    console.log('📧 Nenhuma notícia de alto impacto.');
+  if (
+    noticiasCriticas.length === 0
+  ) {
+
+    console.log(
+      '📧 Nenhuma notícia de alto impacto.'
+    );
+
     return;
+
   }
 
-  // Data/hora no fuso horário de Brasília
-  const dataHora = new Date().toLocaleString('pt-BR', {
-    timeZone: 'America/Sao_Paulo'
-  });
+  if (!resend) {
 
-  const total = noticiasCriticas.length;
+    console.error(
+      '❌ E-mail não enviado: RESEND_API_KEY não configurada.'
+    );
 
-  // Conta por categoria
+    return;
+
+  }
+
+  const dataHora =
+    new Date().toLocaleString(
+      'pt-BR',
+      {
+        timeZone:
+          'America/Sao_Paulo'
+      }
+    );
+
+  const total =
+    noticiasCriticas.length;
+
   const contagemCategorias = {};
-  for (const n of noticiasCriticas) {
-    const cat = n.categoria || 'geral';
-    contagemCategorias[cat] = (contagemCategorias[cat] || 0) + 1;
+
+  for (
+    const noticia
+    of noticiasCriticas
+  ) {
+
+    const categoria =
+      noticia.categoria ||
+      'geral';
+
+    contagemCategorias[categoria] =
+      (
+        contagemCategorias[categoria] ||
+        0
+      ) + 1;
+
   }
 
-  // Lista de categorias com emojis
   const emojis = {
-    'acidente': '⚠️',
-    'transito': '🚧',
-    'clima': '🌧️',
-    'policial': '🚔',
-    'greve': '🚛',
-    'infraestrutura': '🏗️',
-    'logistica': '📦',
-    'fabrica': '🏭',
-    'geral': '📌'
+
+    acidente: '⚠️',
+    transito: '🚧',
+    clima: '🌧️',
+    policial: '🚔',
+    greve: '🚛',
+    infraestrutura: '🏗️',
+    logistica: '📦',
+    fabrica: '🏭',
+    geral: '📌'
+
   };
 
   let listaCategorias = '';
-  for (const [cat, qtd] of Object.entries(contagemCategorias)) {
-    const emoji = emojis[cat] || '📌';
-    listaCategorias += `<li><strong>${emoji} ${cat}</strong>: ${qtd}</li>`;
+
+  for (
+    const [categoria, quantidade]
+    of Object.entries(
+      contagemCategorias
+    )
+  ) {
+
+    const emoji =
+      emojis[categoria] ||
+      '📌';
+
+    listaCategorias +=
+      `<li><strong>${emoji} ${categoria}</strong>: ${quantidade}</li>`;
+
   }
 
-  // Link do site
-  const linkSite = 'https://rapzxyok2019-prog.github.io/monitor-de-impactos/';
+  const linkSite =
+    'https://rapzxyok2019-prog.github.io/monitor-de-impactos/';
 
-  const assunto = `🚨 ${total} alerta(s) operacional(is) - Monitor PepsiCo`;
+  const assunto =
+    `🚨 ${total} alerta(s) operacional(is) - Monitor PepsiCo`;
 
   const mensagemHtml = `
-    <h2 style="color:#003da5;">🚛 Monitor de Impactos - PepsiCo</h2>
-    <p><strong>Data/Hora:</strong> ${dataHora}</p>
-    <p style="font-size:1.3rem;"><strong>📊 Total de alertas:</strong> ${total}</p>
-    <div style="background:#eef2f6; padding:12px; border-radius:8px; margin:12px 0;">
-      <h4 style="margin:0;">📋 Resumo por categoria</h4>
-      <ul style="margin:8px 0 0 0; padding-left:20px;">
+
+    <h2 style="color:#003da5;">
+      🚛 Monitor de Impactos - PepsiCo
+    </h2>
+
+    <p>
+      <strong>Data/Hora:</strong> ${dataHora}
+    </p>
+
+    <p style="font-size:1.3rem;">
+      <strong>📊 Total de alertas:</strong> ${total}
+    </p>
+
+    <div style="
+      background:#eef2f6;
+      padding:12px;
+      border-radius:8px;
+      margin:12px 0;
+    ">
+
+      <h4 style="margin:0;">
+        📋 Resumo por categoria
+      </h4>
+
+      <ul style="
+        margin:8px 0 0 0;
+        padding-left:20px;
+      ">
+
         ${listaCategorias}
+
       </ul>
+
     </div>
+
     <p style="margin:16px 0;">
-      <a href="${linkSite}" target="_blank" style="background:#003da5; color:white; padding:10px 20px; border-radius:8px; text-decoration:none; font-weight:bold;">
+
+      <a
+        href="${linkSite}"
+        target="_blank"
+        style="
+          background:#003da5;
+          color:white;
+          padding:10px 20px;
+          border-radius:8px;
+          text-decoration:none;
+          font-weight:bold;
+        "
+      >
         🔍 Ver no Monitor
       </a>
+
     </p>
-    <hr style="margin:24px 0; border:none; border-top:1px solid #e2e6ee;">
-    <p style="color:#6b7a93; font-size:0.8rem;">Enviado automaticamente pelo Monitor de Impactos.</p>
+
+    <hr style="
+      margin:24px 0;
+      border:none;
+      border-top:1px solid #e2e6ee;
+    ">
+
+    <p style="
+      color:#6b7a93;
+      font-size:0.8rem;
+    ">
+      Enviado automaticamente pelo Monitor de Impactos.
+    </p>
+
   `;
 
   try {
-    for (const destinatario of EMAIL_DESTINATARIOS) {
-      const { error } = await resend.emails.send({
-        from: EMAIL_REMETENTE,
-        to: [destinatario],
-        subject: assunto,
-        html: mensagemHtml
-      });
 
-      if (error) {
-        console.error(`❌ Erro ao enviar para ${destinatario}:`, error.message);
+    for (
+      const destinatario
+      of EMAIL_DESTINATARIOS
+    ) {
+
+      const resultado =
+        await resend.emails.send({
+
+          from:
+            EMAIL_REMETENTE,
+
+          to:
+            [destinatario],
+
+          subject:
+            assunto,
+
+          html:
+            mensagemHtml
+
+        });
+
+      if (
+        resultado.error
+      ) {
+
+        console.error(
+          `❌ Erro ao enviar para ${destinatario}:`,
+          resultado.error.message
+        );
+
       } else {
-        console.log(`📧 Alerta enviado para ${destinatario} (${total} notícias)`);
+
+        console.log(
+          `📧 Alerta enviado para ${destinatario} (${total} notícias)`
+        );
+
       }
+
     }
+
   } catch (error) {
-    console.error('❌ Erro no envio:', error.message);
+
+    console.error(
+      '❌ Erro no envio:',
+      error.message
+    );
+
   }
+
 }
 
 // ============================================================
@@ -1523,10 +1625,20 @@ async function enviarResumo(noticiasCriticas) {
 async function coletarNoticias() {
 
   console.log(
-    '📡 Iniciando Monitor de Impactos v2.1...'
+    '📡 Iniciando Monitor de Impactos v2.2...'
   );
 
-  initializeApp();
+  // ==========================================================
+  // FIREBASE
+  // ==========================================================
+
+  if (
+    getApps().length === 0
+  ) {
+
+    initializeApp();
+
+  }
 
   const db =
     getFirestore();
@@ -1581,6 +1693,7 @@ async function coletarNoticias() {
 
         const resumo =
           item.contentSnippet ||
+          item.content ||
           item.description ||
           '';
 
@@ -1590,9 +1703,7 @@ async function coletarNoticias() {
 
         const dataPub =
           item.pubDate
-            ? new Date(
-                item.pubDate
-              )
+            ? new Date(item.pubDate)
             : new Date();
 
         console.log(
@@ -1653,9 +1764,7 @@ async function coletarNoticias() {
 
         const existing =
           await db
-            .collection(
-              'noticias'
-            )
+            .collection('noticias')
             .where(
               'link',
               '==',
@@ -1834,9 +1943,7 @@ async function coletarNoticias() {
 
           const ref =
             db
-              .collection(
-                'noticias'
-              )
+              .collection('noticias')
               .doc();
 
           batch.set(
@@ -1873,7 +1980,7 @@ async function coletarNoticias() {
   // ==========================================================
 
   console.log(
-    `\n✅ Coleta finalizada!`
+    '\n✅ Coleta finalizada!'
   );
 
   console.log(
@@ -1900,6 +2007,10 @@ coletarNoticias()
 
   .then(() => {
 
+    console.log(
+      '🏁 Processo encerrado com sucesso.'
+    );
+
     process.exit(0);
 
   })
@@ -1914,4 +2025,3 @@ coletarNoticias()
     process.exit(1);
 
   });
-```
