@@ -834,10 +834,7 @@ function calcularRelevancia(
   fonte
 ) {
 
-  const texto =
-    normalizar(
-      `${titulo} ${resumo}`
-    );
+ const texto = normalizar(`${titulo} ${resumo}`);
 
   let score = 0;
 
