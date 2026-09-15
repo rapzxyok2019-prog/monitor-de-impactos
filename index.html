@@ -1055,83 +1055,69 @@
 
     // ===== RENDERIZAR CATEGORIAS =====
     function renderizarCategorias(config) {
-        var container = document.getElementById('categoriasToggle');
-        if (!container) return;
+    var container = document.getElementById('categoriasToggle');
+    if (!container) return;
 
-        db.collection('categorias').get().then(function(snapshot) {
-            var todas = [];
-            snapshot.forEach(function(doc) {
-                var data = doc.data();
-                var nome = data.nome || doc.id;
-                var labelMap = {
-                    'clima': '🌧️ Clima',
-                    'policial': '🚔 Policial',
-                    'greve': '🚛 Greve',
-                    'acidente': '⚠️ Acidentes',
-                    'transito': '🚧 Trânsito',
-                    'fabrica': '🏭 Fábricas'
-                };
-                var label = labelMap[nome] || data.label || data[nome] || nome;
-                todas.push({
-                    id: nome,
-                    label: label,
-                    ativa: data.ativa !== false
-                });
+    db.collection('categorias').get().then(function(snapshot) {
+        var todas = [];
+        snapshot.forEach(function(doc) {
+            var data = doc.data();
+            var nome = data.nome || doc.id;
+            
+            // Label: aceita "label" ou a chave antiga (ex: "fabrica ")
+            var label = data.label || data[nome] || data[nome + ' '] || nome;
+            
+            // Ativa: aceita "ativa" ou "ativo"
+            var ativa = data.ativa !== false && data.ativo !== false;
+            
+            todas.push({
+                id: nome,
+                label: label,
+                ativa: ativa
             });
-
-            var ativas = config.categoriasAtivas || [];
-            var html = '';
-            for (var i = 0; i < todas.length; i++) {
-                var cat = todas[i];
-                var checked = ativas.indexOf(cat.id) !== -1 && cat.ativa ? 'checked' : '';
-                html += '<label><input type="checkbox" value="' + cat.id + '" ' + checked + '> ' + cat.label + '</label>';
-            }
-            container.innerHTML = html;
-
-            var checkboxes = container.querySelectorAll('input[type="checkbox"]');
-            for (var j = 0; j < checkboxes.length; j++) {
-                (function(chk) {
-                    chk.addEventListener('change', function() {
-                        var novasAtivas = [];
-                        var allChecked = container.querySelectorAll('input[type="checkbox"]:checked');
-                        for (var k = 0; k < allChecked.length; k++) {
-                            novasAtivas.push(allChecked[k].value);
-                        }
-                        DataService.setCategoriasAtivas(novasAtivas).then(function() {
-                            atualizarFiltrosRapidos(novasAtivas);
-                            atualizarFeed();
-                        });
-                    });
-                })(checkboxes[j]);
-            }
-        }).catch(function(error) {
-            console.error('Erro ao carregar categorias:', error);
-            container.innerHTML = '<span style="color:#dc2626; font-size:0.8rem;">❌ Erro ao carregar categorias.</span>';
         });
-    }
 
-    function atualizarFiltrosRapidos(categoriasAtivas) {
-        var container = document.getElementById('filtrosContainer');
-        if (!container) return;
-
-        var botoes = container.querySelectorAll('button[data-filtro]');
-        for (var i = 0; i < botoes.length; i++) {
-            var btn = botoes[i];
-            var filtro = btn.dataset.filtro;
-            if (filtro === 'todos') continue;
-            if (categoriasAtivas && categoriasAtivas.indexOf(filtro) !== -1) {
-                btn.style.display = '';
-            } else {
-                btn.style.display = 'none';
-                if (btn.classList.contains('ativo')) {
-                    btn.classList.remove('ativo');
-                    var todosBtn = container.querySelector('[data-filtro="todos"]');
-                    if (todosBtn) todosBtn.classList.add('ativo');
-                }
-            }
+        var ativas = config.categoriasAtivas || [];
+        var html = '';
+        for (var i = 0; i < todas.length; i++) {
+            var cat = todas[i];
+            var checked = ativas.indexOf(cat.id) !== -1 && cat.ativa ? 'checked' : '';
+            html += '<label><input type="checkbox" value="' + cat.id + '" ' + checked + '> ' + cat.label + '</label>';
         }
-    }
+        container.innerHTML = html;
 
+        var checkboxes = container.querySelectorAll('input[type="checkbox"]');
+        for (var j = 0; j < checkboxes.length; j++) {
+            (function(chk) {
+                chk.addEventListener('change', function() {
+                    var novasAtivas = [];
+                    var allChecked = container.querySelectorAll('input[type="checkbox"]:checked');
+                    for (var k = 0; k < allChecked.length; k++) {
+                        novasAtivas.push(allChecked[k].value);
+                    }
+                    DataService.setCategoriasAtivas(novasAtivas).then(function() {
+                        atualizarFiltrosRapidos(novasAtivas);
+                        atualizarFeed();
+                    });
+                });
+            })(checkboxes[j]);
+        }
+    }).catch(function(error) {
+        console.error('Erro ao carregar categorias:', error);
+        container.innerHTML = '<span style="color:#dc2626; font-size:0.8rem;">❌ Erro ao carregar categorias.</span>';
+    });
+}
+
+   function atualizarFiltrosRapidos(categoriasAtivas) {
+    var container = document.getElementById('filtrosContainer');
+    if (!container) return;
+
+    // Mostra TODOS os botões, independente das preferências
+    var botoes = container.querySelectorAll('button[data-filtro]');
+    for (var i = 0; i < botoes.length; i++) {
+        botoes[i].style.display = '';
+    }
+}
     // ===== MAPA =====
     var map;
 
