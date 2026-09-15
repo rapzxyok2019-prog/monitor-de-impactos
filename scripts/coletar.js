@@ -15,7 +15,7 @@ const { Resend } = require('resend');
 const DIAS_PADRAO = 2;
 
 // Score mínimo para salvar no site
-const SCORE_MINIMO = 40;
+const SCORE_MINIMO = 30;
 
 // Score mínimo para alerta por e-mail
 const SCORE_ALERTA = 70;
@@ -504,6 +504,13 @@ const LOCALIDADES_MONITORADAS = [
   'porto alegre',
   'brasília',
   'brasilia'
+'goiânia', 'goiania', 'cuiabá', 'cuiaba', 'campo grande',
+'londrina', 'maringá', 'maringa', 'florianópolis', 'florianopolis',
+'joão pessoa', 'joao pessoa', 'maceió', 'maceio', 'aracaju',
+'teresina', 'são luís', 'sao luis', 'palmas', 'porto velho',
+'juiz de fora', 'montes claros', 'feira de santana',
+'campina grande', 'caruaru', 'diadema', 'mauá', 'maua',
+'são caetano', 'sao caetano', 'santo andré', 'santo andre'
 
 ];
 
@@ -535,6 +542,10 @@ const RODOVIAS_MONITORADAS = [
   'ayrton senna',
   'jacú pêssego',
   'jacu pessego'
+'br-101', 'br-116', 'br-040', 'br-050', 'br-060', 'br-153',
+'br-163', 'br-262', 'br-267', 'br-369', 'br-376', 'br-386',
+'sp-330', 'sp-348', 'sp-280', 'sp-270', 'sp-021', 'sp-160',
+'mg-050', 'mg-030', 'pr-092', 'rs-118', 'ba-099'
 
 ];
 
