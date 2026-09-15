@@ -2158,68 +2158,53 @@ function podeEnviarAlerta(analise) {
 
 function determinarCategoria(analise) {
 
-  if (
-    analise.rodovia
-  ) {
-
-    return 'transito';
-
-  }
-
-  if (
-    analise.eventos.includes('acidente')
-  ) {
-
-    return 'acidente';
-
-  }
-
-  if (
-    analise.eventos.includes('clima')
-  ) {
-
-    return 'clima';
-
-  }
-
-  if (
-    analise.eventos.includes('greve')
-  ) {
-
-    return 'greve';
-
-  }
-
-  if (
-    analise.eventos.includes('seguranca')
-  ) {
-
+  // ==========================================================
+  // 1º PRIORIDADE: SEGURANÇA (mais importante)
+  // ==========================================================
+  if (analise.eventos.includes('seguranca')) {
     return 'policial';
-
   }
 
-  if (
-    analise.eventos.includes('infraestrutura')
-  ) {
-
-    return 'infraestrutura';
-
+  // ==========================================================
+  // 2º PRIORIDADE: GREVE
+  // ==========================================================
+  if (analise.eventos.includes('greve')) {
+    return 'greve';
   }
 
-  if (
-    analise.eventos.includes('logistica')
-  ) {
-
-    return 'logistica';
-
+  // ==========================================================
+  // 3º PRIORIDADE: CLIMA
+  // ==========================================================
+  if (analise.eventos.includes('clima')) {
+    return 'clima';
   }
 
-  if (
-    analise.eventos.includes('transito')
-  ) {
+  // ==========================================================
+  // 4º PRIORIDADE: ACIDENTE
+  // ==========================================================
+  if (analise.eventos.includes('acidente')) {
+    return 'acidente';
+  }
 
+  // ==========================================================
+  // 5º PRIORIDADE: RODOVIA / TRÂNSITO
+  // ==========================================================
+  if (analise.rodovia || analise.eventos.includes('transito')) {
     return 'transito';
+  }
 
+  // ==========================================================
+  // 6º PRIORIDADE: INFRAESTRUTURA
+  // ==========================================================
+  if (analise.eventos.includes('infraestrutura')) {
+    return 'infraestrutura';
+  }
+
+  // ==========================================================
+  // 7º PRIORIDADE: LOGÍSTICA
+  // ==========================================================
+  if (analise.eventos.includes('logistica')) {
+    return 'logistica';
   }
 
   return 'geral';
