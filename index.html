@@ -6,7 +6,7 @@
     <title>Monitor de Impactos | PepsiCo</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css" />
@@ -18,188 +18,277 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
     <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: "Inter", system-ui, sans-serif; background:#f2f4f8; padding:16px; min-height:100vh; display:flex; justify-content:center; align-items:flex-start; }
+        .container { max-width:1280px; width:100%; margin:0 auto; }
+
         /* ============================================================ */
-/* HEADER MODERNO                                              */
-/* ============================================================ */
-.header-moderno {
-    position: relative;
-    background:
-        radial-gradient(circle at 20% 30%, rgba(0, 212, 255, 0.15) 0%, transparent 50%),
-        radial-gradient(circle at 80% 70%, rgba(255, 200, 0, 0.10) 0%, transparent 50%),
-        linear-gradient(135deg, #001f4d 0%, #003da5 50%, #0057c7 100%);
-    border-radius: 28px;
-    padding: 28px 36px;
-    margin-bottom: 24px;
-    box-shadow:
-        0 20px 60px rgba(0, 31, 77, 0.35),
-        0 0 0 1px rgba(255, 255, 255, 0.08) inset,
-        0 1px 0 rgba(255, 255, 255, 0.15) inset;
-    overflow: hidden;
-    min-height: 200px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 16px;
-    isolation: isolate;
-}
+        /* HEADER MODERNO                                              */
+        /* ============================================================ */
+        .header-moderno {
+            position: relative;
+            background:
+                radial-gradient(circle at 20% 30%, rgba(0, 212, 255, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(255, 200, 0, 0.10) 0%, transparent 50%),
+                linear-gradient(135deg, #001f4d 0%, #003da5 50%, #0057c7 100%);
+            border-radius: 28px;
+            padding: 28px 36px;
+            margin-bottom: 24px;
+            box-shadow:
+                0 20px 60px rgba(0, 31, 77, 0.35),
+                0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+                0 1px 0 rgba(255, 255, 255, 0.15) inset;
+            overflow: hidden;
+            min-height: 180px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            isolation: isolate;
+        }
+        .header-moderno::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 10%;
+            right: 10%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.8), transparent);
+            z-index: 3;
+        }
+        .header-fundo {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.30;
+        }
+        .header-fundo svg { width: 100%; height: 100%; display: block; }
+        .header-conteudo {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            width: 100%;
+        }
+        .header-esquerda {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .titulo-bloco {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .titulo-tag {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: rgba(0, 212, 255, 0.9);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .titulo-tag::before {
+            content: '';
+            width: 24px;
+            height: 2px;
+            background: #00d4ff;
+            border-radius: 2px;
+        }
+        .titulo-principal {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: white;
+            letter-spacing: -0.5px;
+            line-height: 1.1;
+        }
+        .titulo-principal span {
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.5);
+        }
+        .subtitulo {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 400;
+            margin-top: 2px;
+            letter-spacing: 0.5px;
+        }
+        .header-direita {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 18px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: white;
+            transition: all 0.2s ease;
+        }
+        .status-badge .dot {
+            width: 8px;
+            height: 8px;
+            background: #4ade80;
+            border-radius: 50%;
+            box-shadow: 0 0 12px rgba(74, 222, 128, 0.8);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.85); }
+        }
+        .btn-sair {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 18px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: white;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s ease;
+        }
+        .btn-sair:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
 
-.header-moderno::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 10%;
-    right: 10%;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.8), transparent);
-    z-index: 3;
-}
+        /* ===== LOGIN ===== */
+        #telaLogin { max-width:400px; margin:60px auto; background:white; padding:30px; border-radius:20px; box-shadow:0 8px 30px rgba(0,0,0,0.1); }
+        #telaLogin h2 { text-align:center; color:#003da5; margin-bottom:8px; }
+        #telaLogin .subtitle { text-align:center; color:#6b7a93; font-size:0.9rem; margin-bottom:24px; }
+        #telaLogin input { width:100%; padding:12px 16px; border:1px solid #d0d7e2; border-radius:10px; font-size:1rem; margin-bottom:12px; font-family:inherit; outline:none; transition:border 0.15s ease; }
+        #telaLogin input:focus { border-color:#003da5; box-shadow:0 0 0 3px rgba(0,61,165,0.1); }
+        #loginBtn { width:100%; background:#003da5; color:white; border:none; padding:14px; border-radius:10px; font-size:1rem; font-weight:600; cursor:pointer; font-family:inherit; transition:background 0.15s ease; }
+        #loginBtn:hover { background:#002d7a; }
+        #loginBtn:disabled { opacity:0.6; cursor:not-allowed; }
+        #cadastrarBtn { width:100%; background:transparent; color:#003da5; border:none; padding:10px; font-size:0.85rem; cursor:pointer; font-family:inherit; margin-top:4px; }
+        #cadastrarBtn:hover { text-decoration:underline; }
+        #loginErro { color:#dc2626; font-size:0.85rem; text-align:center; display:none; margin-top:8px; }
 
-.header-fundo {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 1;
-    opacity: 0.35;
-}
-.header-fundo svg {
-    width: 100%;
-    height: 100%;
-    display: block;
-}
+        .conteudo-site { display:none; }
 
-.header-conteudo {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 16px;
-    width: 100%;
-}
+        .tabs { display:flex; gap:4px; margin-bottom:20px; background:white; padding:6px; border-radius:50px; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
+        .tab-btn { flex:1; border:none; background:transparent; padding:10px 16px; border-radius:40px; font-weight:600; font-size:0.8rem; cursor:pointer; color:#4a5b76; transition:all 0.2s ease; font-family:inherit; }
+        .tab-btn:hover { background:#f0f3f9; }
+        .tab-btn.ativo { background:#003da5; color:white; box-shadow:0 4px 12px rgba(0,61,165,0.25); }
+        .tab-content { display:none; animation:fadeUp 0.3s ease; }
+        .tab-content.ativo { display:block; }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
 
-.header-esquerda {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    flex-wrap: wrap;
-}
+        .dashboard { display:grid; grid-template-columns:repeat(auto-fit, minmax(90px,1fr)); gap:10px; margin-bottom:20px; }
+        .card-metrica { background:white; padding:12px 10px; border-radius:16px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
+        .card-metrica .numero { font-size:1.5rem; font-weight:700; line-height:1.2; }
+        .card-metrica .rotulo { font-size:0.55rem; color:#6b7a93; text-transform:uppercase; letter-spacing:0.3px; font-weight:600; margin-top:2px; }
+        .card-metrica .icone { font-size:1.3rem; display:block; }
+        .card-metrica.critico .numero { color:#dc2626; }
+        .card-metrica.atencao .numero { color:#d97706; }
+        .card-metrica.info .numero { color:#2563eb; }
+        .card-metrica.total .numero { color:#003da5; }
 
-.titulo-bloco {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
+        .dashboard-extras { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+        @media (max-width: 600px) { .dashboard-extras { grid-template-columns:1fr; } }
+        .card-extra { background:white; padding:12px 14px; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
+        .card-extra h4 { font-size:0.6rem; color:#6b7a93; text-transform:uppercase; letter-spacing:0.3px; font-weight:600; margin-bottom:6px; }
+        .card-extra canvas { max-height:150px; max-width:100%; }
+        .fonte-item { display:flex; justify-content:space-between; padding:3px 0; border-bottom:1px solid #f0f2f6; font-size:0.8rem; }
+        .fonte-item:last-child { border-bottom:none; }
+        .fonte-item strong { color:#003da5; }
 
-.titulo-tag {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 0.65rem;
-    font-weight: 600;
-    color: rgba(0, 212, 255, 0.9);
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
+        .filtros-rapidos { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:12px; }
+        .filtros-rapidos button { background:white; border:1px solid #e2e6ee; padding:4px 12px; border-radius:40px; font-size:0.7rem; font-weight:500; cursor:pointer; transition:all 0.15s ease; font-family:inherit; color:#2c3e4e; }
+        .filtros-rapidos button:hover { background:#f0f3f9; border-color:#bcc4d4; }
+        .filtros-rapidos button.ativo { background:#003da5; color:white; border-color:#003da5; box-shadow:0 4px 12px rgba(0,61,165,0.2); }
 
-.titulo-tag::before {
-    content: '';
-    width: 24px;
-    height: 2px;
-    background: #00d4ff;
-    border-radius: 2px;
-}
+        .barra-busca { background:white; padding:6px 14px; border-radius:60px; margin-bottom:16px; display:flex; align-items:center; gap:8px; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
+        .barra-busca input { flex:1; border:none; outline:none; font-size:0.85rem; padding:8px 0; font-family:inherit; background:transparent; color:#1e2a3a; }
+        .barra-busca input::placeholder { color:#9aa8bc; }
 
-.titulo-principal {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: white;
-    letter-spacing: -0.5px;
-    line-height: 1.1;
-}
+        .grid-2colunas { display:grid; grid-template-columns:1fr; gap:16px; }
+        @media (min-width:820px) { .grid-2colunas { grid-template-columns:1fr 1fr; } }
+        .card { background:white; border-radius:16px; padding:14px 14px; margin-bottom:12px; box-shadow:0 2px 8px rgba(0,0,0,0.04); border-left:4px solid #003da5; transition:all 0.2s ease; }
+        .card:hover { box-shadow:0 8px 24px rgba(0,0,0,0.06); transform:translateY(-1px); }
+        .card.lida { opacity:0.6; background:#f8f9fc; border-left-color:#bcc4d4; }
+        .card.lida:hover { transform:none; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
+        .card .badge-nova { background:#4ade80; color:#003da5; font-size:0.5rem; font-weight:700; padding:1px 8px; border-radius:40px; margin-left:6px; text-transform:uppercase; }
+        .selo { display:inline-block; font-size:0.5rem; font-weight:700; padding:2px 8px; border-radius:40px; text-transform:uppercase; letter-spacing:0.3px; }
+        .selo.critico { background:#fee2e2; color:#991b1b; }
+        .selo.atencao { background:#fef9c3; color:#854d0e; }
+        .selo.info { background:#dbeafe; color:#1e40af; }
+        .titulo { font-size:0.9rem; font-weight:600; margin:4px 0 3px; color:#1e2a3a; line-height:1.3; }
+        .fonte { font-size:0.6rem; color:#6b7a93; margin-bottom:4px; display:flex; flex-wrap:wrap; gap:4px; align-items:center; }
+        .fonte a { color:#003da5; text-decoration:none; font-weight:500; }
+        .fonte a:hover { text-decoration:underline; }
+        .resumo { color:#2c3e4e; line-height:1.4; font-size:0.78rem; margin-bottom:8px; }
+        .acoes { display:flex; flex-wrap:wrap; align-items:center; gap:4px; border-top:1px solid #eef0f4; padding-top:8px; }
+        .emoji-btn { background:none; border:none; font-size:1rem; cursor:pointer; padding:2px 6px; border-radius:30px; display:inline-flex; align-items:center; gap:3px; transition:background 0.15s ease; font-family:inherit; }
+        .emoji-btn:hover { background:#f0f3f9; }
+        .contador { font-size:0.6rem; color:#4a5b76; min-width:14px; }
+        .btn-acao { background:none; border:1px solid #d0d7e2; padding:2px 10px; border-radius:40px; font-size:0.55rem; font-weight:500; cursor:pointer; background:white; transition:all 0.15s ease; font-family:inherit; color:#2c3e4e; }
+        .btn-acao:hover { background:#f0f3f9; border-color:#b0baca; }
+        .btn-apagar { color:#dc2626 !important; border-color:#dc2626 !important; }
+        .btn-apagar:hover { background:#fee2e2 !important; }
+        #mapa { height:280px; border-radius:14px; background:#e8ecf2; border:1px solid #e2e6ee; margin-bottom:6px; overflow:hidden; }
+        .card-mapa { background:white; border-radius:16px; padding:14px 16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
+        .card-mapa h3 { font-size:0.8rem; margin-bottom:8px; color:#1e2a3a; font-weight:600; }
 
-.titulo-principal span {
-    font-weight: 300;
-    color: rgba(255, 255, 255, 0.5);
-}
+        .config-section { background:white; border-radius:20px; padding:18px; box-shadow:0 2px 8px rgba(0,0,0,0.04); margin-bottom:16px; }
+        .config-section h3 { font-size:0.95rem; margin-bottom:8px; color:#1e2a3a; font-weight:600; }
+        .config-section p { font-size:0.75rem; color:#6b7a93; margin-bottom:10px; }
+        .config-section .campo { display:flex; gap:8px; flex-wrap:wrap; }
+        .config-section input[type=text] { flex:1; padding:6px 12px; border:1px solid #d0d7e2; border-radius:40px; font-size:0.8rem; outline:none; font-family:inherit; min-width:120px; transition:border 0.15s ease; }
+        .config-section input[type=text]:focus { border-color:#003da5; box-shadow:0 0 0 3px rgba(0,61,165,0.1); }
+        .config-section button { background:#003da5; color:white; border:none; padding:6px 16px; border-radius:40px; font-size:0.75rem; font-weight:500; cursor:pointer; transition:background 0.15s ease; font-family:inherit; }
+        .config-section button:hover { background:#002d7a; }
+        .config-section button:disabled { opacity:0.5; cursor:not-allowed; }
+        .config-section button.danger { background:#dc2626; }
+        .config-section button.danger:hover { background:#b91c1c; }
+        .lista-itens { display:flex; flex-wrap:wrap; gap:5px; margin-top:10px; }
+        .item-chip { background:#f0f3f9; padding:3px 12px; border-radius:40px; font-size:0.75rem; display:inline-flex; align-items:center; gap:6px; font-weight:500; }
+        .item-chip .remover { background:none; border:none; color:#991b1b; cursor:pointer; font-weight:700; font-size:0.8rem; line-height:1; padding:0 2px; }
+        .toggle-group { display:flex; flex-wrap:wrap; gap:12px; margin:8px 0; }
+        .toggle-group label { display:flex; align-items:center; gap:5px; font-size:0.8rem; cursor:pointer; font-weight:500; }
+        .toggle-group input[type=checkbox] { width:15px; height:15px; accent-color:#003da5; cursor:pointer; }
+        .palavra-sugestao { display:inline-flex; align-items:center; gap:5px; background:#f0f3f9; padding:3px 10px 3px 12px; border-radius:40px; font-size:0.75rem; font-weight:500; margin:2px 3px 2px 0; }
+        .palavra-sugestao .add-btn { background:none; border:none; color:#003da5; cursor:pointer; font-weight:700; font-size:0.9rem; line-height:1; padding:0 2px; }
+        .palavra-sugestao .add-btn:hover { color:#002d7a; }
+        .mensagem-bloqueio { color:#6b7a93; font-size:0.8rem; margin-top:8px; padding:8px 12px; background:#f0f3f9; border-radius:8px; text-align:center; }
+        #secaoApagar { border:2px solid #dc2626; margin-top:20px; }
+        #secaoApagar h3 { color:#dc2626; }
+        #apagarStatus { margin-top:8px; font-size:0.85rem; display:none; }
+        footer { text-align:center; font-size:0.6rem; color:#8a9bb0; margin-top:24px; padding-top:12px; border-top:1px solid #e2e6ee; }
 
-.subtitulo {
-    font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.6);
-    font-weight: 400;
-    margin-top: 2px;
-    letter-spacing: 0.5px;
-}
-
-.header-direita {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-}
-
-.status-badge {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 18px;
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 40px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: white;
-    transition: all 0.2s ease;
-}
-
-.status-badge .dot {
-    width: 8px;
-    height: 8px;
-    background: #4ade80;
-    border-radius: 50%;
-    box-shadow: 0 0 12px rgba(74, 222, 128, 0.8);
-    animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.5; transform: scale(0.85); }
-}
-
-.btn-sair {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 18px;
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 40px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: white;
-    cursor: pointer;
-    font-family: inherit;
-    transition: all 0.2s ease;
-}
-
-.btn-sair:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
-    transform: translateY(-1px);
-}
-
-@media (max-width: 700px) {
-    .header-moderno { padding: 20px 22px; }
-    .titulo-principal { font-size: 1.4rem; }
-    .logo-box { width: 52px; height: 52px; font-size: 1.4rem; }
-}
+        @media (max-width: 700px) {
+            .header-moderno { padding: 20px 22px; }
+            .titulo-principal { font-size: 1.4rem; }
+        }
+        @media (max-width:480px) { body{ padding:8px; } .tab-btn{ font-size:0.65rem; padding:6px 8px; } .card{ padding:10px; } #mapa{ height:200px; } #telaLogin{ margin:30px 16px; padding:20px; } }
     </style>
 </head>
 <body>
@@ -217,349 +306,231 @@
     </div>
 
     <!-- CONTEÚDO PRINCIPAL -->
-   <header class="header-moderno">
+    <div class="conteudo-site" id="conteudoSite">
 
-    <!-- FUNDO COM SILHUETAS -->
-    <div class="header-fundo">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 200" preserveAspectRatio="xMidYMid slice">
-            <g fill="none" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" opacity="0.7">
+        <header class="header-moderno">
 
-                <!-- Caminhão grande -->
-                <g transform="translate(20, 15) rotate(-22) scale(1.3)">
-                    <rect x="0" y="8" width="42" height="16" rx="2"/>
-                    <rect x="42" y="14" width="16" height="10" rx="1"/>
-                    <circle cx="10" cy="26" r="3"/>
-                    <circle cx="28" cy="26" r="3"/>
-                    <circle cx="49" cy="26" r="3"/>
-                </g>
-
-                <!-- Nuvem com chuva -->
-                <g transform="translate(120, 12) rotate(18) scale(1.1)">
-                    <path d="M 8 16 Q 0 16 0 10 Q 0 4 7 4 Q 11 0 18 2 Q 24 0 26 6 Q 34 6 32 14 Q 30 20 24 20 L 10 20 Z"/>
-                    <line x1="8" y1="24" x2="6" y2="31"/>
-                    <line x1="15" y1="24" x2="13" y2="31"/>
-                    <line x1="22" y1="24" x2="20" y2="31"/>
-                </g>
-
-                <!-- Raio -->
-                <g transform="translate(210, 25) rotate(-35) scale(1.2)">
-                    <path d="M 12 0 L 4 14 L 12 14 L 4 30 L 16 12 L 8 12 Z"/>
-                </g>
-
-                <!-- Jornal -->
-                <g transform="translate(280, 15) rotate(42) scale(1)">
-                    <rect x="0" y="0" width="32" height="36" rx="2"/>
-                    <line x1="5" y1="9" x2="27" y2="9"/>
-                    <line x1="5" y1="16" x2="27" y2="16"/>
-                    <line x1="5" y1="23" x2="27" y2="23"/>
-                    <line x1="5" y1="30" x2="18" y2="30"/>
-                </g>
-
-                <!-- Fábrica -->
-                <g transform="translate(360, 20) rotate(-15) scale(1.25)">
-                    <rect x="0" y="14" width="42" height="20"/>
-                    <rect x="4" y="6" width="10" height="10"/>
-                    <rect x="18" y="2" width="10" height="14"/>
-                    <rect x="32" y="10" width="8" height="6"/>
-                </g>
-
-                <!-- Viatura -->
-                <g transform="translate(460, 22) rotate(25) scale(1.15)">
-                    <rect x="0" y="8" width="36" height="14" rx="2"/>
-                    <rect x="6" y="0" width="12" height="8"/>
-                    <circle cx="8" cy="24" r="3"/>
-                    <circle cx="28" cy="24" r="3"/>
-                </g>
-
-                <!-- Cone -->
-                <g transform="translate(560, 18) rotate(-48) scale(1.2)">
-                    <path d="M 8 0 L 16 24 L 0 24 Z"/>
-                    <line x1="4" y1="12" x2="12" y2="12"/>
-                </g>
-
-                <!-- Bússola -->
-                <g transform="translate(650, 15) rotate(15) scale(1.1)">
-                    <circle cx="12" cy="12" r="11"/>
-                    <path d="M 12 2 L 15 12 L 12 22 L 9 12 Z"/>
-                </g>
-
-                <!-- Caixa -->
-                <g transform="translate(740, 20) rotate(-30) scale(1.15)">
-                    <rect x="0" y="6" width="26" height="26"/>
-                    <line x1="0" y1="16" x2="26" y2="16"/>
-                    <line x1="13" y1="6" x2="13" y2="32"/>
-                </g>
-
-                <!-- Rotas -->
-                <g transform="translate(830, 18) rotate(20) scale(1.1)">
-                    <circle cx="6" cy="6" r="2.5"/>
-                    <circle cx="34" cy="22" r="2.5"/>
-                    <circle cx="62" cy="8" r="2.5"/>
-                    <line x1="6" y1="6" x2="34" y2="22" stroke-dasharray="3,3"/>
-                    <line x1="34" y1="22" x2="62" y2="8" stroke-dasharray="3,3"/>
-                </g>
-
-                <!-- Sirene -->
-                <g transform="translate(930, 18) rotate(-55) scale(1.15)">
-                    <path d="M 3 14 L 10 2 L 17 14 Z"/>
-                    <rect x="1" y="14" width="18" height="4" rx="1"/>
-                </g>
-
-                <!-- Trovão -->
-                <g transform="translate(1020, 25) rotate(40) scale(1.2)">
-                    <path d="M 12 0 L 4 14 L 12 14 L 4 30 L 16 12 L 8 12 Z"/>
-                </g>
-
-                <!-- Balão -->
-                <g transform="translate(1120, 20) rotate(-20) scale(1.1)">
-                    <path d="M 12 0 Q 22 0 22 10 Q 22 18 12 20 Q 2 18 2 10 Q 2 0 12 0 Z"/>
-                    <line x1="12" y1="20" x2="12" y2="30"/>
-                </g>
-
-                <!-- Caminhão médio -->
-                <g transform="translate(40, 80) rotate(35) scale(1.1)">
-                    <rect x="0" y="8" width="38" height="14" rx="2"/>
-                    <rect x="38" y="14" width="14" height="8" rx="1"/>
-                    <circle cx="9" cy="24" r="3"/>
-                    <circle cx="26" cy="24" r="3"/>
-                    <circle cx="45" cy="24" r="3"/>
-                </g>
-
-                <!-- Nuvem média -->
-                <g transform="translate(150, 95) rotate(-25) scale(0.95)">
-                    <path d="M 8 16 Q 0 16 0 10 Q 0 4 7 4 Q 11 0 18 2 Q 24 0 26 6 Q 34 6 32 14 Q 30 20 24 20 L 10 20 Z"/>
-                </g>
-
-                <!-- Cone médio -->
-                <g transform="translate(240, 90) rotate(60) scale(0.9)">
-                    <path d="M 8 0 L 16 24 L 0 24 Z"/>
-                    <line x1="4" y1="12" x2="12" y2="12"/>
-                </g>
-
-                <!-- Raio médio -->
-                <g transform="translate(320, 100) rotate(-75) scale(1)">
-                    <path d="M 12 0 L 4 14 L 12 14 L 4 30 L 16 12 L 8 12 Z"/>
-                </g>
-
-                <!-- Jornal médio -->
-                <g transform="translate(400, 85) rotate(18) scale(0.9)">
-                    <rect x="0" y="0" width="30" height="34" rx="2"/>
-                    <line x1="4" y1="8" x2="26" y2="8"/>
-                    <line x1="4" y1="14" x2="26" y2="14"/>
-                    <line x1="4" y1="20" x2="26" y2="20"/>
-                </g>
-
-                <!-- Fábrica média -->
-                <g transform="translate(490, 95) rotate(-40) scale(1)">
-                    <rect x="0" y="14" width="38" height="18"/>
-                    <rect x="4" y="6" width="10" height="10"/>
-                    <rect x="18" y="2" width="10" height="14"/>
-                </g>
-
-                <!-- Viatura média -->
-                <g transform="translate(580, 90) rotate(50) scale(0.95)">
-                    <rect x="0" y="8" width="34" height="14" rx="2"/>
-                    <rect x="6" y="0" width="10" height="8"/>
-                    <circle cx="8" cy="24" r="3"/>
-                    <circle cx="26" cy="24" r="3"/>
-                </g>
-
-                <!-- Bússola média -->
-                <g transform="translate(670, 100) rotate(-65) scale(1)">
-                    <circle cx="12" cy="12" r="11"/>
-                    <path d="M 12 2 L 15 12 L 12 22 L 9 12 Z"/>
-                </g>
-
-                <!-- Caixa média -->
-                <g transform="translate(750, 85) rotate(28) scale(0.95)">
-                    <rect x="0" y="6" width="24" height="24"/>
-                    <line x1="0" y1="16" x2="24" y2="16"/>
-                    <line x1="12" y1="6" x2="12" y2="30"/>
-                </g>
-
-                <!-- Rotas médias -->
-                <g transform="translate(830, 95) rotate(-50) scale(1)">
-                    <circle cx="6" cy="6" r="2.5"/>
-                    <circle cx="32" cy="20" r="2.5"/>
-                    <circle cx="58" cy="8" r="2.5"/>
-                    <line x1="6" y1="6" x2="32" y2="20" stroke-dasharray="3,3"/>
-                    <line x1="32" y1="20" x2="58" y2="8" stroke-dasharray="3,3"/>
-                </g>
-
-                <!-- Sirene média -->
-                <g transform="translate(920, 90) rotate(70) scale(1)">
-                    <path d="M 3 14 L 10 2 L 17 14 Z"/>
-                    <rect x="1" y="14" width="18" height="4" rx="1"/>
-                </g>
-
-                <!-- Trovão médio -->
-                <g transform="translate(1010, 100) rotate(-85) scale(0.95)">
-                    <path d="M 12 0 L 4 14 L 12 14 L 4 30 L 16 12 L 8 12 Z"/>
-                </g>
-
-                <!-- Balão médio -->
-                <g transform="translate(1100, 90) rotate(15) scale(0.95)">
-                    <path d="M 12 0 Q 22 0 22 10 Q 22 18 12 20 Q 2 18 2 10 Q 2 0 12 0 Z"/>
-                    <line x1="12" y1="20" x2="12" y2="30"/>
-                </g>
-
-                <!-- Caminhão inferior -->
-                <g transform="translate(60, 155) rotate(-45) scale(1.05)">
-                    <rect x="0" y="8" width="40" height="14" rx="2"/>
-                    <rect x="40" y="14" width="14" height="8" rx="1"/>
-                    <circle cx="9" cy="24" r="3"/>
-                    <circle cx="26" cy="24" r="3"/>
-                    <circle cx="46" cy="24" r="3"/>
-                </g>
-
-                <!-- Nuvem inferior -->
-                <g transform="translate(180, 160) rotate(45) scale(1)">
-                    <path d="M 8 16 Q 0 16 0 10 Q 0 4 7 4 Q 11 0 18 2 Q 24 0 26 6 Q 34 6 32 14 Q 30 20 24 20 L 10 20 Z"/>
-                    <line x1="8" y1="24" x2="6" y2="31"/>
-                    <line x1="15" y1="24" x2="13" y2="31"/>
-                </g>
-
-                <!-- Raio inferior -->
-                <g transform="translate(270, 165) rotate(-30) scale(1.1)">
-                    <path d="M 12 0 L 4 14 L 12 14 L 4 30 L 16 12 L 8 12 Z"/>
-                </g>
-
-                <!-- Jornal inferior -->
-                <g transform="translate(360, 155) rotate(55) scale(0.95)">
-                    <rect x="0" y="0" width="30" height="34" rx="2"/>
-                    <line x1="4" y1="8" x2="26" y2="8"/>
-                    <line x1="4" y1="14" x2="26" y2="14"/>
-                </g>
-
-                <!-- Fábrica inferior -->
-                <g transform="translate(450, 160) rotate(-20) scale(1.05)">
-                    <rect x="0" y="14" width="40" height="18"/>
-                    <rect x="4" y="6" width="10" height="10"/>
-                    <rect x="18" y="2" width="10" height="14"/>
-                </g>
-
-                <!-- Viatura inferior -->
-                <g transform="translate(550, 165) rotate(40) scale(0.95)">
-                    <rect x="0" y="8" width="34" height="14" rx="2"/>
-                    <rect x="6" y="0" width="10" height="8"/>
-                    <circle cx="8" cy="24" r="3"/>
-                    <circle cx="26" cy="24" r="3"/>
-                </g>
-
-                <!-- Cone inferior -->
-                <g transform="translate(640, 160) rotate(-70) scale(1)">
-                    <path d="M 8 0 L 16 24 L 0 24 Z"/>
-                    <line x1="4" y1="12" x2="12" y2="12"/>
-                </g>
-
-                <!-- Bússola inferior -->
-                <g transform="translate(730, 165) rotate(25) scale(1)">
-                    <circle cx="12" cy="12" r="11"/>
-                    <path d="M 12 2 L 15 12 L 12 22 L 9 12 Z"/>
-                </g>
-
-                <!-- Caixa inferior -->
-                <g transform="translate(820, 158) rotate(-55) scale(1)">
-                    <rect x="0" y="6" width="26" height="26"/>
-                    <line x1="0" y1="16" x2="26" y2="16"/>
-                    <line x1="13" y1="6" x2="13" y2="32"/>
-                </g>
-
-                <!-- Rotas inferior -->
-                <g transform="translate(910, 165) rotate(60) scale(1)">
-                    <circle cx="6" cy="6" r="2.5"/>
-                    <circle cx="34" cy="22" r="2.5"/>
-                    <line x1="6" y1="6" x2="34" y2="22" stroke-dasharray="3,3"/>
-                </g>
-
-                <!-- Sirene inferior -->
-                <g transform="translate(1000, 160) rotate(-35) scale(1.05)">
-                    <path d="M 3 14 L 10 2 L 17 14 Z"/>
-                    <rect x="1" y="14" width="18" height="4" rx="1"/>
-                </g>
-
-                <!-- Balão inferior direito -->
-                <g transform="translate(1090, 165) rotate(45) scale(1)">
-                    <path d="M 12 0 Q 22 0 22 10 Q 22 18 12 20 Q 2 18 2 10 Q 2 0 12 0 Z"/>
-                    <line x1="12" y1="20" x2="12" y2="30"/>
-                </g>
-
-                <!-- Pontos -->
-                <circle cx="100" cy="60" r="1.5" fill="white"/>
-                <circle cx="260" cy="50" r="1.5" fill="white"/>
-                <circle cx="420" cy="65" r="1.5" fill="white"/>
-                <circle cx="580" cy="55" r="1.5" fill="white"/>
-                <circle cx="740" cy="60" r="1.5" fill="white"/>
-                <circle cx="900" cy="50" r="1.5" fill="white"/>
-                <circle cx="1060" cy="65" r="1.5" fill="white"/>
-                <circle cx="180" cy="140" r="1.5" fill="white"/>
-                <circle cx="500" cy="135" r="1.5" fill="white"/>
-                <circle cx="820" cy="140" r="1.5" fill="white"/>
-                <circle cx="1140" cy="130" r="1.5" fill="white"/>
-
-                <!-- Cruzes -->
-                <g transform="translate(200, 130) rotate(15)">
-                    <line x1="0" y1="0" x2="8" y2="8"/>
-                    <line x1="8" y1="0" x2="0" y2="8"/>
-                </g>
-                <g transform="translate(420, 130) rotate(-30)">
-                    <line x1="0" y1="0" x2="8" y2="8"/>
-                    <line x1="8" y1="0" x2="0" y2="8"/>
-                </g>
-                <g transform="translate(660, 130) rotate(45)">
-                    <line x1="0" y1="0" x2="8" y2="8"/>
-                    <line x1="8" y1="0" x2="0" y2="8"/>
-                </g>
-                <g transform="translate(880, 130) rotate(-15)">
-                    <line x1="0" y1="0" x2="8" y2="8"/>
-                    <line x1="8" y1="0" x2="0" y2="8"/>
-                </g>
-
-                <!-- Rabiscos tracejados -->
-                <path d="M 80 130 Q 130 110 180 135" stroke-dasharray="3,4" opacity="0.5"/>
-                <path d="M 320 130 Q 370 110 420 135" stroke-dasharray="3,4" opacity="0.5"/>
-                <path d="M 560 130 Q 610 110 660 135" stroke-dasharray="3,4" opacity="0.5"/>
-                <path d="M 800 130 Q 850 110 900 135" stroke-dasharray="3,4" opacity="0.5"/>
-                <path d="M 1040 130 Q 1090 110 1140 135" stroke-dasharray="3,4" opacity="0.5"/>
-
-            </g>
-        </svg>
-    </div>
-
-    <!-- CONTEÚDO DO HEADER -->
- <div class="header-esquerda">
-
-    <!-- LOGO DIRETA, COM SOMBRA BRANCA -->
-    <img src="https://1000logos.net/wp-content/uploads/2020/08/PepsiCo-Logo-1.png" 
-         alt="PepsiCo" 
-         style="height: 55px; width: auto; object-fit: contain;
-                filter: drop-shadow(0 0 12px rgba(255,255,255,0.6)) 
-                        drop-shadow(0 0 25px rgba(255,255,255,0.3));
-                transition: all 0.3s ease;
-                flex-shrink: 0;">
-
-    <div class="titulo-bloco">
-        <div class="titulo-tag">PEPSICO • SEGURANÇA E LOGÍSTICA</div>
-        <div class="titulo-principal">Monitor de Impactos <span>| Operacional</span></div>
-        <div class="subtitulo">Rodovias • Clima • Greves • Fábricas • Policial</div>
-    </div>
-</div>
-
-        <!-- Direita: Status + Sair (por enquanto mantidos aqui) -->
-        <div class="header-direita">
-            <div class="status-badge">
-                <span class="dot"></span>
-                <span id="authStatus">Conectando...</span>
+            <!-- FUNDO COM SILHUETAS -->
+            <div class="header-fundo">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 200" preserveAspectRatio="xMidYMid slice">
+                    <g fill="none" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" opacity="0.7">
+                        <!-- Caminhão grande -->
+                        <g transform="translate(20, 15) rotate(-22) scale(1.3)">
+                            <rect x="0" y="8" width="42" height="16" rx="2"/>
+                            <rect x="42" y="14" width="16" height="10" rx="1"/>
+                            <circle cx="10" cy="26" r="3"/>
+                            <circle cx="28" cy="26" r="3"/>
+                            <circle cx="49" cy="26" r="3"/>
+                        </g>
+                        <!-- Nuvem com chuva -->
+                        <g transform="translate(120, 12) rotate(18) scale(1.1)">
+                            <path d="M 8 16 Q 0 16 0 10 Q 0 4 7 4 Q 11 0 18 2 Q 24 0 26 6 Q 34 6 32 14 Q 30 20 24 20 L 10 20 Z"/>
+                            <line x1="8" y1="24" x2="6" y2="31"/>
+                            <line x1="15" y1="24" x2="13" y2="31"/>
+                            <line x1="22" y1="24" x2="20" y2="31"/>
+                        </g>
+                        <!-- Raio -->
+                        <g transform="translate(210, 25) rotate(-35) scale(1.2)">
+                            <path d="M 12 0 L 4 14 L 12 14 L 4 30 L 16 12 L 8 12 Z"/>
+                        </g>
+                        <!-- Jornal -->
+                        <g transform="translate(280, 15) rotate(42) scale(1)">
+                            <rect x="0" y="0" width="32" height="36" rx="2"/>
+                            <line x1="5" y1="9" x2="27" y2="9"/>
+                            <line x1="5" y1="16" x2="27" y2="16"/>
+                            <line x1="5" y1="23" x2="27" y2="23"/>
+                        </g>
+                        <!-- Fábrica -->
+                        <g transform="translate(360, 20) rotate(-15) scale(1.25)">
+                            <rect x="0" y="14" width="42" height="20"/>
+                            <rect x="4" y="6" width="10" height="10"/>
+                            <rect x="18" y="2" width="10" height="14"/>
+                        </g>
+                        <!-- Viatura -->
+                        <g transform="translate(460, 22) rotate(25) scale(1.15)">
+                            <rect x="0" y="8" width="36" height="14" rx="2"/>
+                            <rect x="6" y="0" width="12" height="8"/>
+                            <circle cx="8" cy="24" r="3"/>
+                            <circle cx="28" cy="24" r="3"/>
+                        </g>
+                        <!-- Cone -->
+                        <g transform="translate(560, 18) rotate(-48) scale(1.2)">
+                            <path d="M 8 0 L 16 24 L 0 24 Z"/>
+                            <line x1="4" y1="12" x2="12" y2="12"/>
+                        </g>
+                        <!-- Bússola -->
+                        <g transform="translate(650, 15) rotate(15) scale(1.1)">
+                            <circle cx="12" cy="12" r="11"/>
+                            <path d="M 12 2 L 15 12 L 12 22 L 9 12 Z"/>
+                        </g>
+                        <!-- Caixa -->
+                        <g transform="translate(740, 20) rotate(-30) scale(1.15)">
+                            <rect x="0" y="6" width="26" height="26"/>
+                            <line x1="0" y1="16" x2="26" y2="16"/>
+                            <line x1="13" y1="6" x2="13" y2="32"/>
+                        </g>
+                        <!-- Rotas -->
+                        <g transform="translate(830, 18) rotate(20) scale(1.1)">
+                            <circle cx="6" cy="6" r="2.5"/>
+                            <circle cx="34" cy="22" r="2.5"/>
+                            <circle cx="62" cy="8" r="2.5"/>
+                            <line x1="6" y1="6" x2="34" y2="22" stroke-dasharray="3,3"/>
+                            <line x1="34" y1="22" x2="62" y2="8" stroke-dasharray="3,3"/>
+                        </g>
+                        <!-- Sirene -->
+                        <g transform="translate(930, 18) rotate(-55) scale(1.15)">
+                            <path d="M 3 14 L 10 2 L 17 14 Z"/>
+                            <rect x="1" y="14" width="18" height="4" rx="1"/>
+                        </g>
+                        <!-- Trovão -->
+                        <g transform="translate(1020, 25) rotate(40) scale(1.2)">
+                            <path d="M 12 0 L 4 14 L 12 14 L 4 30 L 16 12 L 8 12 Z"/>
+                        </g>
+                        <!-- Balão -->
+                        <g transform="translate(1120, 20) rotate(-20) scale(1.1)">
+                            <path d="M 12 0 Q 22 0 22 10 Q 22 18 12 20 Q 2 18 2 10 Q 2 0 12 0 Z"/>
+                            <line x1="12" y1="20" x2="12" y2="30"/>
+                        </g>
+                        <!-- Caminhão médio -->
+                        <g transform="translate(40, 80) rotate(35) scale(1.1)">
+                            <rect x="0" y="8" width="38" height="14" rx="2"/>
+                            <rect x="38" y="14" width="14" height="8" rx="1"/>
+                            <circle cx="9" cy="24" r="3"/>
+                            <circle cx="26" cy="24" r="3"/>
+                        </g>
+                        <!-- Nuvem média -->
+                        <g transform="translate(150, 95) rotate(-25) scale(0.95)">
+                            <path d="M 8 16 Q 0 16 0 10 Q 0 4 7 4 Q 11 0 18 2 Q 24 0 26 6 Q 34 6 32 14 Q 30 20 24 20 L 10 20 Z"/>
+                        </g>
+                        <!-- Raio médio -->
+                        <g transform="translate(320, 100) rotate(-75) scale(1)">
+                            <path d="M 12 0 L 4 14 L 12 14 L 4 30 L 16 12 L 8 12 Z"/>
+                        </g>
+                        <!-- Fábrica média -->
+                        <g transform="translate(490, 95) rotate(-40) scale(1)">
+                            <rect x="0" y="14" width="38" height="18"/>
+                            <rect x="4" y="6" width="10" height="10"/>
+                            <rect x="18" y="2" width="10" height="14"/>
+                        </g>
+                        <!-- Viatura média -->
+                        <g transform="translate(580, 90) rotate(50) scale(0.95)">
+                            <rect x="0" y="8" width="34" height="14" rx="2"/>
+                            <rect x="6" y="0" width="10" height="8"/>
+                            <circle cx="8" cy="24" r="3"/>
+                            <circle cx="26" cy="24" r="3"/>
+                        </g>
+                        <!-- Bússola média -->
+                        <g transform="translate(670, 100) rotate(-65) scale(1)">
+                            <circle cx="12" cy="12" r="11"/>
+                            <path d="M 12 2 L 15 12 L 12 22 L 9 12 Z"/>
+                        </g>
+                        <!-- Caixa média -->
+                        <g transform="translate(750, 85) rotate(28) scale(0.95)">
+                            <rect x="0" y="6" width="24" height="24"/>
+                            <line x1="0" y1="16" x2="24" y2="16"/>
+                            <line x1="12" y1="6" x2="12" y2="30"/>
+                        </g>
+                        <!-- Sirene média -->
+                        <g transform="translate(920, 90) rotate(70) scale(1)">
+                            <path d="M 3 14 L 10 2 L 17 14 Z"/>
+                            <rect x="1" y="14" width="18" height="4" rx="1"/>
+                        </g>
+                        <!-- Trovão médio -->
+                        <g transform="translate(1010, 100) rotate(-85) scale(0.95)">
+                            <path d="M 12 0 L 4 14 L 12 14 L 4 30 L 16 12 L 8 12 Z"/>
+                        </g>
+                        <!-- Caminhão inferior -->
+                        <g transform="translate(60, 155) rotate(-45) scale(1.05)">
+                            <rect x="0" y="8" width="40" height="14" rx="2"/>
+                            <rect x="40" y="14" width="14" height="8" rx="1"/>
+                            <circle cx="9" cy="24" r="3"/>
+                            <circle cx="26" cy="24" r="3"/>
+                        </g>
+                        <!-- Nuvem inferior -->
+                        <g transform="translate(180, 160) rotate(45) scale(1)">
+                            <path d="M 8 16 Q 0 16 0 10 Q 0 4 7 4 Q 11 0 18 2 Q 24 0 26 6 Q 34 6 32 14 Q 30 20 24 20 L 10 20 Z"/>
+                        </g>
+                        <!-- Raio inferior -->
+                        <g transform="translate(270, 165) rotate(-30) scale(1.1)">
+                            <path d="M 12 0 L 4 14 L 12 14 L 4 30 L 16 12 L 8 12 Z"/>
+                        </g>
+                        <!-- Fábrica inferior -->
+                        <g transform="translate(450, 160) rotate(-20) scale(1.05)">
+                            <rect x="0" y="14" width="40" height="18"/>
+                            <rect x="4" y="6" width="10" height="10"/>
+                        </g>
+                        <!-- Viatura inferior -->
+                        <g transform="translate(550, 165) rotate(40) scale(0.95)">
+                            <rect x="0" y="8" width="34" height="14" rx="2"/>
+                            <rect x="6" y="0" width="10" height="8"/>
+                            <circle cx="8" cy="24" r="3"/>
+                            <circle cx="26" cy="24" r="3"/>
+                        </g>
+                        <!-- Cone inferior -->
+                        <g transform="translate(640, 160) rotate(-70) scale(1)">
+                            <path d="M 8 0 L 16 24 L 0 24 Z"/>
+                            <line x1="4" y1="12" x2="12" y2="12"/>
+                        </g>
+                        <!-- Bússola inferior -->
+                        <g transform="translate(730, 165) rotate(25) scale(1)">
+                            <circle cx="12" cy="12" r="11"/>
+                            <path d="M 12 2 L 15 12 L 12 22 L 9 12 Z"/>
+                        </g>
+                        <!-- Caixa inferior -->
+                        <g transform="translate(820, 158) rotate(-55) scale(1)">
+                            <rect x="0" y="6" width="26" height="26"/>
+                            <line x1="0" y1="16" x2="26" y2="16"/>
+                        </g>
+                        <!-- Sirene inferior -->
+                        <g transform="translate(1000, 160) rotate(-35) scale(1.05)">
+                            <path d="M 3 14 L 10 2 L 17 14 Z"/>
+                            <rect x="1" y="14" width="18" height="4" rx="1"/>
+                        </g>
+                        <!-- Pontos -->
+                        <circle cx="100" cy="60" r="1.5" fill="white"/>
+                        <circle cx="260" cy="50" r="1.5" fill="white"/>
+                        <circle cx="420" cy="65" r="1.5" fill="white"/>
+                        <circle cx="580" cy="55" r="1.5" fill="white"/>
+                        <circle cx="740" cy="60" r="1.5" fill="white"/>
+                        <circle cx="900" cy="50" r="1.5" fill="white"/>
+                        <circle cx="1060" cy="65" r="1.5" fill="white"/>
+                    </g>
+                </svg>
             </div>
-            <button class="btn-sair" id="logoutBtn">
-                🚪 Sair
-            </button>
-        </div>
 
-    </div>
+            <!-- CONTEÚDO DO HEADER -->
+            <div class="header-conteudo">
 
-</header>
-</header>
+                <div class="header-esquerda">
+                    <img src="https://1000logos.net/wp-content/uploads/2020/08/PepsiCo-Logo-1.png"
+                         alt="PepsiCo"
+                         style="height: 55px; width: auto; object-fit: contain;
+                                filter: drop-shadow(0 0 12px rgba(255,255,255,0.6))
+                                        drop-shadow(0 0 25px rgba(255,255,255,0.3));
+                                transition: all 0.3s ease;
+                                flex-shrink: 0;">
+
+                    <div class="titulo-bloco">
+                        <div class="titulo-tag">PEPSICO • SEGURANÇA E LOGÍSTICA</div>
+                        <div class="titulo-principal">Monitor de Impactos <span>| Operacional</span></div>
+                        <div class="subtitulo">Rodovias • Clima • Greves • Fábricas • Policial</div>
+                    </div>
+                </div>
+
+                <div class="header-direita">
+                    <div class="status-badge">
+                        <span class="dot"></span>
+                        <span id="authStatus">Conectando...</span>
+                    </div>
+                    <button class="btn-sair" id="logoutBtn">
+                        🚪 Sair
+                    </button>
+                </div>
+
+            </div>
+
+        </header>
+
         <div class="tabs">
             <button class="tab-btn ativo" data-tab="noticias">📋 Notícias</button>
             <button class="tab-btn" data-tab="preferencias">⚙️ Preferências</button>
@@ -567,7 +538,6 @@
 
         <div id="tab-noticias" class="tab-content ativo">
 
-            <!-- DASHBOARD -->
             <div class="dashboard" id="dashboardMetricas">
                 <div class="card-metrica total"><span class="icone">📰</span><div class="numero" id="totalCount">0</div><div class="rotulo">Total</div></div>
                 <div class="card-metrica critico"><span class="icone">🔴</span><div class="numero" id="criticoCount">0</div><div class="rotulo">Crítico</div></div>
@@ -575,7 +545,6 @@
                 <div class="card-metrica info"><span class="icone">🟢</span><div class="numero" id="infoCount">0</div><div class="rotulo">Informativo</div></div>
             </div>
 
-            <!-- GRÁFICO + TOP FONTES -->
             <div class="dashboard-extras">
                 <div class="card-extra">
                     <h4>📊 Ocorrências por categoria (últimas 24h)</h4>
@@ -587,18 +556,13 @@
                 </div>
             </div>
 
-            <!-- FILTROS POR CATEGORIA -->
-            <div class="filtros-rapidos" id="filtrosContainer">
-                <!-- Os botões serão gerados pelo JavaScript -->
-            </div>
+            <div class="filtros-rapidos" id="filtrosContainer"></div>
             <div id="filtrosStatus" style="font-size:0.7rem; color:#6b7a93; margin-top:4px; margin-bottom:8px;"></div>
 
-            <!-- BUSCA -->
             <div class="barra-busca">
                 🔍 <input type="text" id="buscaInput" placeholder="Buscar notícias...">
             </div>
 
-            <!-- FEED + MAPA -->
             <div class="grid-2colunas">
                 <div id="feedNoticias"></div>
                 <div>
@@ -642,7 +606,6 @@
     </div>
 </div>
 
-<!-- SCRIPTS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
 <script>
@@ -662,7 +625,6 @@
     const db = firebase.firestore();
     const auth = firebase.auth();
 
-    // ===== ADMINISTRADOR =====
     const ADMIN_EMAIL = "admin@monitor.com";
 
     const telaLogin = document.getElementById('telaLogin');
@@ -698,25 +660,11 @@
             this._initialized = true;
         },
 
-        getNoticias: function() {
-            return this._noticias;
-        },
-
-        isLida: function(id) {
-            var user = auth.currentUser;
-            if (!user) return false;
-            var noticia = this._noticias.find(function(n) { return n.id === id; });
-            if (!noticia) return false;
-            var lidaPor = noticia.lidaPor || [];
-            return lidaPor.indexOf(user.uid) !== -1;
-        },
+        getNoticias: function() { return this._noticias; },
 
         toggleLida: function(id) {
             var user = auth.currentUser;
-            if (!user) {
-                alert('Você precisa estar logado.');
-                return;
-            }
+            if (!user) { alert('Você precisa estar logado.'); return; }
             var docRef = db.collection('noticias').doc(id);
             var self = this;
             docRef.get().then(function(doc) {
@@ -727,22 +675,15 @@
                 } else {
                     return docRef.update({ lidaPor: firebase.firestore.FieldValue.arrayUnion(user.uid) });
                 }
-            }).then(function() {
-                self._notify();
-            }).catch(function(error) {
-                console.error('Erro ao marcar lida:', error);
-                alert('Erro ao marcar como lida.');
-            });
+            }).then(function() { self._notify(); })
+              .catch(function(error) { console.error('Erro:', error); });
         },
 
         reagirNoticia: function(id, emoji) {
             var docRef = db.collection('noticias').doc(id);
             var update = {};
             update['reacoes.' + emoji] = firebase.firestore.FieldValue.increment(1);
-            docRef.update(update).catch(function(error) {
-                console.error('Erro ao reagir:', error);
-                alert('Erro ao reagir.');
-            });
+            docRef.update(update).catch(function(error) { console.error('Erro:', error); });
         },
 
         getConfig: function() {
@@ -765,7 +706,7 @@
                     });
                 }
             }).catch(function(error) {
-                console.error('Erro ao carregar configurações:', error);
+                console.error('Erro config:', error);
                 return {
                     palavrasChave: ['interdição', 'greve', 'acidente', 'enchente', 'blitz', 'operação', 'PRF'],
                     categoriasAtivas: ['clima', 'transito', 'greve', 'fabrica', 'acidente', 'policial']
@@ -804,9 +745,7 @@
             });
         },
 
-        onChange: function(callback) {
-            this._listeners.push(callback);
-        },
+        onChange: function(callback) { this._listeners.push(callback); },
 
         _notify: function() {
             for (var i = 0; i < this._listeners.length; i++) {
@@ -820,8 +759,7 @@
         if (user) {
             telaLogin.style.display = 'none';
             conteudoSite.style.display = 'block';
-            authStatus.textContent = '✅ ' + (user.email || 'Usuário');
-            authStatus.style.background = 'rgba(74, 222, 128, 0.2)';
+            authStatus.textContent = user.email || 'Usuário';
             if (!DataService._initialized) {
                 DataService.init();
                 initApp();
@@ -829,8 +767,7 @@
         } else {
             telaLogin.style.display = 'block';
             conteudoSite.style.display = 'none';
-            authStatus.textContent = '🔒 Desconectado';
-            authStatus.style.background = 'rgba(255, 100, 100, 0.2)';
+            authStatus.textContent = 'Conectando...';
             loginBtn.textContent = 'Entrar';
             loginBtn.disabled = false;
         }
@@ -859,14 +796,11 @@
         var email = prompt('Digite o e-mail do novo usuário:');
         if (!email) return;
         var senha = prompt('Digite a senha (mínimo 6 caracteres):');
-        if (!senha || senha.length < 6) {
-            alert('A senha deve ter pelo menos 6 caracteres.');
-            return;
-        }
+        if (!senha || senha.length < 6) { alert('A senha deve ter pelo menos 6 caracteres.'); return; }
         auth.createUserWithEmailAndPassword(email, senha).then(function() {
             alert('✅ Usuário ' + email + ' criado com sucesso!');
         }).catch(function(error) {
-            alert('❌ Erro ao criar usuário: ' + getMensagemErro(error.code));
+            alert('❌ Erro: ' + getMensagemErro(error.code));
         });
     });
 
@@ -887,7 +821,7 @@
         return erros[code] || 'Erro ao fazer login. Tente novamente.';
     }
 
-    // ===== FUNÇÕES GLOBAIS =====
+    // ===== FUNÇÕES AUXILIARES =====
     function escapeHtml(text) {
         if (!text) return '';
         return text.replace(/[&<>]/g, function(m) {
@@ -898,21 +832,25 @@
         });
     }
 
+    function normalizar(texto) {
+        if (!texto) return '';
+        return texto.toString()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .trim();
+    }
+
     function classificarSeveridade(titulo, resumo, palavrasChave) {
         var texto = (titulo + ' ' + resumo).toLowerCase();
         var encontrou = false;
         for (var i = 0; i < palavrasChave.length; i++) {
-            if (texto.indexOf(palavrasChave[i].toLowerCase()) !== -1) {
-                encontrou = true;
-                break;
-            }
+            if (texto.indexOf(palavrasChave[i].toLowerCase()) !== -1) { encontrou = true; break; }
         }
         if (!encontrou) return { label: 'Informativo', classe: 'info' };
         var criticas = ['interdição', 'greve', 'acidente', 'enchente', 'vazou', 'paralisação', 'blitz', 'operação', 'PRF'];
         for (var j = 0; j < criticas.length; j++) {
-            if (texto.indexOf(criticas[j]) !== -1) {
-                return { label: 'Crítico', classe: 'critico' };
-            }
+            if (texto.indexOf(criticas[j]) !== -1) return { label: 'Crítico', classe: 'critico' };
         }
         return { label: 'Atenção', classe: 'atencao' };
     }
@@ -933,26 +871,17 @@
         return sorted.slice(0, 15).map(function(p) { return [p, palavras[p]]; });
     }
 
-    // ===== APAGAR NOTÍCIA INDIVIDUAL =====
+    // ===== APAGAR NOTÍCIA =====
     function apagarNoticia(id) {
         var user = auth.currentUser;
-        if (!user || user.email !== ADMIN_EMAIL) {
-            alert('Apenas administradores podem apagar notícias.');
-            return;
-        }
+        if (!user || user.email !== ADMIN_EMAIL) { alert('Apenas administradores podem apagar notícias.'); return; }
         if (confirm('⚠️ Tem certeza que deseja apagar esta notícia?')) {
             db.collection('noticias').doc(id).delete()
-                .then(function() {
-                    alert('✅ Notícia apagada com sucesso!');
-                    atualizarFeed();
-                })
-                .catch(function(error) {
-                    alert('❌ Erro ao apagar notícia: ' + error.message);
-                });
+                .then(function() { alert('✅ Notícia apagada!'); atualizarFeed(); })
+                .catch(function(error) { alert('❌ Erro: ' + error.message); });
         }
     }
 
-    // ===== APAGAR TODAS AS NOTÍCIAS =====
     function initApagarNoticias() {
         var user = auth.currentUser;
         if (!user) return;
@@ -967,19 +896,14 @@
                     if (confirm('Última confirmação: Apagar TUDO?')) {
                         status.style.display = 'block';
                         status.textContent = '⏳ Apagando...';
-                        status.style.color = '#d97706';
                         btn.disabled = true;
-                        apagarTodasNoticias()
-                            .then(function(total) {
-                                status.textContent = '✅ ' + total + ' notícias apagadas!';
-                                status.style.color = '#16a34a';
-                                btn.disabled = false;
-                            })
-                            .catch(function(error) {
-                                status.textContent = '❌ Erro: ' + error.message;
-                                status.style.color = '#dc2626';
-                                btn.disabled = false;
-                            });
+                        apagarTodasNoticias().then(function(total) {
+                            status.textContent = '✅ ' + total + ' notícias apagadas!';
+                            btn.disabled = false;
+                        }).catch(function(error) {
+                            status.textContent = '❌ Erro: ' + error.message;
+                            btn.disabled = false;
+                        });
                     }
                 }
             });
@@ -991,51 +915,14 @@
     function apagarTodasNoticias() {
         return new Promise(function(resolve, reject) {
             var collectionRef = db.collection('noticias');
-            collectionRef.get()
-                .then(function(snapshot) {
-                    if (snapshot.empty) { resolve(0); return; }
-                    var batch = db.batch();
-                    var count = 0;
-                    snapshot.forEach(function(doc) {
-                        batch.delete(doc.ref);
-                        count++;
-                    });
-                    return batch.commit().then(function() { resolve(count); });
-                })
-                .catch(function(error) { reject(error); });
+            collectionRef.get().then(function(snapshot) {
+                if (snapshot.empty) { resolve(0); return; }
+                var batch = db.batch();
+                var count = 0;
+                snapshot.forEach(function(doc) { batch.delete(doc.ref); count++; });
+                return batch.commit().then(function() { resolve(count); });
+            }).catch(function(error) { reject(error); });
         });
-    }
-
-    // ===== ENVIAR POR E-MAIL =====
-    function enviarPorEmail(id) {
-        var noticias = DataService.getNoticias();
-        var noticia = noticias.find(function(n) { return n.id === id; });
-        if (!noticia) {
-            alert('Notícia não encontrada.');
-            return;
-        }
-        var destinatario = prompt('📧 Digite o e-mail do destinatário:');
-        if (!destinatario) return;
-        if (destinatario.indexOf('@') === -1 || destinatario.indexOf('.') === -1) {
-            alert('❌ E-mail inválido.');
-            return;
-        }
-        var titulo = noticia.titulo || 'Sem título';
-        var resumo = noticia.resumo || 'Sem resumo';
-        var link = noticia.link || '#';
-        var fonte = noticia.fonte || 'Fonte desconhecida';
-        var dataFmt = noticia.dataPublicacao ? new Date(noticia.dataPublicacao.seconds * 1000).toLocaleString('pt-BR') : 'Data desconhecida';
-        var assunto = encodeURIComponent('[Monitor PepsiCo] ' + titulo);
-        var corpo = encodeURIComponent(
-            '📰 ' + titulo + '\n\n' +
-            '📝 ' + resumo + '\n\n' +
-            '📅 ' + dataFmt + '\n' +
-            '📰 Fonte: ' + fonte + '\n' +
-            '🔗 Link original: ' + link + '\n\n' +
-            '---\n' +
-            'Enviado pelo Monitor de Impactos - PepsiCo'
-        );
-        window.location.href = 'mailto:' + destinatario + '?subject=' + assunto + '&body=' + corpo;
     }
 
     // ===== GRÁFICO =====
@@ -1057,25 +944,14 @@
         });
         var labels = Object.keys(contagem);
         var values = Object.values(contagem);
-        var cores = {
-            'clima': '#3b82f6', 'policial': '#dc2626', 'greve': '#f59e0b',
-            'acidente': '#8b5cf6', 'transito': '#f97316', 'fabrica': '#22c55e', 'geral': '#6b7280'
-        };
+        var cores = { 'clima': '#3b82f6', 'policial': '#dc2626', 'greve': '#f59e0b', 'acidente': '#8b5cf6', 'transito': '#f97316', 'fabrica': '#22c55e', 'geral': '#6b7280' };
         var backgroundColors = labels.map(function(label) { return cores[label] || '#6b7280'; });
         if (graficoChart) { graficoChart.destroy(); graficoChart = null; }
         var ctx = canvas.getContext('2d');
         graficoChart = new Chart(ctx, {
             type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{ label: 'Ocorrências (últimas 24h)', data: values, backgroundColor: backgroundColors, borderRadius: 4 }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { grid: { display: false } } }
-            }
+            data: { labels: labels, datasets: [{ label: 'Ocorrências (24h)', data: values, backgroundColor: backgroundColors, borderRadius: 4 }] },
+            options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { grid: { display: false } } } }
         });
     }
 
@@ -1084,60 +960,46 @@
         var container = document.getElementById('filtrosContainer');
         var status = document.getElementById('filtrosStatus');
         if (!container) return;
-
         status.textContent = '⏳ Carregando filtros...';
 
-        db.collection('categorias').get()
-            .then(function(snapshot) {
-                var html = '<button data-filtro="todos" class="ativo">📋 Todos</button>';
-
-                if (snapshot.size === 0) {
-                    status.textContent = '⚠️ Nenhuma categoria cadastrada.';
-                    container.innerHTML = html;
-                    return;
-                }
-
-                var labelMap = {
-                    'clima': '🌧️ Clima',
-                    'policial': '🚔 Policial',
-                    'greve': '🚛 Greve',
-                    'acidente': '⚠️ Acidentes',
-                    'transito': '🚧 Trânsito',
-                    'fabrica': '🏭 Fábricas'
-                };
-
-                snapshot.forEach(function(doc) {
-    var data = doc.data();
-    if (data.ativa !== false) {
-        // .trim() remove espaços no início e fim
-        var nome = (data.nome || doc.id).toString().trim();
-        var label = (data.label || data[nome] || nome).toString().trim();
-        html += '<button data-filtro="' + nome + '">' + label + '</button>';
-    }
-});
-
+        db.collection('categorias').get().then(function(snapshot) {
+            var html = '<button data-filtro="todos" class="ativo">📋 Todos</button>';
+            if (snapshot.size === 0) {
+                status.textContent = '⚠️ Nenhuma categoria cadastrada.';
                 container.innerHTML = html;
-                status.textContent = '✅ ' + (container.querySelectorAll('button').length - 1) + ' categorias disponíveis';
-
-                var botoes = container.querySelectorAll('button');
-                for (var i = 0; i < botoes.length; i++) {
-                    (function(btn) {
-                        btn.addEventListener('click', function() {
-                            var todos = container.querySelectorAll('button');
-                            for (var j = 0; j < todos.length; j++) {
-                                todos[j].classList.remove('ativo');
-                            }
-                            btn.classList.add('ativo');
-                            atualizarFeed();
-                        });
-                    })(botoes[i]);
+                return;
+            }
+            var labelMap = {
+                'clima': '🌧️ Clima', 'policial': '🚔 Policial', 'greve': '🚛 Greve',
+                'acidente': '⚠️ Acidentes', 'transito': '🚧 Trânsito', 'fabrica': '🏭 Fábricas'
+            };
+            snapshot.forEach(function(doc) {
+                var data = doc.data();
+                var nome = (data.nome || doc.id).toString().trim();
+                var label = (data.label || data[nome] || data[nome + ' '] || labelMap[nome] || nome).toString().trim();
+                if (data.ativa !== false && data.ativo !== false) {
+                    html += '<button data-filtro="' + nome + '">' + label + '</button>';
                 }
-            })
-            .catch(function(error) {
-                console.error('Erro ao carregar filtros:', error);
-                container.innerHTML = '<button data-filtro="todos" class="ativo">📋 Todos</button>';
-                status.textContent = '❌ Erro ao carregar categorias.';
             });
+            container.innerHTML = html;
+            status.textContent = '✅ ' + (container.querySelectorAll('button').length - 1) + ' categorias';
+
+            var botoes = container.querySelectorAll('button');
+            for (var i = 0; i < botoes.length; i++) {
+                (function(btn) {
+                    btn.addEventListener('click', function() {
+                        var todos = container.querySelectorAll('button');
+                        for (var j = 0; j < todos.length; j++) todos[j].classList.remove('ativo');
+                        btn.classList.add('ativo');
+                        atualizarFeed();
+                    });
+                })(botoes[i]);
+            }
+        }).catch(function(error) {
+            console.error('Erro filtros:', error);
+            container.innerHTML = '<button data-filtro="todos" class="ativo">📋 Todos</button>';
+            status.textContent = '❌ Erro ao carregar categorias.';
+        });
     }
 
     // ===== RENDER FEED =====
@@ -1149,11 +1011,6 @@
         categoriaAtiva = categoriaAtiva || 'todos';
         palavrasChave = palavrasChave || [];
         categoriasAtivas = categoriasAtivas || [];
-
-        function normalizar(texto) {
-            if (!texto) return '';
-            return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-        }
 
         var categoriaFiltro = normalizar(categoriaAtiva);
         var filtradas = [];
@@ -1170,9 +1027,6 @@
 
             var matchTexto = !filtroTexto || normalizar(titulo + ' ' + resumo + ' ' + fonte).indexOf(normalizar(filtroTexto)) !== -1;
             var matchCategoria = categoriaFiltro === 'todos' || categoriaNoticia === categoriaFiltro;
-            if (categoriaFiltro !== 'todos' && categoriasAtivas.indexOf(categoriaAtiva) === -1) {
-                continue;
-            }
             var matchPalavraChave = palavrasChave.length === 0 || palavrasChave.some(function(p) {
                 return normalizar(titulo + ' ' + resumo).indexOf(normalizar(p)) !== -1;
             });
@@ -1187,7 +1041,7 @@
         contadorHtml += '</div>';
 
         if (filtradas.length === 0) {
-            feedDiv.innerHTML = contadorHtml + '<div style="background:white; border-radius:16px; padding:30px; text-align:center; color:#8a9bb0;">📭 Nenhuma notícia encontrada com os filtros atuais</div>';
+            feedDiv.innerHTML = contadorHtml + '<div style="background:white; border-radius:16px; padding:30px; text-align:center; color:#8a9bb0;">📭 Nenhuma notícia</div>';
             return;
         }
 
@@ -1221,55 +1075,37 @@
             html += '<button class="emoji-btn" data-emoji="⚠️">⚠️ <span class="contador" id="cont-' + n.id + '-⚠️">' + (reacoes['⚠️'] || 0) + '</span></button>';
             html += '<button class="emoji-btn" data-emoji="🔥">🔥 <span class="contador" id="cont-' + n.id + '-🔥">' + (reacoes['🔥'] || 0) + '</span></button>';
             html += '<button class="btn-acao" onclick="compartilharNoticia(\'' + n.id + '\')">📤 Compartilhar</button>';
-            html += '<button class="btn-acao" onclick="enviarPorEmail(\'' + n.id + '\')">📧 Enviar</button>';
             html += '<div style="display:flex; align-items:center; gap:6px; margin-left:auto;">';
             html += '<span style="font-size:0.65rem; color:#6b7a93;">👁️ ' + (totalVistos > 0 ? totalVistos : '') + '</span>';
             html += '<button class="btn-acao toggle-lida" data-id="' + n.id + '">' + (lida ? '✅ Lida' : '📖 Marcar lida') + '</button>';
             if (isAdmin) {
-                html += '<button class="btn-acao btn-apagar" data-id="' + n.id + '" style="color:#dc2626; border-color:#dc2626;">🗑️</button>';
+                html += '<button class="btn-acao btn-apagar" data-id="' + n.id + '">🗑️</button>';
             }
             html += '</div></div></div>';
         }
 
         feedDiv.innerHTML = html;
 
-        var emojiBtns = feedDiv.querySelectorAll('.emoji-btn');
-        for (var k = 0; k < emojiBtns.length; k++) {
-            (function(btn) {
-                btn.addEventListener('click', function() {
-                    var card = btn.closest('.card');
-                    var id = card.dataset.id;
-                    var emoji = btn.dataset.emoji;
-                    DataService.reagirNoticia(id, emoji);
-                    var span = document.getElementById('cont-' + id + '-' + emoji);
-                    if (span) {
-                        var current = parseInt(span.innerText) || 0;
-                        span.innerText = current + 1;
-                    }
-                });
-            })(emojiBtns[k]);
-        }
+        feedDiv.querySelectorAll('.emoji-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var card = btn.closest('.card');
+                var id = card.dataset.id;
+                var emoji = btn.dataset.emoji;
+                DataService.reagirNoticia(id, emoji);
+                var span = document.getElementById('cont-' + id + '-' + emoji);
+                if (span) span.innerText = (parseInt(span.innerText) || 0) + 1;
+            });
+        });
 
-        var lidaBtns = feedDiv.querySelectorAll('.toggle-lida');
-        for (var l = 0; l < lidaBtns.length; l++) {
-            (function(btn) {
-                btn.addEventListener('click', function() {
-                    var id = btn.dataset.id;
-                    DataService.toggleLida(id);
-                    atualizarFeed();
-                });
-            })(lidaBtns[l]);
-        }
+        feedDiv.querySelectorAll('.toggle-lida').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                DataService.toggleLida(btn.dataset.id);
+            });
+        });
 
-        var apagarBtns = feedDiv.querySelectorAll('.btn-apagar');
-        for (var a = 0; a < apagarBtns.length; a++) {
-            (function(btn) {
-                btn.addEventListener('click', function() {
-                    var id = btn.dataset.id;
-                    apagarNoticia(id);
-                });
-            })(apagarBtns[a]);
-        }
+        feedDiv.querySelectorAll('.btn-apagar').forEach(function(btn) {
+            btn.addEventListener('click', function() { apagarNoticia(btn.dataset.id); });
+        });
     }
 
     // ===== ATUALIZAR FEED =====
@@ -1325,26 +1161,20 @@
                     var freq = tags[k][1];
                     var jaExiste = palavrasAtuais.indexOf(palavra) !== -1;
                     sugHtml += '<span class="palavra-sugestao">' + palavra + ' <span style="color:#6b7a93;font-size:0.65rem;">(' + freq + ')</span>';
-                    if (!jaExiste && isAdmin) {
-                        sugHtml += '<button class="add-btn" data-palavra="' + palavra + '">➕</button>';
-                    }
+                    if (!jaExiste && isAdmin) sugHtml += '<button class="add-btn" data-palavra="' + palavra + '">➕</button>';
                     sugHtml += '</span>';
                 }
                 sugeridasDiv.innerHTML = sugHtml;
 
                 if (isAdmin) {
-                    var addBtns = sugeridasDiv.querySelectorAll('.add-btn');
-                    for (var m = 0; m < addBtns.length; m++) {
-                        (function(btn) {
-                            btn.addEventListener('click', function() {
-                                var palavra = btn.dataset.palavra;
-                                DataService.addPalavraChave(palavra).then(function() {
-                                    renderizarPalavras();
-                                    atualizarFeed();
-                                });
+                    sugeridasDiv.querySelectorAll('.add-btn').forEach(function(btn) {
+                        btn.addEventListener('click', function() {
+                            DataService.addPalavraChave(btn.dataset.palavra).then(function() {
+                                renderizarPalavras();
+                                atualizarFeed();
                             });
-                        })(addBtns[m]);
-                    }
+                        });
+                    });
                 }
             });
         }
@@ -1356,14 +1186,9 @@
         if (!noticia) { alert('Notícia não encontrada.'); return; }
         var url = noticia.link || '#';
         if (navigator.clipboard) {
-            navigator.clipboard.writeText(url).then(function() {
-                alert('🔗 Link original da notícia copiado!\n' + url);
-            }).catch(function() {
-                prompt('Copie o link manualmente:', url);
-            });
-        } else {
-            prompt('Copie o link manualmente:', url);
-        }
+            navigator.clipboard.writeText(url).then(function() { alert('🔗 Link copiado!\n' + url); })
+              .catch(function() { prompt('Copie:', url); });
+        } else { prompt('Copie:', url); }
     }
 
     // ===== PREFERÊNCIAS =====
@@ -1381,47 +1206,37 @@
                 addBtn.style.display = '';
                 input.style.display = '';
                 bloqueio.style.display = 'none';
-                document.getElementById('palavrasDescricao').textContent = 'Adicione termos para classificar notícias. Você é administrador.';
+                document.getElementById('palavrasDescricao').textContent = 'Adicione termos. Você é administrador.';
             } else {
                 addBtn.style.display = 'none';
                 input.style.display = 'none';
                 bloqueio.style.display = 'block';
-                document.getElementById('palavrasDescricao').textContent = 'Adicione termos para classificar notícias. Apenas administradores podem editar.';
+                document.getElementById('palavrasDescricao').textContent = 'Apenas administradores podem editar.';
             }
 
             var html = '';
             for (var i = 0; i < palavras.length; i++) {
-                var p = palavras[i];
-                html += '<span class="item-chip">' + p;
-                if (isAdmin) {
-                    html += '<button class="remover" data-palavra="' + p + '">✕</button>';
-                }
+                html += '<span class="item-chip">' + palavras[i];
+                if (isAdmin) html += '<button class="remover" data-palavra="' + palavras[i] + '">✕</button>';
                 html += '</span>';
             }
             container.innerHTML = html;
 
             if (isAdmin) {
-                var removers = container.querySelectorAll('.remover');
-                for (var j = 0; j < removers.length; j++) {
-                    (function(btn) {
-                        btn.addEventListener('click', function() {
-                            var palavra = btn.dataset.palavra;
-                            DataService.removePalavraChave(palavra).then(function() {
-                                renderizarPalavras();
-                                atualizarFeed();
-                            });
+                container.querySelectorAll('.remover').forEach(function(btn) {
+                    btn.addEventListener('click', function() {
+                        DataService.removePalavraChave(btn.dataset.palavra).then(function() {
+                            renderizarPalavras();
+                            atualizarFeed();
                         });
-                    })(removers[j]);
-                }
+                    });
+                });
 
                 addBtn.onclick = function() {
                     var val = input.value.trim().toLowerCase();
                     if (!val) return;
                     DataService.getConfig().then(function(configAtual) {
-                        if (configAtual.palavrasChave.indexOf(val) !== -1) {
-                            alert('Essa palavra já está na lista.');
-                            return;
-                        }
+                        if (configAtual.palavrasChave.indexOf(val) !== -1) { alert('Essa palavra já está na lista.'); return; }
                         DataService.addPalavraChave(val).then(function() {
                             input.value = '';
                             renderizarPalavras();
@@ -1439,71 +1254,46 @@
         });
     }
 
-    // ===== RENDERIZAR CATEGORIAS =====
     function renderizarCategorias(config) {
-    var container = document.getElementById('categoriasToggle');
-    if (!container) return;
+        var container = document.getElementById('categoriasToggle');
+        if (!container) return;
 
-    db.collection('categorias').get().then(function(snapshot) {
-        var todas = [];
-        snapshot.forEach(function(doc) {
-            var data = doc.data();
-            var nome = data.nome || doc.id;
-            
-            // Label: aceita "label" ou a chave antiga (ex: "fabrica ")
-            var label = data.label || data[nome] || data[nome + ' '] || nome;
-            
-            // Ativa: aceita "ativa" ou "ativo"
-            var ativa = data.ativa !== false && data.ativo !== false;
-            
-            todas.push({
-                id: nome,
-                label: label,
-                ativa: ativa
+        db.collection('categorias').get().then(function(snapshot) {
+            var todas = [];
+            snapshot.forEach(function(doc) {
+                var data = doc.data();
+                var nome = (data.nome || doc.id).toString().trim();
+                var label = (data.label || data[nome] || data[nome + ' '] || nome).toString().trim();
+                var ativa = data.ativa !== false && data.ativo !== false;
+                todas.push({ id: nome, label: label, ativa: ativa });
             });
-        });
 
-        var ativas = config.categoriasAtivas || [];
-        var html = '';
-        for (var i = 0; i < todas.length; i++) {
-            var cat = todas[i];
-            var checked = ativas.indexOf(cat.id) !== -1 && cat.ativa ? 'checked' : '';
-            html += '<label><input type="checkbox" value="' + cat.id + '" ' + checked + '> ' + cat.label + '</label>';
-        }
-        container.innerHTML = html;
+            var ativas = config.categoriasAtivas || [];
+            var html = '';
+            for (var i = 0; i < todas.length; i++) {
+                var cat = todas[i];
+                var checked = ativas.indexOf(cat.id) !== -1 && cat.ativa ? 'checked' : '';
+                html += '<label><input type="checkbox" value="' + cat.id + '" ' + checked + '> ' + cat.label + '</label>';
+            }
+            container.innerHTML = html;
 
-        var checkboxes = container.querySelectorAll('input[type="checkbox"]');
-        for (var j = 0; j < checkboxes.length; j++) {
-            (function(chk) {
+            container.querySelectorAll('input[type="checkbox"]').forEach(function(chk) {
                 chk.addEventListener('change', function() {
                     var novasAtivas = [];
-                    var allChecked = container.querySelectorAll('input[type="checkbox"]:checked');
-                    for (var k = 0; k < allChecked.length; k++) {
-                        novasAtivas.push(allChecked[k].value);
-                    }
+                    container.querySelectorAll('input[type="checkbox"]:checked').forEach(function(cb) {
+                        novasAtivas.push(cb.value);
+                    });
                     DataService.setCategoriasAtivas(novasAtivas).then(function() {
-                        atualizarFiltrosRapidos(novasAtivas);
                         atualizarFeed();
                     });
                 });
-            })(checkboxes[j]);
-        }
-    }).catch(function(error) {
-        console.error('Erro ao carregar categorias:', error);
-        container.innerHTML = '<span style="color:#dc2626; font-size:0.8rem;">❌ Erro ao carregar categorias.</span>';
-    });
-}
-
-   function atualizarFiltrosRapidos(categoriasAtivas) {
-    var container = document.getElementById('filtrosContainer');
-    if (!container) return;
-
-    // Mostra TODOS os botões, independente das preferências
-    var botoes = container.querySelectorAll('button[data-filtro]');
-    for (var i = 0; i < botoes.length; i++) {
-        botoes[i].style.display = '';
+            });
+        }).catch(function(error) {
+            console.error('Erro categorias:', error);
+            container.innerHTML = '<span style="color:#dc2626; font-size:0.8rem;">❌ Erro ao carregar categorias.</span>';
+        });
     }
-}
+
     // ===== MAPA =====
     var map;
 
@@ -1517,13 +1307,11 @@
         }
         var noticiasComLocalizacao = noticias.filter(function(n) { return n.localizacao && n.localizacao.lat; });
         if (noticiasComLocalizacao.length === 0) {
-            mapaDiv.innerHTML = '<div style="display:flex; align-items:center; justify-content:center; height:100%; color:#6b7a93; font-size:0.9rem;">🗺️ Nenhuma notícia com localização disponível</div>';
+            mapaDiv.innerHTML = '<div style="display:flex; align-items:center; justify-content:center; height:100%; color:#6b7a93; font-size:0.9rem;">🗺️ Nenhuma notícia com localização</div>';
             return;
         }
         map = L.map('mapa').setView([-15.5, -56.0], 4);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap'
-        }).addTo(map);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
         var markers = L.markerClusterGroup();
         for (var j = 0; j < noticiasComLocalizacao.length; j++) {
             var n = noticiasComLocalizacao[j];
@@ -1532,15 +1320,12 @@
             popupContent += '<span style="font-size:0.8rem;">📍 ' + (n.localizacao.cidade || 'Localização') + '</span><br>';
             popupContent += '<span style="font-size:0.7rem; color:#666;">' + escapeHtml(n.fonte) + ' • ' + dataFmt + '</span><br>';
             popupContent += '<a href="' + n.link + '" target="_blank" style="font-size:0.7rem; color:#003da5;">🔗 Ver notícia</a>';
-            var marker = L.marker([n.localizacao.lat, n.localizacao.lng]).bindPopup(popupContent);
-            markers.addLayer(marker);
+            markers.addLayer(L.marker([n.localizacao.lat, n.localizacao.lng]).bindPopup(popupContent));
         }
         map.addLayer(markers);
         if (noticiasComLocalizacao.length > 1) {
             map.fitBounds(markers.getBounds().pad(0.2));
-        } else {
-            map.setZoom(10);
-        }
+        } else { map.setZoom(10); }
         setTimeout(function() { if (map) map.invalidateSize(); }, 300);
     }
 
@@ -1549,41 +1334,25 @@
         DataService.getConfig().then(function(configAtual) {
             renderizarPalavras();
             gerarFiltros();
-            atualizarFiltrosRapidos(configAtual.categoriasAtivas);
 
-            DataService.onChange(function(noticias) {
-                atualizarFeed();
-            });
+            DataService.onChange(function(noticias) { atualizarFeed(); });
 
             var noticias = DataService.getNoticias();
             atualizarFeed();
             initApagarNoticias();
 
-            document.getElementById('buscaInput').addEventListener('input', function() {
-                atualizarFeed();
-            });
+            document.getElementById('buscaInput').addEventListener('input', function() { atualizarFeed(); });
 
-            var tabBtns = document.querySelectorAll('.tab-btn');
-            for (var k = 0; k < tabBtns.length; k++) {
-                (function(btn) {
-                    btn.addEventListener('click', function() {
-                        var allTabs = document.querySelectorAll('.tab-btn');
-                        for (var l = 0; l < allTabs.length; l++) {
-                            allTabs[l].classList.remove('ativo');
-                        }
-                        btn.classList.add('ativo');
-                        var tab = btn.dataset.tab;
-                        var allContents = document.querySelectorAll('.tab-content');
-                        for (var m = 0; m < allContents.length; m++) {
-                            allContents[m].classList.remove('ativo');
-                        }
-                        document.getElementById('tab-' + tab).classList.add('ativo');
-                        if (tab === 'noticias') {
-                            setTimeout(function() { if (map) map.invalidateSize(); }, 200);
-                        }
-                    });
-                })(tabBtns[k]);
-            }
+            document.querySelectorAll('.tab-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('ativo'); });
+                    btn.classList.add('ativo');
+                    var tab = btn.dataset.tab;
+                    document.querySelectorAll('.tab-content').forEach(function(t) { t.classList.remove('ativo'); });
+                    document.getElementById('tab-' + tab).classList.add('ativo');
+                    if (tab === 'noticias') setTimeout(function() { if (map) map.invalidateSize(); }, 200);
+                });
+            });
         });
     }
 </script>
