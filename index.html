@@ -6,7 +6,7 @@
     <title>Monitor de Impactos | PepsiCo</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css" />
@@ -18,121 +18,188 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
     <style>
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family: "Inter", system-ui, sans-serif; background:#f2f4f8; padding:16px; min-height:100vh; display:flex; justify-content:center; align-items:flex-start; }
-        .container { max-width:1280px; width:100%; margin:0 auto; }
-        header { background:linear-gradient(135deg, #003da5 0%, #0057c7 100%); color:white; padding:16px 20px; border-radius:20px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; box-shadow:0 8px 24px rgba(0,61,165,0.25); }
-        header h1 { font-size:1.3rem; font-weight:700; display:flex; align-items:center; gap:6px; }
-        header h1 span { font-weight:300; color:rgba(255,255,255,0.7); }
-        header .sub { font-size:0.7rem; opacity:0.85; margin-top:2px; }
-        .badge { background:rgba(255,255,255,0.15); padding:4px 14px; border-radius:40px; font-size:0.7rem; border:1px solid rgba(255,255,255,0.2); display:flex; align-items:center; gap:6px; cursor:pointer; }
-        .badge::before { content:''; display:inline-block; width:8px; height:8px; background:#4ade80; border-radius:50%; animation:pulse-dot 1.8s infinite; }
-        @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.5;transform:scale(0.8);} }
-        .logout-btn { background:rgba(255,255,255,0.15); color:white; border:1px solid rgba(255,255,255,0.3); padding:4px 12px; border-radius:40px; font-size:0.7rem; cursor:pointer; font-family:inherit; }
-        .logout-btn:hover { background:rgba(255,255,255,0.25); }
+        /* ============================================================ */
+/* HEADER MODERNO                                              */
+/* ============================================================ */
+.header-moderno {
+    position: relative;
+    background:
+        radial-gradient(circle at 20% 30%, rgba(0, 212, 255, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(255, 200, 0, 0.10) 0%, transparent 50%),
+        linear-gradient(135deg, #001f4d 0%, #003da5 50%, #0057c7 100%);
+    border-radius: 28px;
+    padding: 28px 36px;
+    margin-bottom: 24px;
+    box-shadow:
+        0 20px 60px rgba(0, 31, 77, 0.35),
+        0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+        0 1px 0 rgba(255, 255, 255, 0.15) inset;
+    overflow: hidden;
+    min-height: 200px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    isolation: isolate;
+}
 
-        #telaLogin { max-width:400px; margin:60px auto; background:white; padding:30px; border-radius:20px; box-shadow:0 8px 30px rgba(0,0,0,0.1); }
-        #telaLogin h2 { text-align:center; color:#003da5; margin-bottom:8px; }
-        #telaLogin .subtitle { text-align:center; color:#6b7a93; font-size:0.9rem; margin-bottom:24px; }
-        #telaLogin input { width:100%; padding:12px 16px; border:1px solid #d0d7e2; border-radius:10px; font-size:1rem; margin-bottom:12px; font-family:inherit; outline:none; transition:border 0.15s ease; }
-        #telaLogin input:focus { border-color:#003da5; box-shadow:0 0 0 3px rgba(0,61,165,0.1); }
-        #loginBtn { width:100%; background:#003da5; color:white; border:none; padding:14px; border-radius:10px; font-size:1rem; font-weight:600; cursor:pointer; font-family:inherit; transition:background 0.15s ease; }
-        #loginBtn:hover { background:#002d7a; }
-        #loginBtn:disabled { opacity:0.6; cursor:not-allowed; }
-        #cadastrarBtn { width:100%; background:transparent; color:#003da5; border:none; padding:10px; font-size:0.85rem; cursor:pointer; font-family:inherit; margin-top:4px; }
-        #cadastrarBtn:hover { text-decoration:underline; }
-        #loginErro { color:#dc2626; font-size:0.85rem; text-align:center; display:none; margin-top:8px; }
+.header-moderno::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.8), transparent);
+    z-index: 3;
+}
 
-        .conteudo-site { display:none; }
+.header-fundo {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.35;
+}
+.header-fundo svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
 
-        .tabs { display:flex; gap:4px; margin-bottom:20px; background:white; padding:6px; border-radius:50px; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
-        .tab-btn { flex:1; border:none; background:transparent; padding:10px 16px; border-radius:40px; font-weight:600; font-size:0.8rem; cursor:pointer; color:#4a5b76; transition:all 0.2s ease; font-family:inherit; }
-        .tab-btn:hover { background:#f0f3f9; }
-        .tab-btn.ativo { background:#003da5; color:white; box-shadow:0 4px 12px rgba(0,61,165,0.25); }
-        .tab-content { display:none; animation:fadeUp 0.3s ease; }
-        .tab-content.ativo { display:block; }
-        @keyframes fadeUp { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
-        .dashboard { display:grid; grid-template-columns:repeat(auto-fit, minmax(90px,1fr)); gap:10px; margin-bottom:20px; }
-        .card-metrica { background:white; padding:12px 10px; border-radius:16px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
-        .card-metrica .numero { font-size:1.5rem; font-weight:700; line-height:1.2; }
-        .card-metrica .rotulo { font-size:0.55rem; color:#6b7a93; text-transform:uppercase; letter-spacing:0.3px; font-weight:600; margin-top:2px; }
-        .card-metrica .icone { font-size:1.3rem; display:block; }
-        .card-metrica.critico .numero { color:#dc2626; }
-        .card-metrica.atencao .numero { color:#d97706; }
-        .card-metrica.info .numero { color:#2563eb; }
-        .card-metrica.total .numero { color:#003da5; }
-        .dashboard-extras { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
-        @media (max-width: 600px) { .dashboard-extras { grid-template-columns:1fr; } }
-        .card-extra { background:white; padding:12px 14px; border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
-        .card-extra h4 { font-size:0.6rem; color:#6b7a93; text-transform:uppercase; letter-spacing:0.3px; font-weight:600; margin-bottom:6px; }
-        .card-extra canvas { max-height:150px; max-width:100%; }
-        .fonte-item { display:flex; justify-content:space-between; padding:3px 0; border-bottom:1px solid #f0f2f6; font-size:0.8rem; }
-        .fonte-item:last-child { border-bottom:none; }
-        .fonte-item strong { color:#003da5; }
+.header-conteudo {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    width: 100%;
+}
 
-        .filtros-rapidos { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:12px; }
-        .filtros-rapidos button { background:white; border:1px solid #e2e6ee; padding:4px 12px; border-radius:40px; font-size:0.7rem; font-weight:500; cursor:pointer; transition:all 0.15s ease; font-family:inherit; color:#2c3e4e; }
-        .filtros-rapidos button:hover { background:#f0f3f9; border-color:#bcc4d4; }
-        .filtros-rapidos button.ativo { background:#003da5; color:white; border-color:#003da5; box-shadow:0 4px 12px rgba(0,61,165,0.2); }
+.header-esquerda {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
 
-        .barra-busca { background:white; padding:6px 14px; border-radius:60px; margin-bottom:16px; display:flex; align-items:center; gap:8px; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
-        .barra-busca input { flex:1; border:none; outline:none; font-size:0.85rem; padding:8px 0; font-family:inherit; background:transparent; color:#1e2a3a; }
-        .barra-busca input::placeholder { color:#9aa8bc; }
+.titulo-bloco {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
 
-        .grid-2colunas { display:grid; grid-template-columns:1fr; gap:16px; }
-        @media (min-width:820px) { .grid-2colunas { grid-template-columns:1fr 1fr; } }
-        .card { background:white; border-radius:16px; padding:14px 14px; margin-bottom:12px; box-shadow:0 2px 8px rgba(0,0,0,0.04); border-left:4px solid #003da5; transition:all 0.2s ease; }
-        .card:hover { box-shadow:0 8px 24px rgba(0,0,0,0.06); transform:translateY(-1px); }
-        .card.lida { opacity:0.6; background:#f8f9fc; border-left-color:#bcc4d4; }
-        .card.lida:hover { transform:none; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
-        .card .badge-nova { background:#4ade80; color:#003da5; font-size:0.5rem; font-weight:700; padding:1px 8px; border-radius:40px; margin-left:6px; text-transform:uppercase; }
-        .selo { display:inline-block; font-size:0.5rem; font-weight:700; padding:2px 8px; border-radius:40px; text-transform:uppercase; letter-spacing:0.3px; }
-        .selo.critico { background:#fee2e2; color:#991b1b; }
-        .selo.atencao { background:#fef9c3; color:#854d0e; }
-        .selo.info { background:#dbeafe; color:#1e40af; }
-        .titulo { font-size:0.9rem; font-weight:600; margin:4px 0 3px; color:#1e2a3a; line-height:1.3; }
-        .fonte { font-size:0.6rem; color:#6b7a93; margin-bottom:4px; display:flex; flex-wrap:wrap; gap:4px; align-items:center; }
-        .fonte a { color:#003da5; text-decoration:none; font-weight:500; }
-        .fonte a:hover { text-decoration:underline; }
-        .resumo { color:#2c3e4e; line-height:1.4; font-size:0.78rem; margin-bottom:8px; }
-        .acoes { display:flex; flex-wrap:wrap; align-items:center; gap:4px; border-top:1px solid #eef0f4; padding-top:8px; }
-        .emoji-btn { background:none; border:none; font-size:1rem; cursor:pointer; padding:2px 6px; border-radius:30px; display:inline-flex; align-items:center; gap:3px; transition:background 0.15s ease; font-family:inherit; }
-        .emoji-btn:hover { background:#f0f3f9; }
-        .contador { font-size:0.6rem; color:#4a5b76; min-width:14px; }
-        .btn-acao { background:none; border:1px solid #d0d7e2; padding:2px 10px; border-radius:40px; font-size:0.55rem; font-weight:500; cursor:pointer; background:white; transition:all 0.15s ease; font-family:inherit; color:#2c3e4e; }
-        .btn-acao:hover { background:#f0f3f9; border-color:#b0baca; }
-        .btn-apagar { color:#dc2626 !important; border-color:#dc2626 !important; }
-        .btn-apagar:hover { background:#fee2e2 !important; }
-        #mapa { height:280px; border-radius:14px; background:#e8ecf2; border:1px solid #e2e6ee; margin-bottom:6px; overflow:hidden; }
-        .card-mapa { background:white; border-radius:16px; padding:14px 16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
-        .card-mapa h3 { font-size:0.8rem; margin-bottom:8px; color:#1e2a3a; font-weight:600; }
+.titulo-tag {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: rgba(0, 212, 255, 0.9);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
 
-        .config-section { background:white; border-radius:20px; padding:18px; box-shadow:0 2px 8px rgba(0,0,0,0.04); margin-bottom:16px; }
-        .config-section h3 { font-size:0.95rem; margin-bottom:8px; color:#1e2a3a; font-weight:600; }
-        .config-section p { font-size:0.75rem; color:#6b7a93; margin-bottom:10px; }
-        .config-section .campo { display:flex; gap:8px; flex-wrap:wrap; }
-        .config-section input[type=text] { flex:1; padding:6px 12px; border:1px solid #d0d7e2; border-radius:40px; font-size:0.8rem; outline:none; font-family:inherit; min-width:120px; transition:border 0.15s ease; }
-        .config-section input[type=text]:focus { border-color:#003da5; box-shadow:0 0 0 3px rgba(0,61,165,0.1); }
-        .config-section button { background:#003da5; color:white; border:none; padding:6px 16px; border-radius:40px; font-size:0.75rem; font-weight:500; cursor:pointer; transition:background 0.15s ease; font-family:inherit; }
-        .config-section button:hover { background:#002d7a; }
-        .config-section button:disabled { opacity:0.5; cursor:not-allowed; }
-        .config-section button.danger { background:#dc2626; }
-        .config-section button.danger:hover { background:#b91c1c; }
-        .lista-itens { display:flex; flex-wrap:wrap; gap:5px; margin-top:10px; }
-        .item-chip { background:#f0f3f9; padding:3px 12px; border-radius:40px; font-size:0.75rem; display:inline-flex; align-items:center; gap:6px; font-weight:500; }
-        .item-chip .remover { background:none; border:none; color:#991b1b; cursor:pointer; font-weight:700; font-size:0.8rem; line-height:1; padding:0 2px; }
-        .toggle-group { display:flex; flex-wrap:wrap; gap:12px; margin:8px 0; }
-        .toggle-group label { display:flex; align-items:center; gap:5px; font-size:0.8rem; cursor:pointer; font-weight:500; }
-        .toggle-group input[type=checkbox] { width:15px; height:15px; accent-color:#003da5; cursor:pointer; }
-        .palavra-sugestao { display:inline-flex; align-items:center; gap:5px; background:#f0f3f9; padding:3px 10px 3px 12px; border-radius:40px; font-size:0.75rem; font-weight:500; margin:2px 3px 2px 0; }
-        .palavra-sugestao .add-btn { background:none; border:none; color:#003da5; cursor:pointer; font-weight:700; font-size:0.9rem; line-height:1; padding:0 2px; }
-        .palavra-sugestao .add-btn:hover { color:#002d7a; }
-        .mensagem-bloqueio { color:#6b7a93; font-size:0.8rem; margin-top:8px; padding:8px 12px; background:#f0f3f9; border-radius:8px; text-align:center; }
-        #secaoApagar { border:2px solid #dc2626; margin-top:20px; }
-        #secaoApagar h3 { color:#dc2626; }
-        #apagarStatus { margin-top:8px; font-size:0.85rem; display:none; }
-        footer { text-align:center; font-size:0.6rem; color:#8a9bb0; margin-top:24px; padding-top:12px; border-top:1px solid #e2e6ee; }
-        @media (max-width:480px) { body{ padding:8px; } header{ padding:10px 14px; } header h1{ font-size:1rem; } .tab-btn{ font-size:0.65rem; padding:6px 8px; } .card{ padding:10px; } #mapa{ height:200px; } #telaLogin{ margin:30px 16px; padding:20px; } }
+.titulo-tag::before {
+    content: '';
+    width: 24px;
+    height: 2px;
+    background: #00d4ff;
+    border-radius: 2px;
+}
+
+.titulo-principal {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: white;
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+}
+
+.titulo-principal span {
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.subtitulo {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 400;
+    margin-top: 2px;
+    letter-spacing: 0.5px;
+}
+
+.header-direita {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.status-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 40px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: white;
+    transition: all 0.2s ease;
+}
+
+.status-badge .dot {
+    width: 8px;
+    height: 8px;
+    background: #4ade80;
+    border-radius: 50%;
+    box-shadow: 0 0 12px rgba(74, 222, 128, 0.8);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.85); }
+}
+
+.btn-sair {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 18px;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 40px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: white;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s ease;
+}
+
+.btn-sair:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+@media (max-width: 700px) {
+    .header-moderno { padding: 20px 22px; }
+    .titulo-principal { font-size: 1.4rem; }
+    .logo-box { width: 52px; height: 52px; font-size: 1.4rem; }
+}
     </style>
 </head>
 <body>
@@ -150,29 +217,348 @@
     </div>
 
     <!-- CONTEÚDO PRINCIPAL -->
-    <div class="conteudo-site" id="conteudoSite">
-        <header>
-    <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
-        <!-- LOGO DA PEPSICO COM SOMBRA BRANCA -->
-        <img src="https://1000logos.net/wp-content/uploads/2020/08/PepsiCo-Logo-1.png" 
-             alt="Pepsico" 
-             style="height:50px; width:auto; object-fit:contain; 
-                    filter: drop-shadow(0 0 12px rgba(255,255,255,0.6)) 
-                            drop-shadow(0 0 25px rgba(255,255,255,0.3));
-                    transition: all 0.3s ease;">
-        <div>
-            <h1 style="font-size: 1.3rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 6px; color: white;">
-                🚛 Monitor <span style="font-weight: 300; color: rgba(255,255,255,0.7);">| PepsiCo</span>
-            </h1>
-            <div class="sub" style="font-size: 0.7rem; opacity: 0.85; margin-top: 2px; color: rgba(255,255,255,0.8);">
-                Rodovias • Clima • Greves • Fábricas • Policial
+   <header class="header-moderno">
+
+    <!-- FUNDO COM SILHUETAS -->
+    <div class="header-fundo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 200" preserveAspectRatio="xMidYMid slice">
+            <g fill="none" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" opacity="0.7">
+
+                <!-- Caminhão grande -->
+                <g transform="translate(20, 15) rotate(-22) scale(1.3)">
+                    <rect x="0" y="8" width="42" height="16" rx="2"/>
+                    <rect x="42" y="14" width="16" height="10" rx="1"/>
+                    <circle cx="10" cy="26" r="3"/>
+                    <circle cx="28" cy="26" r="3"/>
+                    <circle cx="49" cy="26" r="3"/>
+                </g>
+
+                <!-- Nuvem com chuva -->
+                <g transform="translate(120, 12) rotate(18) scale(1.1)">
+                    <path d="M 8 16 Q 0 16 0 10 Q 0 4 7 4 Q 11 0 18 2 Q 24 0 26 6 Q 34 6 32 14 Q 30 20 24 20 L 10 20 Z"/>
+                    <line x1="8" y1="24" x2="6" y2="31"/>
+                    <line x1="15" y1="24" x2="13" y2="31"/>
+                    <line x1="22" y1="24" x2="20" y2="31"/>
+                </g>
+
+                <!-- Raio -->
+                <g transform="translate(210, 25) rotate(-35) scale(1.2)">
+                    <path d="M 12 0 L 4 14 L 12 14 L 4 30 L 16 12 L 8 12 Z"/>
+                </g>
+
+                <!-- Jornal -->
+                <g transform="translate(280, 15) rotate(42) scale(1)">
+                    <rect x="0" y="0" width="32" height="36" rx="2"/>
+                    <line x1="5" y1="9" x2="27" y2="9"/>
+                    <line x1="5" y1="16" x2="27" y2="16"/>
+                    <line x1="5" y1="23" x2="27" y2="23"/>
+                    <line x1="5" y1="30" x2="18" y2="30"/>
+                </g>
+
+                <!-- Fábrica -->
+                <g transform="translate(360, 20) rotate(-15) scale(1.25)">
+                    <rect x="0" y="14" width="42" height="20"/>
+                    <rect x="4" y="6" width="10" height="10"/>
+                    <rect x="18" y="2" width="10" height="14"/>
+                    <rect x="32" y="10" width="8" height="6"/>
+                </g>
+
+                <!-- Viatura -->
+                <g transform="translate(460, 22) rotate(25) scale(1.15)">
+                    <rect x="0" y="8" width="36" height="14" rx="2"/>
+                    <rect x="6" y="0" width="12" height="8"/>
+                    <circle cx="8" cy="24" r="3"/>
+                    <circle cx="28" cy="24" r="3"/>
+                </g>
+
+                <!-- Cone -->
+                <g transform="translate(560, 18) rotate(-48) scale(1.2)">
+                    <path d="M 8 0 L 16 24 L 0 24 Z"/>
+                    <line x1="4" y1="12" x2="12" y2="12"/>
+                </g>
+
+                <!-- Bússola -->
+                <g transform="translate(650, 15) rotate(15) scale(1.1)">
+                    <circle cx="12" cy="12" r="11"/>
+                    <path d="M 12 2 L 15 12 L 12 22 L 9 12 Z"/>
+                </g>
+
+                <!-- Caixa -->
+                <g transform="translate(740, 20) rotate(-30) scale(1.15)">
+                    <rect x="0" y="6" width="26" height="26"/>
+                    <line x1="0" y1="16" x2="26" y2="16"/>
+                    <line x1="13" y1="6" x2="13" y2="32"/>
+                </g>
+
+                <!-- Rotas -->
+                <g transform="translate(830, 18) rotate(20) scale(1.1)">
+                    <circle cx="6" cy="6" r="2.5"/>
+                    <circle cx="34" cy="22" r="2.5"/>
+                    <circle cx="62" cy="8" r="2.5"/>
+                    <line x1="6" y1="6" x2="34" y2="22" stroke-dasharray="3,3"/>
+                    <line x1="34" y1="22" x2="62" y2="8" stroke-dasharray="3,3"/>
+                </g>
+
+                <!-- Sirene -->
+                <g transform="translate(930, 18) rotate(-55) scale(1.15)">
+                    <path d="M 3 14 L 10 2 L 17 14 Z"/>
+                    <rect x="1" y="14" width="18" height="4" rx="1"/>
+                </g>
+
+                <!-- Trovão -->
+                <g transform="translate(1020, 25) rotate(40) scale(1.2)">
+                    <path d="M 12 0 L 4 14 L 12 14 L 4 30 L 16 12 L 8 12 Z"/>
+                </g>
+
+                <!-- Balão -->
+                <g transform="translate(1120, 20) rotate(-20) scale(1.1)">
+                    <path d="M 12 0 Q 22 0 22 10 Q 22 18 12 20 Q 2 18 2 10 Q 2 0 12 0 Z"/>
+                    <line x1="12" y1="20" x2="12" y2="30"/>
+                </g>
+
+                <!-- Caminhão médio -->
+                <g transform="translate(40, 80) rotate(35) scale(1.1)">
+                    <rect x="0" y="8" width="38" height="14" rx="2"/>
+                    <rect x="38" y="14" width="14" height="8" rx="1"/>
+                    <circle cx="9" cy="24" r="3"/>
+                    <circle cx="26" cy="24" r="3"/>
+                    <circle cx="45" cy="24" r="3"/>
+                </g>
+
+                <!-- Nuvem média -->
+                <g transform="translate(150, 95) rotate(-25) scale(0.95)">
+                    <path d="M 8 16 Q 0 16 0 10 Q 0 4 7 4 Q 11 0 18 2 Q 24 0 26 6 Q 34 6 32 14 Q 30 20 24 20 L 10 20 Z"/>
+                </g>
+
+                <!-- Cone médio -->
+                <g transform="translate(240, 90) rotate(60) scale(0.9)">
+                    <path d="M 8 0 L 16 24 L 0 24 Z"/>
+                    <line x1="4" y1="12" x2="12" y2="12"/>
+                </g>
+
+                <!-- Raio médio -->
+                <g transform="translate(320, 100) rotate(-75) scale(1)">
+                    <path d="M 12 0 L 4 14 L 12 14 L 4 30 L 16 12 L 8 12 Z"/>
+                </g>
+
+                <!-- Jornal médio -->
+                <g transform="translate(400, 85) rotate(18) scale(0.9)">
+                    <rect x="0" y="0" width="30" height="34" rx="2"/>
+                    <line x1="4" y1="8" x2="26" y2="8"/>
+                    <line x1="4" y1="14" x2="26" y2="14"/>
+                    <line x1="4" y1="20" x2="26" y2="20"/>
+                </g>
+
+                <!-- Fábrica média -->
+                <g transform="translate(490, 95) rotate(-40) scale(1)">
+                    <rect x="0" y="14" width="38" height="18"/>
+                    <rect x="4" y="6" width="10" height="10"/>
+                    <rect x="18" y="2" width="10" height="14"/>
+                </g>
+
+                <!-- Viatura média -->
+                <g transform="translate(580, 90) rotate(50) scale(0.95)">
+                    <rect x="0" y="8" width="34" height="14" rx="2"/>
+                    <rect x="6" y="0" width="10" height="8"/>
+                    <circle cx="8" cy="24" r="3"/>
+                    <circle cx="26" cy="24" r="3"/>
+                </g>
+
+                <!-- Bússola média -->
+                <g transform="translate(670, 100) rotate(-65) scale(1)">
+                    <circle cx="12" cy="12" r="11"/>
+                    <path d="M 12 2 L 15 12 L 12 22 L 9 12 Z"/>
+                </g>
+
+                <!-- Caixa média -->
+                <g transform="translate(750, 85) rotate(28) scale(0.95)">
+                    <rect x="0" y="6" width="24" height="24"/>
+                    <line x1="0" y1="16" x2="24" y2="16"/>
+                    <line x1="12" y1="6" x2="12" y2="30"/>
+                </g>
+
+                <!-- Rotas médias -->
+                <g transform="translate(830, 95) rotate(-50) scale(1)">
+                    <circle cx="6" cy="6" r="2.5"/>
+                    <circle cx="32" cy="20" r="2.5"/>
+                    <circle cx="58" cy="8" r="2.5"/>
+                    <line x1="6" y1="6" x2="32" y2="20" stroke-dasharray="3,3"/>
+                    <line x1="32" y1="20" x2="58" y2="8" stroke-dasharray="3,3"/>
+                </g>
+
+                <!-- Sirene média -->
+                <g transform="translate(920, 90) rotate(70) scale(1)">
+                    <path d="M 3 14 L 10 2 L 17 14 Z"/>
+                    <rect x="1" y="14" width="18" height="4" rx="1"/>
+                </g>
+
+                <!-- Trovão médio -->
+                <g transform="translate(1010, 100) rotate(-85) scale(0.95)">
+                    <path d="M 12 0 L 4 14 L 12 14 L 4 30 L 16 12 L 8 12 Z"/>
+                </g>
+
+                <!-- Balão médio -->
+                <g transform="translate(1100, 90) rotate(15) scale(0.95)">
+                    <path d="M 12 0 Q 22 0 22 10 Q 22 18 12 20 Q 2 18 2 10 Q 2 0 12 0 Z"/>
+                    <line x1="12" y1="20" x2="12" y2="30"/>
+                </g>
+
+                <!-- Caminhão inferior -->
+                <g transform="translate(60, 155) rotate(-45) scale(1.05)">
+                    <rect x="0" y="8" width="40" height="14" rx="2"/>
+                    <rect x="40" y="14" width="14" height="8" rx="1"/>
+                    <circle cx="9" cy="24" r="3"/>
+                    <circle cx="26" cy="24" r="3"/>
+                    <circle cx="46" cy="24" r="3"/>
+                </g>
+
+                <!-- Nuvem inferior -->
+                <g transform="translate(180, 160) rotate(45) scale(1)">
+                    <path d="M 8 16 Q 0 16 0 10 Q 0 4 7 4 Q 11 0 18 2 Q 24 0 26 6 Q 34 6 32 14 Q 30 20 24 20 L 10 20 Z"/>
+                    <line x1="8" y1="24" x2="6" y2="31"/>
+                    <line x1="15" y1="24" x2="13" y2="31"/>
+                </g>
+
+                <!-- Raio inferior -->
+                <g transform="translate(270, 165) rotate(-30) scale(1.1)">
+                    <path d="M 12 0 L 4 14 L 12 14 L 4 30 L 16 12 L 8 12 Z"/>
+                </g>
+
+                <!-- Jornal inferior -->
+                <g transform="translate(360, 155) rotate(55) scale(0.95)">
+                    <rect x="0" y="0" width="30" height="34" rx="2"/>
+                    <line x1="4" y1="8" x2="26" y2="8"/>
+                    <line x1="4" y1="14" x2="26" y2="14"/>
+                </g>
+
+                <!-- Fábrica inferior -->
+                <g transform="translate(450, 160) rotate(-20) scale(1.05)">
+                    <rect x="0" y="14" width="40" height="18"/>
+                    <rect x="4" y="6" width="10" height="10"/>
+                    <rect x="18" y="2" width="10" height="14"/>
+                </g>
+
+                <!-- Viatura inferior -->
+                <g transform="translate(550, 165) rotate(40) scale(0.95)">
+                    <rect x="0" y="8" width="34" height="14" rx="2"/>
+                    <rect x="6" y="0" width="10" height="8"/>
+                    <circle cx="8" cy="24" r="3"/>
+                    <circle cx="26" cy="24" r="3"/>
+                </g>
+
+                <!-- Cone inferior -->
+                <g transform="translate(640, 160) rotate(-70) scale(1)">
+                    <path d="M 8 0 L 16 24 L 0 24 Z"/>
+                    <line x1="4" y1="12" x2="12" y2="12"/>
+                </g>
+
+                <!-- Bússola inferior -->
+                <g transform="translate(730, 165) rotate(25) scale(1)">
+                    <circle cx="12" cy="12" r="11"/>
+                    <path d="M 12 2 L 15 12 L 12 22 L 9 12 Z"/>
+                </g>
+
+                <!-- Caixa inferior -->
+                <g transform="translate(820, 158) rotate(-55) scale(1)">
+                    <rect x="0" y="6" width="26" height="26"/>
+                    <line x1="0" y1="16" x2="26" y2="16"/>
+                    <line x1="13" y1="6" x2="13" y2="32"/>
+                </g>
+
+                <!-- Rotas inferior -->
+                <g transform="translate(910, 165) rotate(60) scale(1)">
+                    <circle cx="6" cy="6" r="2.5"/>
+                    <circle cx="34" cy="22" r="2.5"/>
+                    <line x1="6" y1="6" x2="34" y2="22" stroke-dasharray="3,3"/>
+                </g>
+
+                <!-- Sirene inferior -->
+                <g transform="translate(1000, 160) rotate(-35) scale(1.05)">
+                    <path d="M 3 14 L 10 2 L 17 14 Z"/>
+                    <rect x="1" y="14" width="18" height="4" rx="1"/>
+                </g>
+
+                <!-- Balão inferior direito -->
+                <g transform="translate(1090, 165) rotate(45) scale(1)">
+                    <path d="M 12 0 Q 22 0 22 10 Q 22 18 12 20 Q 2 18 2 10 Q 2 0 12 0 Z"/>
+                    <line x1="12" y1="20" x2="12" y2="30"/>
+                </g>
+
+                <!-- Pontos -->
+                <circle cx="100" cy="60" r="1.5" fill="white"/>
+                <circle cx="260" cy="50" r="1.5" fill="white"/>
+                <circle cx="420" cy="65" r="1.5" fill="white"/>
+                <circle cx="580" cy="55" r="1.5" fill="white"/>
+                <circle cx="740" cy="60" r="1.5" fill="white"/>
+                <circle cx="900" cy="50" r="1.5" fill="white"/>
+                <circle cx="1060" cy="65" r="1.5" fill="white"/>
+                <circle cx="180" cy="140" r="1.5" fill="white"/>
+                <circle cx="500" cy="135" r="1.5" fill="white"/>
+                <circle cx="820" cy="140" r="1.5" fill="white"/>
+                <circle cx="1140" cy="130" r="1.5" fill="white"/>
+
+                <!-- Cruzes -->
+                <g transform="translate(200, 130) rotate(15)">
+                    <line x1="0" y1="0" x2="8" y2="8"/>
+                    <line x1="8" y1="0" x2="0" y2="8"/>
+                </g>
+                <g transform="translate(420, 130) rotate(-30)">
+                    <line x1="0" y1="0" x2="8" y2="8"/>
+                    <line x1="8" y1="0" x2="0" y2="8"/>
+                </g>
+                <g transform="translate(660, 130) rotate(45)">
+                    <line x1="0" y1="0" x2="8" y2="8"/>
+                    <line x1="8" y1="0" x2="0" y2="8"/>
+                </g>
+                <g transform="translate(880, 130) rotate(-15)">
+                    <line x1="0" y1="0" x2="8" y2="8"/>
+                    <line x1="8" y1="0" x2="0" y2="8"/>
+                </g>
+
+                <!-- Rabiscos tracejados -->
+                <path d="M 80 130 Q 130 110 180 135" stroke-dasharray="3,4" opacity="0.5"/>
+                <path d="M 320 130 Q 370 110 420 135" stroke-dasharray="3,4" opacity="0.5"/>
+                <path d="M 560 130 Q 610 110 660 135" stroke-dasharray="3,4" opacity="0.5"/>
+                <path d="M 800 130 Q 850 110 900 135" stroke-dasharray="3,4" opacity="0.5"/>
+                <path d="M 1040 130 Q 1090 110 1140 135" stroke-dasharray="3,4" opacity="0.5"/>
+
+            </g>
+        </svg>
+    </div>
+
+    <!-- CONTEÚDO DO HEADER -->
+ <div class="header-esquerda">
+
+    <!-- LOGO DIRETA, COM SOMBRA BRANCA -->
+    <img src="https://1000logos.net/wp-content/uploads/2020/08/PepsiCo-Logo-1.png" 
+         alt="PepsiCo" 
+         style="height: 55px; width: auto; object-fit: contain;
+                filter: drop-shadow(0 0 12px rgba(255,255,255,0.6)) 
+                        drop-shadow(0 0 25px rgba(255,255,255,0.3));
+                transition: all 0.3s ease;
+                flex-shrink: 0;">
+
+    <div class="titulo-bloco">
+        <div class="titulo-tag">PEPSICO • SEGURANÇA E LOGÍSTICA</div>
+        <div class="titulo-principal">Monitor de Impactos <span>| Operacional</span></div>
+        <div class="subtitulo">Rodovias • Clima • Greves • Fábricas • Policial</div>
+    </div>
+</div>
+
+        <!-- Direita: Status + Sair (por enquanto mantidos aqui) -->
+        <div class="header-direita">
+            <div class="status-badge">
+                <span class="dot"></span>
+                <span id="authStatus">Conectando...</span>
             </div>
+            <button class="btn-sair" id="logoutBtn">
+                🚪 Sair
+            </button>
         </div>
+
     </div>
-    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-        <span class="badge" id="authStatus">⏳ Conectando...</span>
-        <button class="logout-btn" id="logoutBtn">Sair</button>
-    </div>
+
+</header>
 </header>
         <div class="tabs">
             <button class="tab-btn ativo" data-tab="noticias">📋 Notícias</button>
