@@ -721,14 +721,14 @@
                 };
 
                 snapshot.forEach(function(doc) {
-                    var data = doc.data();
-                    var nome = data.nome || doc.id;
-                    var label = labelMap[nome] || data.label || data[nome] || nome;
-
-                    if (data.ativa !== false) {
-                        html += '<button data-filtro="' + nome + '">' + label + '</button>';
-                    }
-                });
+    var data = doc.data();
+    if (data.ativa !== false) {
+        // .trim() remove espaços no início e fim
+        var nome = (data.nome || doc.id).toString().trim();
+        var label = (data.label || data[nome] || nome).toString().trim();
+        html += '<button data-filtro="' + nome + '">' + label + '</button>';
+    }
+});
 
                 container.innerHTML = html;
                 status.textContent = '✅ ' + (container.querySelectorAll('button').length - 1) + ' categorias disponíveis';
