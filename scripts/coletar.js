@@ -2159,7 +2159,7 @@ function podeEnviarAlerta(analise) {
 function determinarCategoria(analise) {
 
   // ==========================================================
-  // 1º PRIORIDADE: SEGURANÇA (mais importante)
+  // 1º PRIORIDADE: SEGURANÇA (roubo, assalto, homicídio, incêndio)
   // ==========================================================
   if (analise.eventos.includes('seguranca')) {
     return 'policial';
@@ -2208,7 +2208,6 @@ function determinarCategoria(analise) {
   }
 
   return 'geral';
-
 }
 
 // ============================================================
