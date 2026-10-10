@@ -19,8 +19,19 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family: "Inter", system-ui, sans-serif; background:#eef1f6; padding:16px; min-height:100vh; display:flex; justify-content:center; align-items:flex-start; }
-        .container { max-width:1280px; width:100%; margin:0 auto; }
+      body {
+    font-family: "Inter", system-ui, sans-serif;
+    background:
+        radial-gradient(circle at 0% 0%, rgba(0, 61, 165, 0.06) 0%, transparent 40%),
+        radial-gradient(circle at 100% 100%, rgba(0, 212, 255, 0.05) 0%, transparent 45%),
+        linear-gradient(180deg, #f4f6fa 0%, #eef1f6 100%);
+    background-attachment: fixed;
+    padding:16px;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+}
 
         /* ============================================================ */
         /* HEADER MODERNO                                              */
