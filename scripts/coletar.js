@@ -34,7 +34,7 @@ const LIMIARES_POR_CATEGORIA = {
 const LIMIAR_EXCECAO_CRITICA = 20;
 const FONTES_OFICIAIS = ['inmet', 'cemaden', 'defesa civil', 'defesa_civil', 'crh'];
 const LIMIAR_FONTE_OFICIAL = 15;
-const LIMIAR_PAINEL_INTERNO = 10;
+const LIMIAR_PAINEL_INTERNO = 20;
 
 const TERMOS_SEVERIDADE_CRITICA = [
   'extrema', 'extremo', 'grave', 'graves', 'mortes', 'morto', 'morta',
@@ -62,9 +62,9 @@ const PALAVRAS_BLOQUEIO = [
   'eleição', 'eleicoes', 'eleições', 'votação', 'votacao', 'partido político', 'partido politico',
   'deputado', 'senador', 'vereador', 'ministro', 'governador',
   'inflação', 'inflacao', 'ibovespa', 'dólar', 'dolar', 'bolsa de valores', 'mercado financeiro',
-  'futebol', 'campeonato', 'jogador', 'time', 'olimpíada', 'olimpiada',
+  'futebol', 'campeonato', 'jogador', 'olimpíada', 'olimpiada',
   'celebridade', 'famoso', 'novela', 'cinema', 'filme', 'série', 'serie', 'música', 'musica',
-  'cantor', 'ator', 'influenciador', 'bbb', 'reality show', 'horóscopo', 'horoscopo',
+  'cantor', 'influenciador', 'bbb', 'reality show', 'horóscopo', 'horoscopo',
   'moda', 'fofoca', 'receita', 'entretenimento',
   'safra', 'soja', 'milho', 'trigo', 'café', 'cafe', 'plantio', 'colheita', 'agronegócio',
   'vacina', 'hospital', 'câncer', 'cancer', 'pandemia', 'covid',
@@ -96,21 +96,17 @@ const EVENTOS_OPERACIONAIS = {
       'roubo de carga', 'carga roubada', 'furto de carga', 'assalto a caminhão', 'assalto a caminhao',
       'assalto a carreta', 'roubo de caminhão', 'roubo de caminhao', 'roubo de carreta',
       'desvio de carga', 'carga desviada', 'apreensão de carga', 'apreensao de carga',
-
       'facção', 'faccao', 'milícia', 'milicia', 'pcc', 'comando vermelho',
       'tráfico', 'trafico', 'tráfico de drogas', 'trafico de drogas',
       'crime organizado', 'guerra do tráfico', 'guerra do trafico',
       'domínio de comunidade', 'dominio de comunidade',
       'toque de recolher', 'estado de emergência', 'estado de emergencia',
-
       'operação policial', 'operacao policial', 'operação da prf', 'operacao da prf',
       'blitz', 'barreira policial', 'perseguição', 'perseguicao',
       'confronto', 'tiroteio', 'operação em comunidade', 'operacao em comunidade',
-
       'arrastão', 'arrastao', 'saque', 'saques', 'depredação', 'depredacao',
       'ônibus queimado', 'onibus queimado', 'veículo queimado', 'veiculo queimado',
       'barricada', 'tumulto',
-
       'incêndio em galpão', 'incendio em galpao', 'incêndio em depósito', 'incendio em deposito',
       'incêndio em caminhão', 'incendio em caminhao', 'incêndio em carreta', 'incendio em carreta'
     ],
@@ -133,17 +129,15 @@ const EVENTOS_OPERACIONAIS = {
       'enchente', 'alagamento', 'alagamentos', 'inundação', 'inundacao',
       'deslizamento', 'desabamento por chuva', 'transbordamento',
       'cheia do rio', 'nível do rio', 'nivel do rio',
-
       'vendaval', 'ciclone', 'tornado', 'furacão', 'furacao', 'granizo',
       'frente fria', 'onda de calor', 'calor extremo', 'ressaca', 'ventania',
-
       'alerta meteorológico', 'alerta meteorologico',
       'alerta de chuva', 'alerta de tempestade',
       'aviso de tempestade', 'aviso de tempestades',
       'aviso meteorológico', 'aviso meteorologico',
-
       'queda de árvore', 'queda de arvore', 'queda de poste',
-      'destelhamento', 'destruição por chuva', 'destruicao por chuva'
+      'destelhamento', 'destruição por chuva', 'destruicao por chuva',
+      'previsão do tempo', 'previsao do tempo', 'previsão para hoje', 'previsao para hoje'
     ],
     peso: 25
   },
@@ -201,11 +195,11 @@ const EVENTOS_OPERACIONAIS = {
 
   logistica: {
     palavras: [
-      'transporte', 'transportadora', 'caminhão', 'caminhao', 'caminhões', 'caminhoes',
-      'carreta', 'carga', 'combustível', 'combustivel',
+      'transportadora', 'caminhão', 'caminhao', 'caminhões', 'caminhoes',
+      'carreta', 'combustível', 'combustivel',
       'centro de distribuição', 'centro de distribuicao',
-      'logística', 'logistica', 'cadeia de suprimentos', 'estoque',
-      'entrega', 'entregas', 'expedição', 'expedicao'
+      'logística', 'logistica', 'cadeia de suprimentos',
+      'expedição', 'expedicao'
     ],
     peso: 15
   }
@@ -313,16 +307,14 @@ const RODOVIAS_MONITORADAS = [
 const FONTES = [
   { nome: 'G1 - Segurança Pública', url: 'https://g1.globo.com/rss/g1/seguranca/', categoria: 'seguranca' },
   { nome: 'G1 - São Paulo', url: 'https://g1.globo.com/rss/g1/sp/sao-paulo/', categoria: 'geral' },
+  { nome: 'G1 - Campinas', url: 'https://g1.globo.com/rss/g1/sp/campinas-regiao/', categoria: 'geral' },
   { nome: 'G1 - Minas Gerais', url: 'https://g1.globo.com/rss/g1/mg/minas-gerais/', categoria: 'geral' },
   { nome: 'G1 - Paraná', url: 'https://g1.globo.com/rss/g1/pr/parana/', categoria: 'geral' },
   { nome: 'G1 - Rio de Janeiro', url: 'https://g1.globo.com/rss/g1/rj/rio-de-janeiro/', categoria: 'geral' },
   { nome: 'CNN Brasil', url: 'https://www.cnnbrasil.com.br/feed/', categoria: 'geral' },
-  { nome: 'R7 - São Paulo', url: 'https://noticias.r7.com/sao-paulo/feed.xml', categoria: 'geral' },
-  { nome: 'R7 - Rio de Janeiro', url: 'https://noticias.r7.com/rio-de-janeiro/feed.xml', categoria: 'geral' },
-  { nome: 'Estadão - Polícia', url: 'https://estadao.com.br/rss/policia.xml', categoria: 'seguranca' },
-  { nome: 'O Globo - São Paulo', url: 'https://oglobo.globo.com/rss/sao-paulo/', categoria: 'geral' },
-  { nome: 'INMET - Alertas', url: 'http://alert-as.inmet.gov.br/cap_12/rss/alert-as.rss', categoria: 'clima' },
-  { nome: 'CEMADEN - Alertas', url: 'http://www.cemaden.gov.br/feed/', categoria: 'clima' },
+  { nome: 'Agência Brasil', url: 'https://agenciabrasil.ebc.com.br/rss/geral/feed.xml', categoria: 'geral' },
+  { nome: 'INMET - Alertas', url: 'https://alertas2.inmet.gov.br/', categoria: 'clima' },
+  { nome: 'CEMADEN - Alertas', url: 'https://www.gov.br/cemaden/pt-br/assuntos/monitoramento/feed/', categoria: 'clima' },
   { nome: 'Portal do Trânsito', url: 'https://www.portaldotransito.com.br/feed/', categoria: 'transito' }
 ];
 // ============================================================
@@ -366,30 +358,6 @@ function detectarRodovia(titulo, resumo) {
 }
 
 // ============================================================
-// DETECTAR EVENTOS
-// ============================================================
-
-function detectarEventos(texto) {
-  const eventos = [];
-  for (const [categoria, config] of Object.entries(EVENTOS_OPERACIONAIS)) {
-    const encontrou = config.palavras.some(palavra => texto.includes(normalizar(palavra)));
-    if (encontrou) eventos.push(categoria);
-  }
-  return eventos;
-}
-
-// ============================================================
-// DETECTAR IMPACTO OPERACIONAL
-// ============================================================
-
-function detectarImpactoOperacional(texto) {
-  const impactos = [];
-  if (contem(texto, TERMOS_IMPACTO)) impactos.push('impacto operacional');
-  if (contem(texto, TERMOS_IMPACTO_FORTE)) impactos.push('impacto operacional forte');
-  return impactos;
-}
-
-// ============================================================
 // DETECTAR BAIXA UTILIDADE
 // ============================================================
 
@@ -402,7 +370,7 @@ function detectarBaixaUtilidade(texto) {
 }
 
 // ============================================================
-// CALCULAR RELEVÂNCIA
+// CALCULAR RELEVÂNCIA — COM LÓGICA DE CONTEXTO REAL
 // ============================================================
 
 function calcularRelevancia(titulo, resumo, fonte) {
@@ -411,9 +379,9 @@ function calcularRelevancia(titulo, resumo, fonte) {
   let score = 0;
   const motivos = [];
 
-  // ----------------------------------------------------------
-  // BLOQUEIO
-  // ----------------------------------------------------------
+  // ==========================================================
+  // 1. BLOQUEIO
+  // ==========================================================
   for (const bloqueio of PALAVRAS_BLOQUEIO) {
     if (texto.includes(normalizar(bloqueio))) {
       score -= 60;
@@ -422,85 +390,185 @@ function calcularRelevancia(titulo, resumo, fonte) {
     }
   }
 
-  // ----------------------------------------------------------
-  // EVENTOS
-  // ----------------------------------------------------------
-  const eventos = detectarEventos(texto);
-  for (const evento of eventos) {
-    const peso = EVENTOS_OPERACIONAIS[evento].peso;
-    score += peso;
-    motivos.push(evento);
+  // ==========================================================
+  // 2. ÂNCORAS — o "assunto real" da notícia
+  // ==========================================================
+  const ancoras = {
+    clima: [
+      'chuva forte', 'chuvas intensas', 'chuvas fortes',
+      'temporal com chuva', 'tempestade com chuva', 'tempestade severa',
+      'enchente', 'alagamento', 'alagamentos', 'inundação', 'inundacao',
+      'deslizamento', 'desabamento por chuva', 'transbordamento',
+      'cheia do rio', 'nível do rio', 'nivel do rio',
+      'vendaval', 'ciclone', 'tornado', 'furacão', 'furacao', 'granizo',
+      'frente fria', 'onda de calor', 'calor extremo', 'ressaca', 'ventania',
+      'alerta meteorológico', 'alerta meteorologico',
+      'alerta de chuva', 'alerta de tempestade',
+      'aviso de tempestade', 'aviso de tempestades',
+      'aviso meteorológico', 'aviso meteorologico',
+      'previsão do tempo', 'previsao do tempo'
+    ],
+    greve: [
+      'greve', 'paralisação', 'paralisacao', 'greve geral',
+      'piquete', 'bloqueio de rodovia',
+      'greve de caminhoneiros', 'greve dos caminhoneiros'
+    ],
+    acidente: [
+      'acidente', 'colisão', 'colisao', 'capotamento', 'engavetamento',
+      'atropelamento', 'tombamento', 'carreta tombou', 'caminhão tombou'
+    ],
+    seguranca: [
+      'roubo de carga', 'carga roubada', 'furto de carga', 'assalto a caminhão', 'assalto a caminhao',
+      'assalto a carreta', 'roubo de caminhão', 'roubo de caminhao', 'roubo de carreta',
+      'facção', 'faccao', 'milícia', 'milicia', 'pcc', 'comando vermelho',
+      'crime organizado', 'guerra do tráfico', 'guerra do trafico',
+      'domínio de comunidade', 'dominio de comunidade',
+      'toque de recolher',
+      'operação policial', 'operacao policial', 'operação da prf', 'operacao da prf',
+      'confronto', 'tiroteio', 'arrastão', 'arrastao',
+      'ônibus queimado', 'onibus queimado', 'veículo queimado', 'veiculo queimado',
+      'barricada', 'tumulto'
+    ],
+    transito: [
+      'interdição', 'interdicao', 'interditada', 'bloqueio de pista',
+      'pista fechada', 'pista bloqueada', 'rodovia fechada', 'rodovia interditada',
+      'trânsito parado', 'transito parado', 'congestionamento',
+      'rota alternativa', 'desvio'
+    ],
+    infraestrutura: [
+      'falta de energia', 'apagão', 'apagao', 'queda de energia',
+      'explosão', 'explosao', 'vazamento',
+      'queda de ponte', 'ponte interditada', 'rompimento de barragem'
+    ],
+    abastecimento: [
+      'falta de combustível', 'falta de combustivel',
+      'crise de combustível', 'crise de combustivel',
+      'desabastecimento', 'greve de combustível',
+      'aumento do diesel', 'aumento da gasolina'
+    ],
+    fiscalizacao: [
+      'fiscalização', 'fiscalizacao', 'barreira fiscal', 'posto fiscal',
+      'balança', 'controle de carga', 'operação da prf'
+    ],
+    logistica: [
+      'transportadora', 'centro de distribuição', 'centro de distribuicao',
+      'cadeia de suprimentos', 'logística', 'logistica',
+      'expedição', 'expedicao'
+    ]
+  };
+
+  const ancorasEncontradas = [];
+  for (const [tema, palavras] of Object.entries(ancoras)) {
+    const bateu = palavras.some(p => texto.includes(normalizar(p)));
+    if (bateu) {
+      ancorasEncontradas.push(tema);
+      score += 30;
+      motivos.push(`âncora: ${tema}`);
+    }
   }
 
-  // ----------------------------------------------------------
-  // LOCALIDADE
-  // ----------------------------------------------------------
+  // ==========================================================
+  // 3. CONTEXTOS — "onde / como" — confirma operação real
+  // ==========================================================
+  const contextos = {
+    via: [
+      'rodovia', 'avenida', 'rua', 'pista', 'estrada', 'br-', 'sp-', 'mg-',
+      'pr-', 'rs-', 'sc-', 'ba-', 'pe-', 'ce-', 'go-', 'ms-',
+      'castello branco', 'castelo branco', 'anhanguera', 'bandeirantes',
+      'régis bittencourt', 'regis bittencourt', 'imigrantes', 'anchieta',
+      'rodoanel', 'fernão dias', 'fernao dias'
+    ],
+    impacto: [
+      'interdição', 'interdicao', 'interditada', 'interditado',
+      'bloqueio', 'bloqueada', 'bloqueado', 'desvio', 'evacuação', 'evacuacao',
+      'paralisação', 'paralisacao', 'operação suspensa', 'operacao suspensa',
+      'serviço interrompido', 'servico interrompido',
+      'circulação interrompida', 'circulacao interrompida',
+      'circulação proibida', 'circulacao proibida'
+    ],
+    severidade: [
+      'mortes', 'morto', 'morta', 'vítimas fatais', 'vitimas fatais',
+      'grave', 'graves', 'extrema', 'extremo',
+      'desastre', 'catástrofe', 'catastrofe', 'risco iminente'
+    ]
+  };
+
+  const contextosEncontrados = [];
+  for (const [tipo, palavras] of Object.entries(contextos)) {
+    const bateu = palavras.some(p => texto.includes(normalizar(p)));
+    if (bateu) {
+      contextosEncontrados.push(tipo);
+      score += 15;
+      motivos.push(`contexto: ${tipo}`);
+    }
+  }
+
+  // ==========================================================
+  // 4. LOCALIDADE E RODOVIA
+  // ==========================================================
   const localidade = detectarLocalidade(titulo, resumo);
   if (localidade) {
     score += 15;
     motivos.push(`localidade: ${localidade}`);
   }
 
-  // ----------------------------------------------------------
-  // RODOVIA
-  // ----------------------------------------------------------
   const rodovia = detectarRodovia(titulo, resumo);
   if (rodovia) {
     score += 20;
     motivos.push(`rodovia: ${rodovia}`);
   }
 
-  // ----------------------------------------------------------
-  // IMPACTO OPERACIONAL
-  // ----------------------------------------------------------
-  const impactos = detectarImpactoOperacional(texto);
-  const temImpactoOperacional = impactos.length > 0;
-  if (temImpactoOperacional) {
-    score += 25;
-    impactos.forEach(i => motivos.push(i));
+  // ==========================================================
+  // 5. REGRA DE OPERACIONAL REAL
+  // ==========================================================
+  const temAncora = ancorasEncontradas.length > 0;
+  const temContexto = contextosEncontrados.length > 0;
+  const temLocalidadeOuRodovia = !!localidade || !!rodovia;
+
+  let operacionalReal = false;
+
+  if (temAncora && (temContexto || temLocalidadeOuRodovia)) {
+    operacionalReal = true;
+  } else if (temAncora && !temContexto && !temLocalidadeOuRodovia) {
+    score -= 20;
+    motivos.push('âncora sem contexto nem localidade');
   }
 
-  // ----------------------------------------------------------
-  // BAIXA UTILIDADE
-  // ----------------------------------------------------------
+  // ==========================================================
+  // 6. BAIXA UTILIDADE
+  // ==========================================================
   const baixaUtilidade = detectarBaixaUtilidade(texto);
   if (baixaUtilidade.length > 0) {
     score -= 5 * baixaUtilidade.length;
     motivos.push(`conteúdo secundário: ${baixaUtilidade.join(', ')}`);
   }
 
-  // ----------------------------------------------------------
-  // FONTE ESPECIALIZADA
-  // ----------------------------------------------------------
+  // ==========================================================
+  // 7. CRIME ORGANIZADO — exige localidade monitorada
+  // ==========================================================
+  const termosCrime = ['facção', 'faccao', 'milícia', 'milicia', 'pcc',
+                       'comando vermelho', 'guerra do tráfico', 'guerra do trafico',
+                       'domínio de comunidade', 'dominio de comunidade',
+                       'toque de recolher'];
+  if (termosCrime.some(t => texto.includes(normalizar(t))) && !localidade) {
+    score -= 40;
+    motivos.push('crime organizado sem localidade monitorada');
+  }
+
+  // ==========================================================
+  // 8. FONTE ESPECIALIZADA
+  // ==========================================================
   const fonteNormalizada = normalizar(fonte);
   if (fonteNormalizada.includes('seguranca') || fonteNormalizada.includes('policia')) {
     score += 10;
     motivos.push('fonte especializada');
   }
 
-  // ----------------------------------------------------------
-  // REGRA ESPECIAL: crime organizado exige localidade monitorada
-  // ----------------------------------------------------------
-  const termosCrimeOrganizado = [
-    'facção', 'faccao', 'milícia', 'milicia', 'pcc', 'comando vermelho',
-    'tráfico', 'trafico', 'crime organizado', 'guerra do tráfico', 'guerra do trafico',
-    'domínio de comunidade', 'dominio de comunidade', 'toque de recolher'
-  ];
-  const temCrimeOrganizado = termosCrimeOrganizado.some(t => texto.includes(normalizar(t)));
-
-  if (temCrimeOrganizado && !localidade) {
-    score -= 40;
-    motivos.push('crime organizado sem localidade monitorada');
-  }
-
-  // ----------------------------------------------------------
-  // LIMITAR SCORE
-  // ----------------------------------------------------------
+  // ==========================================================
+  // 9. LIMITAR + NÍVEL
+  // ==========================================================
   score = Math.max(0, Math.min(100, score));
 
-  // ----------------------------------------------------------
-  // NÍVEL
-  // ----------------------------------------------------------
   let nivel = 'DESCARTAR';
   if (score >= 85) nivel = 'CRÍTICO';
   else if (score >= 70) nivel = 'ALTO';
@@ -509,11 +577,11 @@ function calcularRelevancia(titulo, resumo, fonte) {
   return {
     score,
     nivel,
-    eventos,
+    eventos: ancorasEncontradas,
+    contextos: contextosEncontrados,
     localidade,
     rodovia,
-    impactos,
-    temImpactoOperacional,
+    operacionalReal,
     baixaUtilidade,
     motivos
   };
@@ -525,75 +593,67 @@ function calcularRelevancia(titulo, resumo, fonte) {
 
 function determinarCategoria(analise) {
 
-  const texto = (analise.motivos || []).join(' ').toLowerCase();
-
-  // Pontuação por categoria
   const pontos = {
-    policial: 0,
-    clima: 0,
-    greve: 0,
-    transito: 0,
-    acidente: 0,
-    infraestrutura: 0,
-    logistica: 0,
-    abastecimento: 0,
-    fiscalizacao: 0
+    policial: 0, clima: 0, greve: 0, transito: 0,
+    acidente: 0, infraestrutura: 0, logistica: 0,
+    abastecimento: 0, fiscalizacao: 0
   };
 
-  // Peso de cada evento detectado
-  analise.eventos.forEach(evento => {
-    const peso = EVENTOS_OPERACIONAIS[evento] ? EVENTOS_OPERACIONAIS[evento].peso : 0;
-    if (evento === 'seguranca')       pontos.policial += peso;
-    if (evento === 'clima')           pontos.clima += peso;
-    if (evento === 'greve')           pontos.greve += peso;
-    if (evento === 'transito')        pontos.transito += peso;
-    if (evento === 'acidente')        pontos.acidente += peso;
-    if (evento === 'infraestrutura')  pontos.infraestrutura += peso;
-    if (evento === 'logistica')       pontos.logistica += peso;
-    if (evento === 'abastecimento')   pontos.abastecimento += peso;
-    if (evento === 'fiscalizacao')    pontos.fiscalizacao += peso;
+  // Peso por âncora
+  analise.eventos.forEach(ancora => {
+    if (ancora === 'seguranca')       pontos.policial += 30;
+    if (ancora === 'clima')           pontos.clima += 30;
+    if (ancora === 'greve')           pontos.greve += 30;
+    if (ancora === 'transito')        pontos.transito += 25;
+    if (ancora === 'acidente')        pontos.acidente += 25;
+    if (ancora === 'infraestrutura')  pontos.infraestrutura += 25;
+    if (ancora === 'logistica')       pontos.logistica += 20;
+    if (ancora === 'abastecimento')   pontos.abastecimento += 25;
+    if (ancora === 'fiscalizacao')    pontos.fiscalizacao += 20;
   });
 
-  // Bônus: rodovia reforça quem já tem contexto
-  if (analise.rodovia) {
-    if (pontos.transito > 0)  pontos.transito += 15;
-    if (pontos.acidente > 0)  pontos.acidente += 15;
-    if (pontos.greve > 0)     pontos.greve += 15;
+  // Bônus por contexto
+  const temVia     = (analise.contextos || []).includes('via');
+  const temImpacto = (analise.contextos || []).includes('impacto');
+  const temSever   = (analise.contextos || []).includes('severidade');
+
+  if (temVia) {
+    pontos.transito += 20;
+    pontos.acidente += 20;
+    pontos.greve += 15;
+  }
+  if (temImpacto) {
+    pontos.transito += 15;
+    pontos.infraestrutura += 10;
+  }
+  if (temSever) {
+    let maior = 0;
+    for (const cat in pontos) if (pontos[cat] > maior) maior = pontos[cat];
+    for (const cat in pontos) if (pontos[cat] === maior) pontos[cat] += 15;
   }
 
-  // Bônus: impacto operacional
-  if (analise.temImpactoOperacional) {
-    if (pontos.transito > 0)       pontos.transito += 10;
-    if (pontos.infraestrutura > 0) pontos.infraestrutura += 10;
+  // Reforço roubo de carga
+  const texto = (analise.motivos || []).join(' ').toLowerCase();
+  if (['roubo de carga', 'carga roubada', 'furto de carga', 'assalto a carreta']
+      .some(t => texto.includes(normalizar(t)))) {
+    pontos.policial += 25;
   }
 
-  // Reforço: crime organizado empurra policial
-  const termosCrime = ['facção', 'faccao', 'milícia', 'milicia', 'pcc', 'comando vermelho',
-                       'tráfico', 'trafico', 'guerra do tráfico', 'guerra do trafico'];
+  // Reforço crime organizado
+  const termosCrime = ['facção', 'faccao', 'milícia', 'milicia', 'pcc',
+                       'comando vermelho', 'guerra do tráfico', 'guerra do trafico'];
   if (termosCrime.some(t => texto.includes(normalizar(t)))) {
     pontos.policial += 20;
   }
 
-  // Reforço: roubo de carga empurra policial forte
-  const termosRoubo = ['roubo de carga', 'carga roubada', 'furto de carga',
-                       'assalto a caminhão', 'assalto a caminhao',
-                       'assalto a carreta', 'roubo de carreta'];
-  if (termosRoubo.some(t => texto.includes(normalizar(t)))) {
-    pontos.policial += 25;
-  }
-
-  // Escolhe a categoria com maior pontuação
-  let melhorCategoria = 'geral';
-  let maiorPontuacao = 0;
+  // Escolhe vencedor
+  let melhor = 'geral';
+  let maior = 0;
   for (const cat in pontos) {
-    if (pontos[cat] > maiorPontuacao) {
-      maiorPontuacao = pontos[cat];
-      melhorCategoria = cat;
-    }
+    if (pontos[cat] > maior) { maior = pontos[cat]; melhor = cat; }
   }
-
-  if (maiorPontuacao === 0) return 'geral';
-  return melhorCategoria;
+  if (maior === 0) return 'geral';
+  return melhor;
 }
 // ============================================================
 // DETECTAR SEVERIDADE CRÍTICA
@@ -615,6 +675,26 @@ function decidirPublicacao(texto, analise, categoria, fonte) {
   const fonteNorm = normalizar(fonte);
   const fonteOficial = FONTES_OFICIAIS.some(f => fonteNorm.includes(normalizar(f)));
   const severidadeCritica = detectarSeveridadeCritica(texto, analise);
+
+  // ==========================================================
+  // REGRA DE CONTEXTO: sem operacionalReal não sobe pro site
+  // ==========================================================
+  if (!analise.operacionalReal && !fonteOficial && !severidadeCritica) {
+    if (analise.score >= LIMIAR_PAINEL_INTERNO) {
+      return {
+        status: 'painel_interno',
+        motivo: 'Âncora sem contexto nem localidade — fica no painel interno.',
+        limiarUsado: LIMIAR_PAINEL_INTERNO,
+        severidadeCritica
+      };
+    }
+    return {
+      status: 'nao_publicar',
+      motivo: 'Sem âncora ou contexto operacional.',
+      limiarUsado: limiar,
+      severidadeCritica
+    };
+  }
 
   // 1. Regra normal
   if (analise.score >= limiar) {
@@ -810,6 +890,9 @@ async function coletarNoticias() {
         const categoria = determinarCategoria(analise);
 
         console.log(`   📊 Score: ${analise.score}/100 | ${analise.nivel}`);
+        console.log(`   🎯 Âncoras: ${analise.eventos.join(', ') || '—'}`);
+        console.log(`   🌐 Contextos: ${analise.contextos.join(', ') || '—'}`);
+        console.log(`   🧭 Operacional: ${analise.operacionalReal ? 'sim' : 'não'}`);
         console.log(`   🔎 ${analise.motivos.join(', ')}`);
         console.log(`   🏷️ Categoria: ${categoria}`);
 
@@ -846,6 +929,9 @@ async function coletarNoticias() {
 
           score: analise.score,
           nivel: analise.nivel,
+          ancoras: analise.eventos,
+          contextos: analise.contextos,
+          operacionalReal: analise.operacionalReal,
           motivos: analise.motivos,
           localidade: analise.localidade || null,
           rodovia: analise.rodovia || null,
