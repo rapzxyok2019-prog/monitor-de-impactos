@@ -318,7 +318,10 @@ const FONTES = [
   { nome: 'R7 - São Paulo', url: 'https://noticias.r7.com/sao-paulo/feed.xml', categoria: 'geral' },
   { nome: 'R7 - Rio de Janeiro', url: 'https://noticias.r7.com/rio-de-janeiro/feed.xml', categoria: 'geral' },
   { nome: 'Estadão - Polícia', url: 'https://estadao.com.br/rss/policia.xml', categoria: 'seguranca' },
-  { nome: 'O Globo - São Paulo', url: 'https://oglobo.globo.com/rss/sao-paulo/', categoria: 'geral' }
+  { nome: 'O Globo - São Paulo', url: 'https://oglobo.globo.com/rss/sao-paulo/', categoria: 'geral' },
+  { nome: 'INMET - Alertas', url: 'http://alert-as.inmet.gov.br/cap_12/rss/alert-as.rss', categoria: 'clima' },
+  { nome: 'CEMADEN - Alertas', url: 'http://www.cemaden.gov.br/feed/', categoria: 'clima' },
+    { nome: 'Portal do Trânsito', url: 'https://www.portaldotransito.com.br/feed/', categoria: 'transito' }
 ];
 
 // ============================================================
