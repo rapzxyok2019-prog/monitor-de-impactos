@@ -100,25 +100,31 @@ const TERMOS_BAIXA_UTILIDADE = [
 const EVENTOS_OPERACIONAIS = {
   seguranca: {
     palavras: [
+      // Roubo/furto de carga (operação direta)
       'roubo de carga', 'carga roubada', 'furto de carga', 'assalto a caminhão', 'assalto a caminhao',
       'assalto a carreta', 'roubo de caminhão', 'roubo de caminhao', 'roubo de carreta',
       'desvio de carga', 'carga desviada', 'apreensão de carga', 'apreensao de carga',
-      'criminalidade', 'índice de criminalidade', 'indice de criminalidade',
-      'estatística criminal', 'estatistica criminal',
-      'aumento de roubos', 'aumento de furtos', 'roubos', 'furtos',
-      'roubo', 'furto', 'assalto', 'assaltos', 'latrocínio', 'latrocinio',
-      'homicídio', 'homicidio', 'homicídios', 'homicidios',
+
+      // Crime organizado (risco operacional no RJ e capitais)
+      'facção', 'faccao', 'milícia', 'milicia', 'pcc', 'comando vermelho',
       'tráfico', 'trafico', 'tráfico de drogas', 'trafico de drogas',
-      'facção', 'faccao', 'milícia', 'milicia', 'pcc',
-      'operação policial', 'operacao policial', 'operação da prf', 'operacao da prf',
-      'blitz', 'barreira policial', 'perseguição', 'perseguicao', 'confronto', 'tiroteio',
-      'apreensão', 'apreensao', 'prisão', 'prisao', 'presos', 'detido', 'detidos',
-      'mandado de busca', 'busca e apreensão', 'busca e apreensao',
-      'arrastão', 'arrastao', 'saque', 'saques', 'depredação', 'depredacao',
-      'manifestação violenta', 'manifestacao violenta', 'tumulto',
+      'crime organizado', 'guerra do tráfico', 'guerra do trafico',
+      'domínio de comunidade', 'dominio de comunidade',
       'toque de recolher', 'estado de emergência', 'estado de emergencia',
-      'incêndio', 'incendio', 'fogo', 'queimada',
-      'desaparece', 'desaparecido', 'espancado', 'agressão', 'agressao', 'morte'
+
+      // Operações que bloqueiam vias
+      'operação policial', 'operacao policial', 'operação da prf', 'operacao da prf',
+      'blitz', 'barreira policial', 'perseguição', 'perseguicao',
+      'confronto', 'tiroteio', 'operação em comunidade', 'operacao em comunidade',
+
+      // Risco imediato em via
+      'arrastão', 'arrastao', 'saque', 'saques', 'depredação', 'depredacao',
+      'ônibus queimado', 'onibus queimado', 'veículo queimado', 'veiculo queimado',
+      'barricada', 'tumulto',
+
+      // Incidentes com impacto logístico
+      'incêndio em galpão', 'incendio em galpao', 'incêndio em depósito', 'incendio em deposito',
+      'incêndio em caminhão', 'incendio em caminhao', 'incêndio em carreta', 'incendio em carreta'
     ],
     peso: 30
   },
@@ -489,17 +495,69 @@ function calcularRelevancia(titulo, resumo, fonte) {
 // ============================================================
 
 function determinarCategoria(analise) {
-  if (analise.eventos.includes('seguranca')) return 'policial';
+
+  // ============================================================
+  // Ordem de prioridade OPERACIONAL
+  // (o que mais afeta entrega/rota vem primeiro)
+  // ============================================================
+  //
+  // 1. GREVE      → bloqueia tudo, prioridade máxima
+  // 2. CLIMA      → enchente, vendaval, chuva forte
+  // 3. ABASTEC.   → falta de combustível
+  // 4. INFRAEST.  → falta de energia, ponte caída
+  // 5. TRANSITO   → interdição, bloqueio de pista
+  // 6. ACIDENTE   → só se for em rodovia monitorada
+  // 7. LOGISTICA  → se só bateu em logística sem operacional
+  // 8. POLICIAL   → roubo de carga, operação policial
+  // 9. GERAL      → resto
+  // ============================================================
+
+  // 1. GREVE (bloqueio total)
   if (analise.eventos.includes('greve')) return 'greve';
+
+  // 2. CLIMA (chuva forte, temporal, vendaval)
   if (analise.eventos.includes('clima')) return 'clima';
-  if (analise.eventos.includes('acidente')) return 'acidente';
-  if (analise.rodovia || analise.eventos.includes('transito')) return 'transito';
-  if (analise.eventos.includes('infraestrutura')) return 'infraestrutura';
-  if (analise.eventos.includes('logistica')) return 'logistica';
-  if (analise.eventos.includes('fiscalizacao')) return 'policial';
+
+  // 3. ABASTECIMENTO (falta de combustível)
   if (analise.eventos.includes('abastecimento')) return 'geral';
+
+  // 4. INFRAESTRUTURA (falta energia, ponte)
+  if (analise.eventos.includes('infraestrutura')) return 'infraestrutura';
+
+  // 5. TRÂNSITO (interdição / bloqueio / rodovia)
+  if (analise.eventos.includes('transito')) return 'transito';
+  if (analise.rodovia) return 'transito';
+
+  // 6. ACIDENTE (só se tiver contexto de rodovia ou via)
+  if (analise.eventos.includes('acidente') && (analise.rodovia || analise.temImpactoOperacional)) {
+    return 'acidente';
+  }
+
+  // 7. LOGÍSTICA (transporte, caminhão, carga)
+  if (analise.eventos.includes('logistica')) return 'logistica';
+
+  // 8. SEGURANÇA (roubo de carga, operação policial)
+  if (analise.eventos.includes('seguranca')) return 'policial';
+
+  // 9. FISCALIZAÇÃO (vai como policial)
+  if (analise.eventos.includes('fiscalizacao')) return 'policial';
+
   return 'geral';
-}
+    // ==========================================================
+  // REGRA ESPECIAL: crime organizado exige localidade monitorada
+  // ==========================================================
+  const termosCrimeOrganizado = [
+    'facção', 'faccao', 'milícia', 'milicia', 'pcc', 'comando vermelho',
+    'tráfico', 'trafico', 'crime organizado', 'guerra do tráfico', 'guerra do trafico',
+    'domínio de comunidade', 'dominio de comunidade', 'toque de recolher'
+  ];
+  const temCrimeOrganizado = termosCrimeOrganizado.some(t => texto.includes(normalizar(t)));
+
+  if (temCrimeOrganizado && !localidade) {
+    // Crime organizado sem localidade → penaliza forte
+    score -= 40;
+    motivos.push('crime organizado sem localidade monitorada');
+  }
 
 // ============================================================
 // DETECTAR SEVERIDADE CRÍTICA
