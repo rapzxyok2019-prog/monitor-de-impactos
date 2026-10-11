@@ -141,13 +141,25 @@ const EVENTOS_OPERACIONAIS = {
 
   clima: {
     palavras: [
+      // Chuvas e alagamentos (contexto real)
       'chuva forte', 'chuvas intensas', 'chuvas fortes', 'temporal', 'tempestade',
       'enchente', 'alagamento', 'alagamentos', 'inundação', 'inundacao',
-      'deslizamento', 'desabamento', 'transbordamento', 'cheia',
+      'deslizamento', 'desabamento por chuva', 'transbordamento',
+      'cheia do rio', 'nível do rio', 'nivel do rio',
+
+      // Eventos extremos
       'vendaval', 'ciclone', 'tornado', 'furacão', 'furacao', 'granizo',
       'frente fria', 'onda de calor', 'calor extremo', 'ressaca', 'ventania',
-      'alerta meteorológico', 'alerta meteorologico', 'defesa civil',
-      'alerta de chuva', 'aviso de tempestade', 'aviso de tempestades'
+
+      // Alertas oficiais
+      'alerta meteorológico', 'alerta meteorologico',
+      'alerta de chuva', 'alerta de tempestade',
+      'aviso de tempestade', 'aviso de tempestades',
+      'aviso meteorológico', 'aviso meteorologico',
+
+      // Impacto climático direto
+      'queda de árvore', 'queda de arvore', 'queda de poste',
+      'destelhamento', 'destruição por chuva', 'destruicao por chuva'
     ],
     peso: 25
   },
@@ -416,7 +428,9 @@ function calcularRelevancia(titulo, resumo, fonte) {
   let score = 0;
   const motivos = [];
 
+  // ----------------------------------------------------------
   // BLOQUEIO
+  // ----------------------------------------------------------
   for (const bloqueio of PALAVRAS_BLOQUEIO) {
     if (texto.includes(normalizar(bloqueio))) {
       score -= 60;
@@ -425,7 +439,9 @@ function calcularRelevancia(titulo, resumo, fonte) {
     }
   }
 
+  // ----------------------------------------------------------
   // EVENTOS
+  // ----------------------------------------------------------
   const eventos = detectarEventos(texto);
   for (const evento of eventos) {
     const peso = EVENTOS_OPERACIONAIS[evento].peso;
@@ -433,21 +449,27 @@ function calcularRelevancia(titulo, resumo, fonte) {
     motivos.push(evento);
   }
 
+  // ----------------------------------------------------------
   // LOCALIDADE
+  // ----------------------------------------------------------
   const localidade = detectarLocalidade(titulo, resumo);
   if (localidade) {
     score += 15;
     motivos.push(`localidade: ${localidade}`);
   }
 
+  // ----------------------------------------------------------
   // RODOVIA
+  // ----------------------------------------------------------
   const rodovia = detectarRodovia(titulo, resumo);
   if (rodovia) {
     score += 20;
     motivos.push(`rodovia: ${rodovia}`);
   }
 
+  // ----------------------------------------------------------
   // IMPACTO OPERACIONAL
+  // ----------------------------------------------------------
   const impactos = detectarImpactoOperacional(texto);
   const temImpactoOperacional = impactos.length > 0;
   if (temImpactoOperacional) {
@@ -455,22 +477,27 @@ function calcularRelevancia(titulo, resumo, fonte) {
     impactos.forEach(i => motivos.push(i));
   }
 
+  // ----------------------------------------------------------
   // BAIXA UTILIDADE
+  // ----------------------------------------------------------
   const baixaUtilidade = detectarBaixaUtilidade(texto);
   if (baixaUtilidade.length > 0) {
     score -= 5 * baixaUtilidade.length;
     motivos.push(`conteúdo secundário: ${baixaUtilidade.join(', ')}`);
   }
 
+  // ----------------------------------------------------------
   // FONTE ESPECIALIZADA
+  // ----------------------------------------------------------
   const fonteNormalizada = normalizar(fonte);
   if (fonteNormalizada.includes('seguranca') || fonteNormalizada.includes('policia')) {
     score += 10;
     motivos.push('fonte especializada');
   }
-    // ==========================================================
+
+  // ----------------------------------------------------------
   // REGRA ESPECIAL: crime organizado exige localidade monitorada
-  // ==========================================================
+  // ----------------------------------------------------------
   const termosCrimeOrganizado = [
     'facção', 'faccao', 'milícia', 'milicia', 'pcc', 'comando vermelho',
     'tráfico', 'trafico', 'crime organizado', 'guerra do tráfico', 'guerra do trafico',
@@ -479,13 +506,18 @@ function calcularRelevancia(titulo, resumo, fonte) {
   const temCrimeOrganizado = termosCrimeOrganizado.some(t => texto.includes(normalizar(t)));
 
   if (temCrimeOrganizado && !localidade) {
-    // Crime organizado sem localidade → penaliza forte
     score -= 40;
     motivos.push('crime organizado sem localidade monitorada');
   }
+
+  // ----------------------------------------------------------
+  // LIMITAR SCORE
+  // ----------------------------------------------------------
   score = Math.max(0, Math.min(100, score));
 
-  // NÍVEL (usa limiares fixos de severidade, não o SCORE_MINIMO)
+  // ----------------------------------------------------------
+  // NÍVEL
+  // ----------------------------------------------------------
   let nivel = 'DESCARTAR';
   if (score >= 85) nivel = 'CRÍTICO';
   else if (score >= 70) nivel = 'ALTO';
@@ -503,61 +535,6 @@ function calcularRelevancia(titulo, resumo, fonte) {
     motivos
   };
 }
-
-// ============================================================
-// CATEGORIA (SEGURANÇA EM 1º LUGAR)
-// ============================================================
-
-function determinarCategoria(analise) {
-
-  // ============================================================
-  // Ordem de prioridade OPERACIONAL
-  // (o que mais afeta entrega/rota vem primeiro)
-  // ============================================================
-  //
-  // 1. GREVE      → bloqueia tudo, prioridade máxima
-  // 2. CLIMA      → enchente, vendaval, chuva forte
-  // 3. ABASTEC.   → falta de combustível
-  // 4. INFRAEST.  → falta de energia, ponte caída
-  // 5. TRANSITO   → interdição, bloqueio de pista
-  // 6. ACIDENTE   → só se for em rodovia monitorada
-  // 7. LOGISTICA  → se só bateu em logística sem operacional
-  // 8. POLICIAL   → roubo de carga, operação policial
-  // 9. GERAL      → resto
-  // ============================================================
-
-  // 1. GREVE (bloqueio total)
-  if (analise.eventos.includes('greve')) return 'greve';
-
-  // 2. CLIMA (chuva forte, temporal, vendaval)
-  if (analise.eventos.includes('clima')) return 'clima';
-
-  // 3. ABASTECIMENTO (falta de combustível)
-  if (analise.eventos.includes('abastecimento')) return 'geral';
-
-  // 4. INFRAESTRUTURA (falta energia, ponte)
-  if (analise.eventos.includes('infraestrutura')) return 'infraestrutura';
-
-  // 5. TRÂNSITO (interdição / bloqueio / rodovia)
-  if (analise.eventos.includes('transito')) return 'transito';
-  if (analise.rodovia) return 'transito';
-
-  // 6. ACIDENTE (só se tiver contexto de rodovia ou via)
-  if (analise.eventos.includes('acidente') && (analise.rodovia || analise.temImpactoOperacional)) {
-    return 'acidente';
-  }
-
-  // 7. LOGÍSTICA (transporte, caminhão, carga)
-  if (analise.eventos.includes('logistica')) return 'logistica';
-
-  // 8. SEGURANÇA (roubo de carga, operação policial)
-  if (analise.eventos.includes('seguranca')) return 'policial';
-
-  // 9. FISCALIZAÇÃO (vai como policial)
-  if (analise.eventos.includes('fiscalizacao')) return 'policial';
-  return 'geral';
-  }
-
 // ============================================================
 // DETECTAR SEVERIDADE CRÍTICA
 // ============================================================
