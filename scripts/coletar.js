@@ -588,7 +588,7 @@ function calcularRelevancia(titulo, resumo, fonte) {
 }
 
 // ============================================================
-// CATEGORIA — por PONTUAÇÃO (maior vence)
+// CATEGORIA — por PONTUAÇÃO COM CONTEXTO
 // ============================================================
 
 function determinarCategoria(analise) {
@@ -599,7 +599,9 @@ function determinarCategoria(analise) {
     abastecimento: 0, fiscalizacao: 0
   };
 
-  // Peso por âncora
+  // ----------------------------------------------------------
+  // 1. PESO POR ÂNCORA (o tema real)
+  // ----------------------------------------------------------
   analise.eventos.forEach(ancora => {
     if (ancora === 'seguranca')       pontos.policial += 30;
     if (ancora === 'clima')           pontos.clima += 30;
@@ -612,10 +614,13 @@ function determinarCategoria(analise) {
     if (ancora === 'fiscalizacao')    pontos.fiscalizacao += 20;
   });
 
-  // Bônus por contexto
-  const temVia     = (analise.contextos || []).includes('via');
-  const temImpacto = (analise.contextos || []).includes('impacto');
-  const temSever   = (analise.contextos || []).includes('severidade');
+  // ----------------------------------------------------------
+  // 2. BÔNUS POR CONTEXTO (o detalhe operacional)
+  // ----------------------------------------------------------
+  const contextos = analise.contextos || [];
+  const temVia     = contextos.includes('via');
+  const temImpacto = contextos.includes('impacto');
+  const temSever   = contextos.includes('severidade');
 
   if (temVia) {
     pontos.transito += 20;
@@ -632,21 +637,44 @@ function determinarCategoria(analise) {
     for (const cat in pontos) if (pontos[cat] === maior) pontos[cat] += 15;
   }
 
-  // Reforço roubo de carga
-  const texto = (analise.motivos || []).join(' ').toLowerCase();
-  if (['roubo de carga', 'carga roubada', 'furto de carga', 'assalto a carreta']
-      .some(t => texto.includes(normalizar(t)))) {
-    pontos.policial += 25;
+  // ----------------------------------------------------------
+  // 3. REGRA DE CONTEXTO POR TEMA
+  // ----------------------------------------------------------
+  // Cada categoria só "confirma" se tiver contexto real
+  // ----------------------------------------------------------
+
+  // CLIMA só ganha se tiver contexto climático real
+  const contextoClima = [
+    'alagamento', 'alagamentos', 'alagou', 'enchente', 'inundação', 'inundacao',
+    'transbordamento', 'deslizamento', 'destelhamento',
+    'vendaval', 'ventania', 'granizo', 'ciclone', 'tornado',
+    'chuva forte', 'chuva intensa', 'temporal com chuva',
+    'alerta meteorológico', 'alerta meteorologico', 'alerta de chuva',
+    'aviso de tempestade', 'defesa civil'
+  ].some(p => analise.motivos.join(' ').toLowerCase().includes(normalizar(p)));
+
+  if (!contextoClima && pontos.clima > 0) {
+    // Previsão do tempo sem contexto real → perde os pontos de clima
+    pontos.clima = Math.max(0, pontos.clima - 25);
   }
 
-  // Reforço crime organizado
-  const termosCrime = ['facção', 'faccao', 'milícia', 'milicia', 'pcc',
-                       'comando vermelho', 'guerra do tráfico', 'guerra do trafico'];
-  if (termosCrime.some(t => texto.includes(normalizar(t)))) {
-    pontos.policial += 20;
+  // SEGURANÇA só ganha se tiver contexto real
+  const contextoSeguranca = [
+    'roubo de carga', 'carga roubada', 'furto de carga',
+    'assalto a caminhão', 'assalto a carreta', 'roubo de caminhão', 'roubo de carreta',
+    'facção', 'faccao', 'milícia', 'milicia', 'pcc', 'comando vermelho',
+    'operação policial', 'operacao policial', 'confronto', 'tiroteio',
+    'arrastão', 'arrastao', 'ônibus queimado', 'onibus queimado'
+  ].some(p => analise.motivos.join(' ').toLowerCase().includes(normalizar(p)));
+
+  if (!contextoSeguranca && pontos.policial > 0) {
+    // Bateu em segurança mas sem contexto real → reduz peso
+    pontos.policial = Math.max(0, pontos.policial - 20);
   }
 
-  // Escolhe vencedor
+  // ----------------------------------------------------------
+  // 4. ESCOLHE VENCEDOR
+  // ----------------------------------------------------------
   let melhor = 'geral';
   let maior = 0;
   for (const cat in pontos) {
