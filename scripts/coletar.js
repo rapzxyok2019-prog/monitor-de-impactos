@@ -468,7 +468,21 @@ function calcularRelevancia(titulo, resumo, fonte) {
     score += 10;
     motivos.push('fonte especializada');
   }
+    // ==========================================================
+  // REGRA ESPECIAL: crime organizado exige localidade monitorada
+  // ==========================================================
+  const termosCrimeOrganizado = [
+    'facção', 'faccao', 'milícia', 'milicia', 'pcc', 'comando vermelho',
+    'tráfico', 'trafico', 'crime organizado', 'guerra do tráfico', 'guerra do trafico',
+    'domínio de comunidade', 'dominio de comunidade', 'toque de recolher'
+  ];
+  const temCrimeOrganizado = termosCrimeOrganizado.some(t => texto.includes(normalizar(t)));
 
+  if (temCrimeOrganizado && !localidade) {
+    // Crime organizado sem localidade → penaliza forte
+    score -= 40;
+    motivos.push('crime organizado sem localidade monitorada');
+  }
   score = Math.max(0, Math.min(100, score));
 
   // NÍVEL (usa limiares fixos de severidade, não o SCORE_MINIMO)
@@ -541,22 +555,7 @@ function determinarCategoria(analise) {
 
   // 9. FISCALIZAÇÃO (vai como policial)
   if (analise.eventos.includes('fiscalizacao')) return 'policial';
-
   return 'geral';
-    // ==========================================================
-  // REGRA ESPECIAL: crime organizado exige localidade monitorada
-  // ==========================================================
-  const termosCrimeOrganizado = [
-    'facção', 'faccao', 'milícia', 'milicia', 'pcc', 'comando vermelho',
-    'tráfico', 'trafico', 'crime organizado', 'guerra do tráfico', 'guerra do trafico',
-    'domínio de comunidade', 'dominio de comunidade', 'toque de recolher'
-  ];
-  const temCrimeOrganizado = termosCrimeOrganizado.some(t => texto.includes(normalizar(t)));
-
-  if (temCrimeOrganizado && !localidade) {
-    // Crime organizado sem localidade → penaliza forte
-    score -= 40;
-    motivos.push('crime organizado sem localidade monitorada');
   }
 
 // ============================================================
