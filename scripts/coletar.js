@@ -13,17 +13,16 @@ const { Resend } = require('resend');
 // ============================================================
 
 const DIAS_PADRAO = 2;
-const SCORE_ALERTA = 70;   // Mínimo para alerta por e-mail (quando não for severidade crítica)
+const SCORE_ALERTA = 70;
 const MAX_NOTICIAS_POR_FONTE = 8;
 
 // ------------------------------------------------------------
 // LIMIARES POR CATEGORIA
-// Cada categoria tem seu próprio mínimo para subir no site
 // ------------------------------------------------------------
 const LIMIARES_POR_CATEGORIA = {
   policial:       35,
   greve:          40,
-  clima:          30,   // chuva forte / temporal precisa subir
+  clima:          30,
   acidente:       30,
   transito:       30,
   infraestrutura: 35,
@@ -32,17 +31,11 @@ const LIMIARES_POR_CATEGORIA = {
   padrao:         40
 };
 
-// Se for evento crítico, pode publicar com score menor
 const LIMIAR_EXCECAO_CRITICA = 20;
-
-// Fonte oficial pode publicar como "atenção" com score menor
 const FONTES_OFICIAIS = ['inmet', 'cemaden', 'defesa civil', 'defesa_civil', 'crh'];
 const LIMIAR_FONTE_OFICIAL = 15;
-
-// Abaixo disso não sobe nem no painel interno
 const LIMIAR_PAINEL_INTERNO = 10;
 
-// Termos que caracterizam severidade crítica
 const TERMOS_SEVERIDADE_CRITICA = [
   'extrema', 'extremo', 'grave', 'graves', 'mortes', 'morto', 'morta',
   'vítimas fatais', 'vitimas fatais', 'risco de morte', 'risco iminente',
@@ -79,7 +72,7 @@ const PALAVRAS_BLOQUEIO = [
 ];
 
 // ============================================================
-// TERMOS DE BAIXA UTILIDADE OPERACIONAL
+// TERMOS DE BAIXA UTILIDADE
 // ============================================================
 
 const TERMOS_BAIXA_UTILIDADE = [
@@ -100,29 +93,24 @@ const TERMOS_BAIXA_UTILIDADE = [
 const EVENTOS_OPERACIONAIS = {
   seguranca: {
     palavras: [
-      // Roubo/furto de carga (operação direta)
       'roubo de carga', 'carga roubada', 'furto de carga', 'assalto a caminhão', 'assalto a caminhao',
       'assalto a carreta', 'roubo de caminhão', 'roubo de caminhao', 'roubo de carreta',
       'desvio de carga', 'carga desviada', 'apreensão de carga', 'apreensao de carga',
 
-      // Crime organizado (risco operacional no RJ e capitais)
       'facção', 'faccao', 'milícia', 'milicia', 'pcc', 'comando vermelho',
       'tráfico', 'trafico', 'tráfico de drogas', 'trafico de drogas',
       'crime organizado', 'guerra do tráfico', 'guerra do trafico',
       'domínio de comunidade', 'dominio de comunidade',
       'toque de recolher', 'estado de emergência', 'estado de emergencia',
 
-      // Operações que bloqueiam vias
       'operação policial', 'operacao policial', 'operação da prf', 'operacao da prf',
       'blitz', 'barreira policial', 'perseguição', 'perseguicao',
       'confronto', 'tiroteio', 'operação em comunidade', 'operacao em comunidade',
 
-      // Risco imediato em via
       'arrastão', 'arrastao', 'saque', 'saques', 'depredação', 'depredacao',
       'ônibus queimado', 'onibus queimado', 'veículo queimado', 'veiculo queimado',
       'barricada', 'tumulto',
 
-      // Incidentes com impacto logístico
       'incêndio em galpão', 'incendio em galpao', 'incêndio em depósito', 'incendio em deposito',
       'incêndio em caminhão', 'incendio em caminhao', 'incêndio em carreta', 'incendio em carreta'
     ],
@@ -141,23 +129,19 @@ const EVENTOS_OPERACIONAIS = {
 
   clima: {
     palavras: [
-      // Chuvas e alagamentos (contexto real)
       'chuva forte', 'chuvas intensas', 'chuvas fortes', 'temporal', 'tempestade',
       'enchente', 'alagamento', 'alagamentos', 'inundação', 'inundacao',
       'deslizamento', 'desabamento por chuva', 'transbordamento',
       'cheia do rio', 'nível do rio', 'nivel do rio',
 
-      // Eventos extremos
       'vendaval', 'ciclone', 'tornado', 'furacão', 'furacao', 'granizo',
       'frente fria', 'onda de calor', 'calor extremo', 'ressaca', 'ventania',
 
-      // Alertas oficiais
       'alerta meteorológico', 'alerta meteorologico',
       'alerta de chuva', 'alerta de tempestade',
       'aviso de tempestade', 'aviso de tempestades',
       'aviso meteorológico', 'aviso meteorologico',
 
-      // Impacto climático direto
       'queda de árvore', 'queda de arvore', 'queda de poste',
       'destelhamento', 'destruição por chuva', 'destruicao por chuva'
     ],
@@ -228,7 +212,7 @@ const EVENTOS_OPERACIONAIS = {
 };
 
 // ============================================================
-// TERMOS DE IMPACTO OPERACIONAL
+// TERMOS DE IMPACTO
 // ============================================================
 
 const TERMOS_IMPACTO = [
@@ -339,9 +323,8 @@ const FONTES = [
   { nome: 'O Globo - São Paulo', url: 'https://oglobo.globo.com/rss/sao-paulo/', categoria: 'geral' },
   { nome: 'INMET - Alertas', url: 'http://alert-as.inmet.gov.br/cap_12/rss/alert-as.rss', categoria: 'clima' },
   { nome: 'CEMADEN - Alertas', url: 'http://www.cemaden.gov.br/feed/', categoria: 'clima' },
-    { nome: 'Portal do Trânsito', url: 'https://www.portaldotransito.com.br/feed/', categoria: 'transito' }
+  { nome: 'Portal do Trânsito', url: 'https://www.portaldotransito.com.br/feed/', categoria: 'transito' }
 ];
-
 // ============================================================
 // NORMALIZAÇÃO E UTILITÁRIOS
 // ============================================================
@@ -534,6 +517,83 @@ function calcularRelevancia(titulo, resumo, fonte) {
     baixaUtilidade,
     motivos
   };
+}
+
+// ============================================================
+// CATEGORIA — por PONTUAÇÃO (maior vence)
+// ============================================================
+
+function determinarCategoria(analise) {
+
+  const texto = (analise.motivos || []).join(' ').toLowerCase();
+
+  // Pontuação por categoria
+  const pontos = {
+    policial: 0,
+    clima: 0,
+    greve: 0,
+    transito: 0,
+    acidente: 0,
+    infraestrutura: 0,
+    logistica: 0,
+    abastecimento: 0,
+    fiscalizacao: 0
+  };
+
+  // Peso de cada evento detectado
+  analise.eventos.forEach(evento => {
+    const peso = EVENTOS_OPERACIONAIS[evento] ? EVENTOS_OPERACIONAIS[evento].peso : 0;
+    if (evento === 'seguranca')       pontos.policial += peso;
+    if (evento === 'clima')           pontos.clima += peso;
+    if (evento === 'greve')           pontos.greve += peso;
+    if (evento === 'transito')        pontos.transito += peso;
+    if (evento === 'acidente')        pontos.acidente += peso;
+    if (evento === 'infraestrutura')  pontos.infraestrutura += peso;
+    if (evento === 'logistica')       pontos.logistica += peso;
+    if (evento === 'abastecimento')   pontos.abastecimento += peso;
+    if (evento === 'fiscalizacao')    pontos.fiscalizacao += peso;
+  });
+
+  // Bônus: rodovia reforça quem já tem contexto
+  if (analise.rodovia) {
+    if (pontos.transito > 0)  pontos.transito += 15;
+    if (pontos.acidente > 0)  pontos.acidente += 15;
+    if (pontos.greve > 0)     pontos.greve += 15;
+  }
+
+  // Bônus: impacto operacional
+  if (analise.temImpactoOperacional) {
+    if (pontos.transito > 0)       pontos.transito += 10;
+    if (pontos.infraestrutura > 0) pontos.infraestrutura += 10;
+  }
+
+  // Reforço: crime organizado empurra policial
+  const termosCrime = ['facção', 'faccao', 'milícia', 'milicia', 'pcc', 'comando vermelho',
+                       'tráfico', 'trafico', 'guerra do tráfico', 'guerra do trafico'];
+  if (termosCrime.some(t => texto.includes(normalizar(t)))) {
+    pontos.policial += 20;
+  }
+
+  // Reforço: roubo de carga empurra policial forte
+  const termosRoubo = ['roubo de carga', 'carga roubada', 'furto de carga',
+                       'assalto a caminhão', 'assalto a caminhao',
+                       'assalto a carreta', 'roubo de carreta'];
+  if (termosRoubo.some(t => texto.includes(normalizar(t)))) {
+    pontos.policial += 25;
+  }
+
+  // Escolhe a categoria com maior pontuação
+  let melhorCategoria = 'geral';
+  let maiorPontuacao = 0;
+  for (const cat in pontos) {
+    if (pontos[cat] > maiorPontuacao) {
+      maiorPontuacao = pontos[cat];
+      melhorCategoria = cat;
+    }
+  }
+
+  if (maiorPontuacao === 0) return 'geral';
+  return melhorCategoria;
 }
 // ============================================================
 // DETECTAR SEVERIDADE CRÍTICA
@@ -751,8 +811,8 @@ async function coletarNoticias() {
 
         console.log(`   📊 Score: ${analise.score}/100 | ${analise.nivel}`);
         console.log(`   🔎 ${analise.motivos.join(', ')}`);
+        console.log(`   🏷️ Categoria: ${categoria}`);
 
-        // NOVA LÓGICA DE PUBLICAÇÃO
         const decisao = decidirPublicacao(textoCompleto, analise, categoria, fonte.nome);
         console.log(`   🚦 ${decisao.status} — ${decisao.motivo}`);
 
@@ -779,12 +839,10 @@ async function coletarNoticias() {
           fonte: fonte.nome,
           categoria,
 
-          // ---- NOVOS CAMPOS DE DECISÃO ----
           statusPublicacao: decisao.status,
           motivoPublicacao: decisao.motivo,
           limiarUsado: decisao.limiarUsado,
           severidadeCritica: decisao.severidadeCritica,
-          // ---------------------------------
 
           score: analise.score,
           nivel: analise.nivel,
@@ -801,7 +859,6 @@ async function coletarNoticias() {
         total++;
         console.log('   ✅ SALVA');
 
-        // E-mail: agora dispara por score alto OU severidade crítica
         const deveAlertar =
           noticia.score >= SCORE_ALERTA ||
           decisao.severidadeCritica === true;
