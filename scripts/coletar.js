@@ -77,14 +77,14 @@ const PALAVRAS_BLOQUEIO = [
   'vacina', 'hospital', 'câncer', 'cancer', 'pandemia', 'covid',
   'viralizou', 'viraliza', 'internautas', 'curiosidade'
   
-      // Crimes que só mencionam trânsito de passagem (não é operacional)
-    'briga de trânsito', 'briga de transito',
-    'discussão de trânsito', 'discussao de transito',
-    'desentendimento no trânsito', 'desentendimento no transito',
-    'crime de trânsito', 'crime de transito',
-    'esfaqueado', 'esfaqueada', 'facada',
-    'agressão em via', 'agressao em via',
-    'briga em via', 'discussão em via', 'discussao em via'
+     // Crimes que só mencionam trânsito de passagem (não é operacional)
+      'briga de trânsito', 'briga de transito',
+      'discussão de trânsito', 'discussao de transito',
+      'desentendimento no trânsito', 'desentendimento no transito',
+      'crime de trânsito', 'crime de transito',
+      'esfaqueado', 'esfaqueada', 'facada',
+      'agressão em via', 'agressao em via',
+      'briga em via', 'discussão em via', 'discussao em via'
 ];
 
 // ============================================================
