@@ -75,7 +75,7 @@ const PALAVRAS_BLOQUEIO = [
   'moda', 'fofoca', 'receita', 'entretenimento',
   'safra', 'soja', 'milho', 'trigo', 'café', 'cafe', 'plantio', 'colheita', 'agronegócio',
   'vacina', 'hospital', 'câncer', 'cancer', 'pandemia', 'covid',
-  'viralizou', 'viraliza', 'internautas', 'curiosidade'
+  'viralizou', 'viraliza', 'internautas', 'curiosidade',
   
      // Crimes que só mencionam trânsito de passagem (não é operacional)
       'briga de trânsito', 'briga de transito',
