@@ -84,7 +84,21 @@ const PALAVRAS_BLOQUEIO = [
       'crime de trânsito', 'crime de transito',
       'esfaqueado', 'esfaqueada', 'facada',
       'agressão em via', 'agressao em via',
-      'briga em via', 'discussão em via', 'discussao em via'
+      'briga em via', 'discussão em via', 'discussao em via',
+  
+   // Aviação civil (não operacional)
+  'queda de avião', 'queda de aviao',
+  'acidente aéreo', 'acidente aereo',
+  'avião', 'aviao', 'aeronave',
+  'aeroporto', 'voos', 'voo',
+  'companhia aérea', 'companhia aerea',
+
+    // Estatísticas e declarações
+  'mortes nas estradas', 'mortes no trânsito', 'mortes no transito',
+  'estatística', 'estatistica', 'levantamento', 'balanço', 'balanco',
+  'disse que', 'afirmou que', 'declarou',
+  'segundo dados', 'de acordo com dados'
+
 ];
 
 // ============================================================
@@ -150,7 +164,7 @@ const EVENTOS_OPERACIONAIS = {
       'previsão do tempo', 'previsao do tempo',
       'previsão para hoje', 'previsao para hoje'
     ],
-    peso: 25
+    peso: 32
   },
 
   // ----------------------------------------------------------
@@ -169,8 +183,7 @@ const EVENTOS_OPERACIONAIS = {
       'pcc', 'comando vermelho', 'crime organizado',
       'guerra do tráfico', 'guerra do trafico',
       'domínio de comunidade', 'dominio de comunidade',
-      'toque de recolher', 'estado de emergência', 'estado de emergencia',
-
+    
       // Operações que bloqueiam vias
       'operação policial', 'operacao policial',
       'operação da prf', 'operacao da prf',
