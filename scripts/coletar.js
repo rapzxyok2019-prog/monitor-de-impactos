@@ -76,6 +76,15 @@ const PALAVRAS_BLOQUEIO = [
   'safra', 'soja', 'milho', 'trigo', 'café', 'cafe', 'plantio', 'colheita', 'agronegócio',
   'vacina', 'hospital', 'câncer', 'cancer', 'pandemia', 'covid',
   'viralizou', 'viraliza', 'internautas', 'curiosidade'
+  
+      // Crimes que só mencionam trânsito de passagem (não é operacional)
+    'briga de trânsito', 'briga de transito',
+    'discussão de trânsito', 'discussao de transito',
+    'desentendimento no trânsito', 'desentendimento no transito',
+    'crime de trânsito', 'crime de transito',
+    'esfaqueado', 'esfaqueada', 'facada',
+    'agressão em via', 'agressao em via',
+    'briga em via', 'discussão em via', 'discussao em via'
 ];
 
 // ============================================================
@@ -189,9 +198,9 @@ const EVENTOS_OPERACIONAIS = {
   // ----------------------------------------------------------
   // TRÂNSITO = bloqueio de via, acidente que trava, etc.
   // ----------------------------------------------------------
-  transito: {
+   transito: {
     palavras: [
-      // Interdições e bloqueios
+      // Interdições e bloqueios explícitos
       'interdição', 'interdicao', 'interditada', 'interditado',
       'bloqueio de pista', 'pista fechada', 'pista bloqueada',
       'faixa bloqueada', 'faixa interditada',
@@ -199,16 +208,22 @@ const EVENTOS_OPERACIONAIS = {
       'avenida fechada', 'avenida interditada',
       'rua fechada', 'rua interditada',
       'trânsito parado', 'transito parado',
+      'trânsito bloqueado', 'transito bloqueado',
+      'trânsito interditado', 'transito interditado',
       'congestionamento', 'lentidão', 'lentidao',
       'desvio', 'rota alternativa',
-      'obras na rodovia', 'acidente na rodovia',
 
       // Acidentes que travam via
-      'acidente', 'colisão', 'colisao', 'capotamento', 'engavetamento',
-      'atropelamento', 'batida', 'tombamento', 'tombou',
+      'engavetamento', 'capotamento',
       'carreta tombou', 'caminhão tombou', 'caminhao tombou',
       'caminhão capotou', 'caminhao capotou',
-      'carreta capotou', 'veículo capotou', 'veiculo capotou'
+      'carreta capotou', 'veículo capotou', 'veiculo capotou',
+      'tombamento', 'tombou',
+      'colisão', 'colisao',
+      'acidente na rodovia', 'acidente na br',
+      'acidente na avenida', 'acidente na pista',
+      'acidente com caminhão', 'acidente com caminhao',
+      'acidente com carreta', 'acidente com ônibus', 'acidente com onibus'
     ],
     peso: 25
   },
@@ -460,6 +475,7 @@ function calcularRelevancia(titulo, resumo, fonte) {
       score -= 60;
       motivos.push(`bloqueio: ${bloqueio}`);
       break;
+      
     }
   }
 
@@ -529,27 +545,38 @@ function calcularRelevancia(titulo, resumo, fonte) {
     motivos.push(`rodovia: ${rodovia}`);
   }
 
-  // ==========================================================
+   // ==========================================================
   // 5. REGRA DE OPERACIONAL REAL
   // ==========================================================
   const temAncora = ancorasEncontradas.length > 0;
-  const temContexto = contextosEncontrados.length > 0;
   const temLocalidadeOuRodovia = !!localidade || !!rodovia;
+
+  // Contexto REAL (não genérico)
+  const temContextoReal = 
+    contextosEncontrados.includes('via') || 
+    contextosEncontrados.includes('impacto');
+
+  // Categorias que podem liberar SOZINHAS (mesmo sem via/impacto)
+  const categoriaCritica = 
+    ancorasEncontradas.includes('clima') ||
+    (ancorasEncontradas.includes('policial') && ehLocalidadeRJ(localidade));
 
   let operacionalReal = false;
 
-  if (temAncora && temContexto) {
+  if (temAncora && temContextoReal) {
+    // Regra 1: âncora + via/impacto
+    operacionalReal = true;
+  } else if (temAncora && categoriaCritica) {
+    // Regra 2: clima OU policial no RJ
     operacionalReal = true;
   } else if (temAncora && temLocalidadeOuRodovia && ancorasEncontradas.length >= 2) {
+    // Regra 3: âncora + localidade/rodovia + 2+ âncoras
     operacionalReal = true;
-  } else if (temAncora && ancorasEncontradas.includes('clima') && temLocalidadeOuRodovia) {
-    // clima sempre vale se tiver localidade (é risco direto)
-    operacionalReal = true;
-  } else if (temAncora && ancorasEncontradas.includes('policial') && ehLocalidadeRJ(localidade)) {
-    // policial no RJ é risco direto
-    operacionalReal = true;
+  } else if (temAncora && !temContextoReal && !categoriaCritica) {
+    // Âncora sozinha sem contexto real → penaliza
+    score -= 20;
+    motivos.push('âncora sem contexto real');
   }
-
   // ==========================================================
   // 6. BAIXA UTILIDADE
   // ==========================================================
