@@ -962,7 +962,21 @@ async function coletarNoticias() {
         const resumo = item.contentSnippet || item.content || item.description || '';
         const link = item.link || '#';
         const dataPub = item.pubDate ? new Date(item.pubDate) : new Date();
+const dataPub = item.pubDate ? new Date(item.pubDate) : new Date();
 
+// ----------------------------------------------------------
+// FILTRO DE DATA: ignora notícias com mais de 2 dias
+// ----------------------------------------------------------
+const agora = new Date();
+const idadeHoras = (agora - dataPub) / (1000 * 60 * 60);
+
+if (idadeHoras > 48) {
+  console.log(`📰 ${titulo.slice(0, 70)}`);
+  console.log(`   ⏰ Antiga (${Math.round(idadeHoras)}h) — IGNORADA`);
+  continue;
+}
+
+console.log(`📰 ${titulo.slice(0, 70)}`);
         console.log(`📰 ${titulo.slice(0, 70)}`);
 
         const analise = calcularRelevancia(titulo, resumo, fonte.nome);
