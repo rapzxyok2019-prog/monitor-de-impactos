@@ -989,7 +989,6 @@ async function coletarNoticias() {
         const resumo = item.contentSnippet || item.content || item.description || '';
         const link = item.link || '#';
         const dataPub = item.pubDate ? new Date(item.pubDate) : new Date();
-const dataPub = item.pubDate ? new Date(item.pubDate) : new Date();
 
 // ----------------------------------------------------------
 // FILTRO DE DATA: ignora notícias com mais de 2 dias
