@@ -497,11 +497,11 @@ function calcularRelevancia(titulo, resumo, fonte) {
   // ==========================================================
   const ancorasEncontradas = [];
   for (const [tema, config] of Object.entries(EVENTOS_OPERACIONAIS)) {
-    const bateu = config.palavras.some(p => texto.includes(normalizar(p)));
-    if (bateu) {
+    const palavrasQueBateram = config.palavras.filter(p => texto.includes(normalizar(p)));
+    if (palavrasQueBateram.length > 0) {
       ancorasEncontradas.push(tema);
       score += config.peso;
-      motivos.push(`âncora: ${tema}`);
+      motivos.push(`âncora: ${tema} (${palavrasQueBateram.join(', ')})`);
     }
   }
 
