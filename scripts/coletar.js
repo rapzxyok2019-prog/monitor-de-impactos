@@ -495,13 +495,13 @@ function calcularRelevancia(titulo, resumo, fonte) {
   // ==========================================================
   // 2. ÂNCORAS — o "assunto real" (usa EVENTOS_OPERACIONAIS)
   // ==========================================================
-  const ancorasEncontradas = [];
+ const ancorasEncontradas = [];
   for (const [tema, config] of Object.entries(EVENTOS_OPERACIONAIS)) {
     const palavrasQueBateram = config.palavras.filter(p => texto.includes(normalizar(p)));
     if (palavrasQueBateram.length > 0) {
       ancorasEncontradas.push(tema);
       score += config.peso;
-      motivos.push(`âncora: ${tema} (${palavrasQueBateram.join(', ')})`);
+      motivos.push(`âncora: ${tema} (${palavrasQueBateram.slice(0, 3).join(', ')})`);
     }
   }
 
@@ -708,9 +708,10 @@ function determinarCategoria(analise, texto) {
     'facção', 'faccao', 'milícia', 'milicia', 'pcc', 'comando vermelho',
     'operação policial', 'operacao policial',
     'confronto', 'tiroteio', 'arrastão', 'arrastao',
-    'ônibus queimado', 'onibus queimado',
-    'toque de recolher', 'domínio de comunidade', 'dominio de comunidade',
-    'guerra do tráfico', 'guerra do trafico'
+    'ônibus queimado', 'onibus queimado', 'toque de recolher', 'domínio de comunidade', 'dominio de comunidade',
+    'guerra do tráfico', 'guerra do trafico', 'roubada', 'roubadas', 'roubado', 'roubados',
+      'assaltada', 'assaltadas', 'assaltado', 'assaltados',
+      'roubaram', 'assaltaram', 'carga roubada', 'carga foi roubada',
   ]);
   if (!temPolicialReal && pontos.policial > 0) {
     pontos.policial = Math.max(0, pontos.policial - 20);
@@ -748,8 +749,35 @@ function determinarCategoria(analise, texto) {
     }
   }
   if (maior === 0) return 'geral';
+
+    let melhor = 'geral';
+  let maior = 0;
+  for (const cat in pontos) {
+    if (pontos[cat] > maior) {
+      maior = pontos[cat];
+      melhor = cat;
+    }
+  }
+  if (maior === 0) return 'geral';
+
+  // ==========================================================
+  // DESEMPATES — prioridades específicas
+  // ==========================================================
+
+  // Abastecimento vence se for o maior ou empatar
+  if (pontos.abastecimento > 0 && pontos.abastecimento >= maior - 3) {
+    return 'abastecimento';
+  }
+
+  // Clima vence se for o maior ou empatar com transito/policial
+  if (pontos.clima > 0 && pontos.clima >= maior - 3 &&
+      pontos.clima >= pontos.transito - 3 && pontos.clima >= pontos.policial - 3) {
+    return 'clima';
+  }
+  
   return melhor;
 }
+
 // ============================================================
 // DETECTAR SEVERIDADE CRÍTICA
 // ============================================================
