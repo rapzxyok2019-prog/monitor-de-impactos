@@ -166,6 +166,44 @@ const EVENTOS_OPERACIONAIS = {
     ],
     peso: 32
   },
+  
+    risco_abastecimento: {
+    palavras: [
+      // Água
+      'risco de falta de água', 'risco de falta de agua',
+      'risco de desabastecimento de água', 'risco de desabastecimento de agua',
+      'pode faltar água', 'pode faltar agua',
+      'pode haver racionamento', 'racionamento pode',
+      'racionamento de água', 'racionamento de agua',
+      'reservatório em nível crítico', 'reservatorio em nivel critico',
+      'reservatório no limite', 'reservatorio no limite',
+      'nível do reservatório caiu', 'nivel do reservatorio caiu',
+      'sistema em alerta', 'sistema em estado crítico', 'sistema em estado critico',
+      'previsão de racionamento', 'previsao de racionamento',
+      'ameaça de racionamento', 'ameaca de racionamento',
+      'abastecimento em risco',
+      'crise hídrica', 'crise hidrica',
+
+      // Energia
+      'risco de apagão', 'risco de apagao',
+      'risco de falta de energia',
+      'pode faltar energia', 'pode faltar luz',
+      'racionamento de energia',
+      'bandeira vermelha', 'bandeira vermelha na conta de luz',
+      'crise energética', 'crise energetica',
+
+      // Combustível
+      'risco de falta de combustível', 'risco de falta de combustivel',
+      'pode faltar combustível', 'pode faltar combustivel',
+      'pode faltar diesel', 'pode faltar gasolina',
+      'risco de desabastecimento de combustível',
+      'risco de desabastecimento de combustivel',
+      'crise de combustível', 'crise de combustivel',
+      'caminhoneiros ameaçam', 'caminhoneiros ameacam',
+      'greve pode começar', 'greve prevista'
+    ],
+    peso: 40   // peso alto — é alerta preventivo
+  },
 
   // ----------------------------------------------------------
   // POLICIAL = risco operacional por violência/operações
@@ -660,6 +698,7 @@ function determinarCategoria(analise, texto) {
     if (ancora === 'greve')           pontos.greve += peso;
     if (ancora === 'infraestrutura')  pontos.infraestrutura += peso;
     if (ancora === 'abastecimento')   pontos.abastecimento += peso;
+    if (ancora === 'risco_abastecimento')   pontos.risco_abastecimento += peso;
   });
 
   // ----------------------------------------------------------
