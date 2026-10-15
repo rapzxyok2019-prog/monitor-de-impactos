@@ -583,6 +583,196 @@
             .card-metrica .numero { font-size: 1.7rem; }
         }
         @media (max-width:480px) { body{ padding:8px; } .tab-btn{ font-size:0.65rem; padding:6px 8px; } .card{ padding:12px; } #mapa{ height:200px; } #telaLogin{ margin:30px 16px; padding:20px; } }
+        
+                /* ============================================================ */
+        /* MINUTO DE PREVENÇÃO — MODAL                                 */
+        /* ============================================================ */
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            animation: fadeIn 0.2s ease;
+        }
+        .modal-overlay.ativo { display: flex; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-minuto {
+            background: #ffffff;
+            border-radius: 20px;
+            max-width: 520px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 80px rgba(0, 20, 51, 0.4);
+            animation: slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            position: relative;
+            border-top: 6px solid #f59e0b;
+        }
+        .modal-minuto.sev-critico { border-top-color: #dc2626; }
+        .modal-minuto.sev-atencao { border-top-color: #f59e0b; }
+        .modal-minuto.sev-info    { border-top-color: #16a34a; }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-fechar {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: #f0f3f9;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            color: #4a5b76;
+            transition: all 0.15s ease;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+        .modal-fechar:hover { background: #e2e6ee; color: #1e2a3a; }
+
+        .modal-titulo {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #0f1c33;
+            padding: 24px 60px 16px 24px;
+            letter-spacing: -0.3px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-corpo {
+            padding: 0 24px;
+        }
+
+        .minuto-bloco {
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f2f6;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+        .minuto-bloco:last-child { border-bottom: none; }
+
+        .minuto-label {
+            font-size: 0.65rem;
+            color: #6b7a93;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .minuto-valor {
+            color: #1e2a3a;
+            font-weight: 500;
+        }
+
+        .minuto-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 12px 0;
+            font-size: 0.75rem;
+            color: #4a5b76;
+            border-bottom: 1px solid #f0f2f6;
+        }
+        .minuto-meta span {
+            background: #f0f3f9;
+            padding: 3px 10px;
+            border-radius: 40px;
+            font-weight: 500;
+        }
+
+        .minuto-resumo {
+            background: #f8f9fc;
+            padding: 12px 14px;
+            border-radius: 10px;
+            font-size: 0.83rem;
+            color: #2c3e4e;
+            line-height: 1.55;
+            margin-top: 6px;
+        }
+
+        .minuto-risco {
+            color: #991b1b;
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+        .minuto-acao {
+            color: #1e40af;
+            font-weight: 600;
+        }
+
+        .modal-acoes {
+            padding: 16px 24px 24px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .modal-btn {
+            flex: 1;
+            min-width: 140px;
+            background: #003da5;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .modal-btn:hover { background: #002d7a; transform: translateY(-1px); }
+
+        .modal-btn.secundario {
+            background: #f0f3f9;
+            color: #2c3e4e;
+        }
+        .modal-btn.secundario:hover { background: #e2e6ee; color: #1e2a3a; }
+
+        .modal-btn.copiado {
+            background: #16a34a !important;
+        }
+
+        /* Botão "Minuto de prevenção" no card */
+        .btn-minuto {
+            background: linear-gradient(180deg, #fef9c3 0%, #fde047 100%) !important;
+            color: #713f12 !important;
+            border-color: #eab308 !important;
+            font-weight: 700 !important;
+        }
+        .btn-minuto:hover {
+            background: linear-gradient(180deg, #fde047 0%, #facc15 100%) !important;
+            transform: translateY(-1px);
+        }
     </style>
 </head>
 <body>
@@ -1618,5 +1808,24 @@
         });
     }
 </script>
+<!-- ============================================================ -->
+<!-- MODAL: MINUTO DE PREVENÇÃO                                  -->
+<!-- ============================================================ -->
+<div class="modal-overlay" id="modalMinuto">
+    <div class="modal-minuto" id="modalMinutoConteudo">
+        <button class="modal-fechar" onclick="fecharMinuto()" aria-label="Fechar">✕</button>
+        <div class="modal-titulo">
+            ⚠️ Minuto de Prevenção
+        </div>
+        <div class="modal-corpo" id="modalMinutoCorpo">
+            <!-- conteúdo gerado pelo JS -->
+        </div>
+        <div class="modal-acoes">
+            <button class="modal-btn" id="btnCopiarMinuto" onclick="copiarMinuto()">📤 Copiar minuto</button>
+            <button class="modal-btn secundario" onclick="fecharMinuto()">Fechar</button>
+        </div>
+    </div>
+</div>
+    
 </body>
 </html>
