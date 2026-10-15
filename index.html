@@ -1772,6 +1772,251 @@
         setTimeout(function() { if (map) map.invalidateSize(); }, 300);
     }
 
+    // ============================================================
+    // MINUTO DE PREVENÇÃO
+    // ============================================================
+
+    var minutoAtual = null;
+
+    function gerarMinuto(n) {
+        var local = n.localidade
+            ? n.localidade.charAt(0).toUpperCase() + n.localidade.slice(1)
+            : 'Região monitorada';
+
+        var rodovia = n.rodovia ? n.rodovia.toUpperCase() : null;
+
+        var data = n.dataPublicacao
+            ? new Date(n.dataPublicacao.seconds * 1000).toLocaleString('pt-BR')
+            : 'Data desconhecida';
+
+        var catLabels = {
+            clima: '🌧️ Clima',
+            policial: '🚔 Policial',
+            transito: '🚧 Trânsito',
+            greve: '🚛 Greve',
+            infraestrutura: '🏗️ Infraestrutura',
+            abastecimento: '⛽ Abastecimento',
+            risco_abastecimento: '⚠️ Risco Iminente'
+        };
+        var catLabel = catLabels[n.categoria] || n.categoria;
+
+        var resumo = (n.resumo || '').trim();
+        if (resumo.length > 150) {
+            resumo = resumo.slice(0, 147).trim() + '...';
+        }
+
+        var texto = ((n.titulo || '') + ' ' + (n.resumo || '')).toLowerCase();
+        var risco = '';
+        var acao = '';
+
+        var temVia = (n.contextos || []).includes('via');
+        var temImpacto = (n.contextos || []).includes('impacto');
+
+        switch (n.categoria) {
+            case 'clima':
+                if (texto.includes('alagamento') || texto.includes('alaga')) {
+                    risco = 'Alagamento em via';
+                    acao = 'Evitar rotas centrais, considerar desvio';
+                } else if (texto.includes('vendaval') || texto.includes('ventania')) {
+                    risco = 'Vendaval pode derrubar estruturas';
+                    acao = 'Evitar vias com árvores, redobrar atenção';
+                } else if (texto.includes('granizo')) {
+                    risco = 'Risco de granizo';
+                    acao = 'Evitar áreas abertas, proteger veículos';
+                } else if (texto.includes('enchente') || texto.includes('inundacao') || texto.includes('inundação')) {
+                    risco = 'Enchente / inundação';
+                    acao = 'Suspender operação na área, aguardar liberação';
+                } else if (texto.includes('deslizamento')) {
+                    risco = 'Deslizamento';
+                    acao = 'Evitar encostas e vias próximas';
+                } else {
+                    risco = 'Evento climático na região';
+                    acao = 'Acompanhar atualizações, avaliar rotas';
+                }
+                break;
+
+            case 'policial':
+                if (n.riscoAlto) {
+                    risco = 'Confronto/operação com risco elevado';
+                    acao = 'Suspender entregas na região, aguardar orientação';
+                } else if (temVia) {
+                    risco = 'Operação policial com bloqueio de via';
+                    acao = 'Evitar a região, considerar rota alternativa';
+                } else {
+                    risco = 'Risco de segurança na região';
+                    acao = 'Redobrar atenção, avaliar necessidade da rota';
+                }
+                break;
+
+            case 'transito':
+                if (temImpacto) {
+                    risco = 'Via interditada / bloqueada';
+                    acao = 'Usar rota alternativa, prever atraso';
+                } else {
+                    risco = 'Restrição de tráfego';
+                    acao = 'Considerar rota alternativa';
+                }
+                break;
+
+            case 'greve':
+                if (temVia) {
+                    risco = 'Bloqueio por greve em rodovia';
+                    acao = 'Antecipar entregas, monitorar rodovias';
+                } else {
+                    risco = 'Greve pode afetar entrega';
+                    acao = 'Antecipar pedidos, acompanhar situação';
+                }
+                break;
+
+            case 'infraestrutura':
+                if (texto.includes('energia') || texto.includes('apagao') || texto.includes('apagão')) {
+                    risco = 'Falta de energia na região';
+                    acao = 'Verificar CDs próximos, avaliar câmaras frias';
+                } else if (temVia) {
+                    risco = 'Falha estrutural em via';
+                    acao = 'Evitar a região, seguir rota alternativa';
+                } else {
+                    risco = 'Falha de infraestrutura';
+                    acao = 'Monitorar evolução';
+                }
+                break;
+
+            case 'abastecimento':
+                risco = 'Risco de desabastecimento';
+                acao = 'Antecipar abastecimento, monitorar postos';
+                break;
+
+            case 'risco_abastecimento':
+                risco = 'Risco iminente de desabastecimento';
+                acao = 'Acionar plano de contingência imediatamente';
+                break;
+
+            default:
+                risco = 'Verificar notícia completa';
+                acao = 'Avaliar impacto na operação';
+        }
+
+        return {
+            data: data,
+            catLabel: catLabel,
+            local: local,
+            rodovia: rodovia,
+            fonte: n.fonte,
+            resumo: resumo,
+            risco: risco,
+            acao: acao,
+            link: n.link,
+            severidade: n.severidadeCritica ? 'critico'
+                      : (n.statusPublicacao === 'publicar_atencao' ? 'atencao' : 'info')
+        };
+    }
+
+    function abrirMinuto(id) {
+        var noticias = DataService.getNoticias();
+        var n = noticias.find(function(x) { return x.id === id; });
+        if (!n) { alert('Notícia não encontrada.'); return; }
+
+        var m = gerarMinuto(n);
+        minutoAtual = m;
+
+        var corpo = document.getElementById('modalMinutoCorpo');
+        var html = '';
+
+        html += '<div class="minuto-meta">';
+        html += '<span>📅 ' + m.data + '</span>';
+        html += '<span>🏷️ ' + m.catLabel + '</span>';
+        html += '</div>';
+
+        html += '<div class="minuto-bloco">';
+        html += '<div class="minuto-label">📍 Local</div>';
+        html += '<div class="minuto-valor">' + escapeHtml(m.local) + '</div>';
+        if (m.rodovia) {
+            html += '<div class="minuto-valor" style="margin-top:4px;">🛣️ ' + escapeHtml(m.rodovia.toUpperCase()) + '</div>';
+        }
+        html += '</div>';
+
+        html += '<div class="minuto-bloco">';
+        html += '<div class="minuto-label">📰 Fonte</div>';
+        html += '<div class="minuto-valor">' + escapeHtml(m.fonte) + '</div>';
+        html += '</div>';
+
+        html += '<div class="minuto-bloco">';
+        html += '<div class="minuto-label">📋 Resumo</div>';
+        html += '<div class="minuto-resumo">' + escapeHtml(m.resumo) + '</div>';
+        html += '</div>';
+
+        html += '<div class="minuto-bloco">';
+        html += '<div class="minuto-label">🎯 Risco</div>';
+        html += '<div class="minuto-risco">' + escapeHtml(m.risco) + '</div>';
+        html += '</div>';
+
+        html += '<div class="minuto-bloco">';
+        html += '<div class="minuto-label">🚫 Ação sugerida</div>';
+        html += '<div class="minuto-acao">' + escapeHtml(m.acao) + '</div>';
+        html += '</div>';
+
+        corpo.innerHTML = html;
+
+        var modal = document.getElementById('modalMinutoConteudo');
+        modal.className = 'modal-minuto sev-' + m.severidade;
+
+        document.getElementById('modalMinuto').classList.add('ativo');
+    }
+
+    function fecharMinuto() {
+        document.getElementById('modalMinuto').classList.remove('ativo');
+        minutoAtual = null;
+    }
+
+    function copiarMinuto() {
+        if (!minutoAtual) return;
+
+        var m = minutoAtual;
+        var texto =
+            '⚠️ MINUTO DE PREVENÇÃO\n\n' +
+            '📅 ' + m.data + '\n' +
+            '🏷️ ' + m.catLabel + '\n' +
+            '📍 Local: ' + m.local + '\n' +
+            (m.rodovia ? '🛣️ Rodovia: ' + m.rodovia.toUpperCase() + '\n' : '') +
+            '📰 Fonte: ' + m.fonte + '\n\n' +
+            '📋 Resumo:\n' + m.resumo + '\n\n' +
+            '🎯 Risco: ' + m.risco + '\n' +
+            '🚫 Ação: ' + m.acao + '\n\n' +
+            '🔗 ' + m.link;
+
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(texto).then(function() {
+                var btn = document.getElementById('btnCopiarMinuto');
+                var original = btn.innerHTML;
+                btn.innerHTML = '✅ Copiado!';
+                btn.classList.add('copiado');
+                setTimeout(function() {
+                    btn.innerHTML = original;
+                    btn.classList.remove('copiado');
+                }, 2000);
+            }).catch(function() {
+                prompt('Copie manualmente:', texto);
+            });
+        } else {
+            prompt('Copie manualmente:', texto);
+        }
+    }
+
+       // Fecha ao clicar no overlay (fora do modal) + tecla ESC
+    document.addEventListener('DOMContentLoaded', function() {
+        var modalEl = document.getElementById('modalMinuto');
+        if (modalEl) {
+            modalEl.addEventListener('click', function(e) {
+                if (e.target.id === 'modalMinuto') fecharMinuto();
+            });
+        }
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') fecharMinuto();
+    });
+
+    
     // ===== INICIALIZAÇÃO =====
     function initApp() {
         DataService.getConfig().then(function(configAtual) {
