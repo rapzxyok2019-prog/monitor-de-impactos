@@ -750,16 +750,6 @@ function determinarCategoria(analise, texto) {
   }
   if (maior === 0) return 'geral';
 
-    let melhor = 'geral';
-  let maior = 0;
-  for (const cat in pontos) {
-    if (pontos[cat] > maior) {
-      maior = pontos[cat];
-      melhor = cat;
-    }
-  }
-  if (maior === 0) return 'geral';
-
   // ==========================================================
   // DESEMPATES — prioridades específicas
   // ==========================================================
