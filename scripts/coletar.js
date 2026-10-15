@@ -684,7 +684,8 @@ function determinarCategoria(analise, texto) {
     transito: 0,
     greve: 0,
     infraestrutura: 0,
-    abastecimento: 0
+    abastecimento: 0,
+    risco_abastecimento: 0
   };
 
   // ----------------------------------------------------------
@@ -698,9 +699,25 @@ function determinarCategoria(analise, texto) {
     if (ancora === 'greve')           pontos.greve += peso;
     if (ancora === 'infraestrutura')  pontos.infraestrutura += peso;
     if (ancora === 'abastecimento')   pontos.abastecimento += peso;
-    if (ancora === 'risco_abastecimento')   pontos.risco_abastecimento += peso;
   });
+  // ==========================================================
+  // BÔNUS POR CONTEXTO REAL (cada categoria ganha o SEU bônus)
+  // ==========================================================
+  const t2 = (texto || '').toLowerCase();
 
+  // Clima ganha bônus se tiver termos climáticos reais
+  if (['alagamento', 'alagamentos', 'enchente', 'inundacao', 'inundação',
+       'chuva', 'temporal', 'tempestade', 'rio subiu', 'rio transbordou',
+       'vazão', 'vazao', 'nível do rio', 'nivel do rio', 'cheia'].some(p => t2.includes(normalizar(p)))) {
+    pontos.clima += 15;
+  }
+
+  // Abastecimento ganha bônus forte (água/energia)
+  if (['torneira', 'reservatório', 'reservatorio', 'abastecimento',
+       'racionamento', 'sem água', 'sem agua', 'crise hídrica', 'crise hidrica',
+       'apagão', 'apagao', 'sem luz', 'sem energia'].some(p => t2.includes(normalizar(p)))) {
+    pontos.abastecimento += 25;
+  }
   // ----------------------------------------------------------
   // 2. BÔNUS POR CONTEXTO
   // ----------------------------------------------------------
