@@ -246,9 +246,6 @@ const EVENTOS_OPERACIONAIS = {
     peso: 30
   },
 
-  // ----------------------------------------------------------
-  // TRÂNSITO = bloqueio de via, acidente que trava, etc.
-  // ----------------------------------------------------------
    transito: {
     palavras: [
       // Interdições e bloqueios explícitos
@@ -261,44 +258,43 @@ const EVENTOS_OPERACIONAIS = {
       'trânsito parado', 'transito parado',
       'trânsito bloqueado', 'transito bloqueado',
       'trânsito interditado', 'transito interditado',
-      'congestionamento', 'lentidão', 'lentidao',
-      'desvio', 'rota alternativa',
+      'congestionamento intenso', 'congestionamento severo',
 
-      // Acidentes que travam via
-      'engavetamento', 'capotamento',
-      'carreta tombou', 'caminhão tombou', 'caminhao tombou',
-      'caminhão capotou', 'caminhao capotou',
-      'carreta capotou', 'veículo capotou', 'veiculo capotou',
-      'tombamento', 'tombou',
-      'colisão', 'colisao',
+      // Acidentes com contexto EXPLÍCITO de via
+      'engavetamento',
       'acidente na rodovia', 'acidente na br',
       'acidente na avenida', 'acidente na pista',
       'acidente com caminhão', 'acidente com caminhao',
-      'acidente com carreta', 'acidente com ônibus', 'acidente com onibus'
+      'acidente com carreta', 'acidente com ônibus', 'acidente com onibus',
+
+      // Vias bloqueadas por veículo pesado
+      'carreta tombou na', 'caminhão tombou na', 'caminhao tombou na',
+      'carreta capotou na', 'caminhão capotou na', 'caminhao capotou na',
+      'carreta bloqueia', 'caminhão bloqueia', 'caminhao bloqueia',
+      'carreta interdita', 'caminhão interdita', 'caminhao interdita'
     ],
-    peso: 25
+    peso: 30
   },
 
-  // ----------------------------------------------------------
-  // GREVE = caminhoneiros, fábrica, etc.
-  // ----------------------------------------------------------
-  greve: {
+   greve: {
     palavras: [
+      // Greve em curso
       'greve', 'greve geral',
       'greve de caminhoneiros', 'greve dos caminhoneiros',
       'greve de funcionários', 'greve de funcionarios',
       'greve em fábrica', 'greve em fabrica',
       'greve em indústria', 'greve em industria',
-      'paralisação', 'paralisacao',
+      'greve no transporte',
       'paralisação de caminhoneiros', 'paralisacao de caminhoneiros',
       'paralisação de transporte', 'paralisacao de transporte',
       'paralisação em fábrica', 'paralisacao em fabrica',
-      'caminhoneiros', 'caminhoneiro',
-      'piquete', 'bloqueio de rodovia', 'travamento'
+      'paralisação geral', 'paralisacao geral',
+      'piquete',
+      'caminhoneiros bloqueiam', 'caminhoneiros fecham',
+      'caminhoneiros paralisam'
     ],
     peso: 30
   },
-
   // ----------------------------------------------------------
   // INFRAESTRUTURA = falhas estruturais
   // ----------------------------------------------------------
@@ -676,7 +672,6 @@ function calcularRelevancia(titulo, resumo, fonte) {
 function determinarCategoria(analise, texto) {
 
   const t = normalizar(texto || '');
-  const temPalavra = (lista) => lista.some(p => t.includes(normalizar(p)));
 
   const pontos = {
     clima: 0,
@@ -736,61 +731,151 @@ function determinarCategoria(analise, texto) {
     for (const c in pontos) if (pontos[c] === maior) pontos[c] += 15;
   }
 
-  // ----------------------------------------------------------
-  // 3. REFORÇO POR CONTEXTO REAL NO TEXTO
-  // ----------------------------------------------------------
+  // ==========================================================
+  // 3. REGRA DURA: categoria só confirma com EVIDÊNCIA REAL
+  // (aceita evento em curso OU previsão/risco)
+  // ==========================================================
 
-  // CLIMA: só confirma se tiver evento climático real
-  const temClimaReal = temPalavra([
-    'alaga', 'inunda', 'enchente', 'cheia', 'transbord',
-    'desliza', 'desmorona', 'destelha',
-    'vendaval', 'ventania', 'granizo', 'ciclone', 'tornado', 'furac',
-    'chuva forte', 'chuva intensa', 'temporal', 'tempestade',
-    'alerta meteorol', 'aviso meteorol', 'defesa civil',
-    'nível do rio', 'nivel do rio', 'rio subiu', 'rio transbordou',
+  // ---------------- CLIMA ----------------
+  const climaEmCurso = [
+    'chuva forte', 'temporal', 'tempestade', 'vendaval',
+    'alagamento em', 'alagou em', 'enchente em', 'inundacao em', 'inundação em',
+    'deslizamento em', 'desmoronamento em', 'transbordamento',
+    'granizo', 'ciclone', 'tornado', 'furacão', 'furacao',
+    'alerta meteorológico', 'alerta meteorologico',
+    'alerta de chuva', 'alerta de tempestade',
+    'aviso de tempestade', 'aviso meteorológico', 'aviso meteorologico',
+    'defesa civil alerta', 'defesa civil emite'
+  ].some(t => t2.includes(normalizar(t)));
+
+  const climaPrevisto = [
+    'previsão de chuva', 'previsao de chuva',
     'previsão do tempo', 'previsao do tempo',
-    'onda de calor', 'onda de frio', 'seca', 'estiagem',
-    'queimada', 'incêndio florestal', 'incendio florestal',
-    'terremoto', 'tremor', 'neblina', 'névoa', 'nevoa'
-  ]);
-  if (!temClimaReal && pontos.clima > 0) {
-    pontos.clima = Math.max(0, pontos.clima - 20);
+    'previsão de temporal', 'previsao de temporal',
+    'previsão de tempestade', 'previsao de tempestade',
+    'pode chover forte', 'chuvas previstas',
+    'risco de temporal', 'risco de chuva',
+    'frente fria chega', 'massa de ar frio',
+    'onda de calor', 'onda de frio'
+  ].some(t => t2.includes(normalizar(t)));
+
+  if (pontos.clima > 0 && !climaEmCurso && !climaPrevisto) {
+    pontos.clima = 0;
   }
 
-  // POLICIAL: precisa contexto real
-  const temPolicialReal = temPalavra([
-    'roubo de carga', 'carga roubada', 'furto de carga',
-    'assalto a caminh', 'roubo de caminh', 'roubo de carreta',
-    'facção', 'faccao', 'milícia', 'milicia', 'pcc', 'comando vermelho',
-    'operação policial', 'operacao policial',
-    'confronto', 'tiroteio', 'arrastão', 'arrastao',
-    'ônibus queimado', 'onibus queimado', 'toque de recolher', 'domínio de comunidade', 'dominio de comunidade',
-    'guerra do tráfico', 'guerra do trafico', 'roubada', 'roubadas', 'roubado', 'roubados',
-      'assaltada', 'assaltadas', 'assaltado', 'assaltados',
-      'roubaram', 'assaltaram', 'carga roubada', 'carga foi roubada',
-  ]);
-  if (!temPolicialReal && pontos.policial > 0) {
-    pontos.policial = Math.max(0, pontos.policial - 20);
-  }
-
-  // TRANSiTO: precisa contexto real
-  const temTransitoReal = temPalavra([
-    'interdi', 'bloqueio', 'pista fechada', 'pista bloqueada',
+  // ---------------- TRÂNSITO ----------------
+  const transitoEmCurso = [
+    'interdição', 'interdicao', 'interditada', 'interditado',
+    'bloqueio de pista', 'pista fechada', 'pista bloqueada',
+    'faixa bloqueada', 'faixa interditada',
     'rodovia fechada', 'rodovia interditada',
-    'acidente', 'colis', 'capota', 'engaveta', 'atropel',
-    'tombamento', 'tombou', 'congestionamento', 'desvio', 'rota alternativa'
-  ]);
-  if (!temTransitoReal && pontos.transito > 0) {
-    pontos.transito = Math.max(0, pontos.transito - 15);
+    'avenida fechada', 'avenida interditada',
+    'rua fechada', 'rua interditada',
+    'trânsito parado', 'transito parado',
+    'trânsito bloqueado', 'transito bloqueado',
+    'congestionamento intenso', 'engavetamento',
+    'acidente na rodovia', 'acidente na br',
+    'acidente na avenida', 'acidente na pista',
+    'acidente com caminhão', 'acidente com caminhao',
+    'acidente com carreta', 'acidente com ônibus', 'acidente com onibus',
+    'carreta tombou na', 'caminhão tombou na', 'caminhao tombou na',
+    'carreta capotou na', 'caminhão capotou na', 'caminhao capotou na',
+    'carreta bloqueia', 'caminhão bloqueia', 'caminhao bloqueia'
+  ].some(t => t2.includes(normalizar(t)));
+
+  const transitoPrevisto = [
+    'rodovia será interditada', 'rodovia sera interditada',
+    'avenida será interditada', 'avenida sera interditada',
+    'obra na rodovia', 'obras na rodovia',
+    'interdição programada', 'interdicao programada',
+    'interdição prevista', 'interdicao prevista',
+    'bloqueio programado'
+  ].some(t => t2.includes(normalizar(t)));
+
+  if (pontos.transito > 0 && !transitoEmCurso && !transitoPrevisto) {
+    pontos.transito = 0;
   }
 
-  // GREVE: precisa contexto real
-  const temGreveReal = temPalavra([
-    'greve', 'paralisação', 'paralisacao', 'piquete',
-    'caminhoneir', 'bloqueio de rodovia', 'travamento'
-  ]);
-  if (!temGreveReal && pontos.greve > 0) {
-    pontos.greve = Math.max(0, pontos.greve - 20);
+  // ---------------- GREVE ----------------
+  const greveEmCurso = [
+    'greve em andamento', 'greve começou', 'greve comecou',
+    'greve geral', 'greve de caminhoneiros', 'greve dos caminhoneiros',
+    'greve em fábrica', 'greve em fabrica', 'greve em indústria', 'greve em industria',
+    'greve no transporte',
+    'paralisação de caminhoneiros', 'paralisacao de caminhoneiros',
+    'paralisação de transporte', 'paralisacao de transporte',
+    'piquete', 'caminhoneiros bloqueiam', 'caminhoneiros fecham',
+    'caminhoneiros paralisam'
+  ].some(t => t2.includes(normalizar(t)));
+
+  const grevePrevista = [
+    'greve pode começar', 'greve pode comecar',
+    'greve prevista', 'greve programada',
+    'ameaça de greve', 'ameaca de greve',
+    'caminhoneiros ameaçam', 'caminhoneiros ameacam',
+    'caminhoneiros podem parar',
+    'paralisação prevista', 'paralisacao prevista',
+    'sindicato ameaça', 'sindicato ameaca',
+    'risco de greve'
+  ].some(t => t2.includes(normalizar(t)));
+
+  if (pontos.greve > 0 && !greveEmCurso && !grevePrevista) {
+    pontos.greve = 0;
+  }
+
+  // ---------------- ABASTECIMENTO ----------------
+  const abastecimentoEmCurso = [
+    'falta de combustível', 'falta de combustivel',
+    'falta de água', 'falta de agua',
+    'posto sem combustível', 'posto sem combustivel',
+    'crise de combustível', 'crise de combustivel',
+    'crise hídrica', 'crise hidrica',
+    'desabastecimento'
+  ].some(t => t2.includes(normalizar(t)));
+
+  const abastecimentoPrevisto = [
+    'risco de falta de combustível', 'risco de falta de combustivel',
+    'risco de falta de água', 'risco de falta de agua',
+    'pode faltar combustível', 'pode faltar combustivel',
+    'pode faltar água', 'pode faltar agua',
+    'pode faltar diesel', 'pode faltar gasolina',
+    'pode faltar energia', 'pode faltar luz',
+    'risco de racionamento', 'racionamento pode',
+    'risco de apagão', 'risco de apagao',
+    'risco de desabastecimento',
+    'reservatório em nível crítico', 'reservatorio em nivel critico',
+    'reservatório no limite', 'reservatorio no limite',
+    'bandeira vermelha'
+  ].some(t => t2.includes(normalizar(t)));
+
+  if (pontos.abastecimento > 0 && !abastecimentoEmCurso && !abastecimentoPrevisto) {
+    pontos.abastecimento = 0;
+  }
+
+  // ---------------- POLICIAL ----------------
+  const policialReal = [
+    'roubo de carga', 'carga roubada', 'furto de carga',
+    'assalto a caminhão', 'assalto a caminhao',
+    'assalto a carreta', 'roubo de caminhão', 'roubo de caminhao',
+    'roubo de carreta',
+    'facção', 'faccao', 'milícia', 'milicia', 'pcc', 'comando vermelho',
+    'guerra do tráfico', 'guerra do trafico',
+    'domínio de comunidade', 'dominio de comunidade',
+    'operação policial em comunidade', 'operacao policial em comunidade',
+    'operação em comunidade', 'operacao em comunidade',
+    'toque de recolher',
+    'ônibus queimado', 'onibus queimado',
+    'arrastão em', 'arrastao em'
+  ].some(t => t2.includes(normalizar(t)));
+
+  if (pontos.policial > 0 && !policialReal) {
+    pontos.policial = 0;
+  }
+
+  // ---------------- SE NADA CONFIRMOU, VAI PRA 'GERAL' ----------------
+  const temAlgumaCategoria = Object.values(pontos).some(p => p > 0);
+  if (!temAlgumaCategoria) {
+    return 'geral';
   }
 
   // ----------------------------------------------------------
